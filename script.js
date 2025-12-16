@@ -5,19 +5,41 @@ let currentUser = null;
 // IMPORTANT: Replace 'YOUR_RECAPTCHA_SITE_KEY' in index.html with your actual site key from Google reCAPTCHA admin console
 // Get your keys at: https://www.google.com/recaptcha/admin
 
+let recaptchaWidgets = {};
+
 function validateRecaptcha(formId) {
     // Check if reCAPTCHA response exists
-    const response = grecaptcha.getResponse();
-    if (!response) {
-        alert('Vui lòng xác minh bạn không phải robot!');
-        return false;
+    try {
+        // Try to get response from specific widget, or default widget
+        const widgetId = recaptchaWidgets[formId];
+        const response = widgetId !== undefined ?
+            grecaptcha.getResponse(widgetId) :
+            grecaptcha.getResponse();
+
+        if (!response) {
+            alert('Vui lòng xác minh bạn không phải robot!');
+            return false;
+        }
+        return true;
+    } catch (e) {
+        // If grecaptcha not loaded, skip validation
+        console.log('reCAPTCHA not loaded, skipping validation');
+        return true;
     }
-    return true;
 }
 
-function resetRecaptcha() {
+function resetRecaptcha(formId) {
     if (typeof grecaptcha !== 'undefined') {
-        grecaptcha.reset();
+        try {
+            const widgetId = recaptchaWidgets[formId];
+            if (widgetId !== undefined) {
+                grecaptcha.reset(widgetId);
+            } else {
+                grecaptcha.reset();
+            }
+        } catch (e) {
+            console.log('Error resetting reCAPTCHA');
+        }
     }
 }
 
