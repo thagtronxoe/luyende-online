@@ -1,44 +1,25 @@
 // ========== USER & AUTH SYSTEM ==========
 let currentUser = null;
 
-// ========== CAPTCHA SYSTEM ==========
-let captchaData = {
-    login: { num1: 5, num2: 3, answer: 8 },
-    register: { num1: 7, num2: 2, answer: 9 }
-};
+// ========== GOOGLE reCAPTCHA SYSTEM ==========
+// IMPORTANT: Replace 'YOUR_RECAPTCHA_SITE_KEY' in index.html with your actual site key from Google reCAPTCHA admin console
+// Get your keys at: https://www.google.com/recaptcha/admin
 
-function generateCaptcha(type) {
-    const num1 = Math.floor(Math.random() * 10) + 1;
-    const num2 = Math.floor(Math.random() * 10) + 1;
-    captchaData[type] = { num1, num2, answer: num1 + num2 };
-    return `${num1} + ${num2} = ?`;
+function validateRecaptcha(formId) {
+    // Check if reCAPTCHA response exists
+    const response = grecaptcha.getResponse();
+    if (!response) {
+        alert('Vui lòng xác minh bạn không phải robot!');
+        return false;
+    }
+    return true;
 }
 
-function refreshCaptcha(type) {
-    const question = generateCaptcha(type);
-    const element = document.getElementById(type + 'CaptchaQuestion');
-    if (element) {
-        element.textContent = question;
-    }
-    // Clear input
-    const input = document.getElementById(type + 'Captcha');
-    if (input) {
-        input.value = '';
+function resetRecaptcha() {
+    if (typeof grecaptcha !== 'undefined') {
+        grecaptcha.reset();
     }
 }
-
-function validateCaptcha(type) {
-    const input = document.getElementById(type + 'Captcha');
-    if (!input) return true;
-    const userAnswer = parseInt(input.value);
-    return userAnswer === captchaData[type].answer;
-}
-
-// Initialize captcha on page load
-document.addEventListener('DOMContentLoaded', function () {
-    refreshCaptcha('login');
-    refreshCaptcha('register');
-});
 
 // Get users from localStorage or use default
 function getUsers() {
@@ -112,10 +93,8 @@ function showScreen(screenId) {
 function handleLogin(event) {
     event.preventDefault();
 
-    // Validate CAPTCHA first
-    if (!validateCaptcha('login')) {
-        alert('Kết quả xác minh không đúng!');
-        refreshCaptcha('login');
+    // Validate reCAPTCHA first
+    if (!validateRecaptcha('login')) {
         return;
     }
 
@@ -131,17 +110,15 @@ function handleLogin(event) {
         showDashboard();
     } else {
         alert('Tên đăng nhập hoặc mật khẩu không đúng!');
-        refreshCaptcha('login');
+        resetRecaptcha();
     }
 }
 
 function handleRegister(event) {
     event.preventDefault();
 
-    // Validate CAPTCHA first
-    if (!validateCaptcha('register')) {
-        alert('Kết quả xác minh không đúng!');
-        refreshCaptcha('register');
+    // Validate reCAPTCHA first
+    if (!validateRecaptcha('register')) {
         return;
     }
 
