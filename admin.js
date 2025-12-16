@@ -897,12 +897,19 @@ function deleteAdmin(adminId) {
 }
 
 // ========== INIT ==========
-document.addEventListener('DOMContentLoaded', function () {
-    // Check if already logged in
-    const storedAdmin = localStorage.getItem('luyende_currentAdmin');
-    if (storedAdmin) {
-        currentAdmin = JSON.parse(storedAdmin);
-        showAdminDashboard();
+document.addEventListener('DOMContentLoaded', async function () {
+    // Check if already logged in via token
+    const token = getToken();
+    if (token) {
+        try {
+            const user = await apiGetCurrentUser();
+            if (user && (user.role === 'admin' || user.role === 'super')) {
+                currentAdmin = user;
+                showAdminDashboard();
+            }
+        } catch (err) {
+            console.log('Token invalid, need to login');
+        }
     }
     // Load contact settings
     loadContactSettings();
