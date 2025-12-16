@@ -90,7 +90,7 @@ function showScreen(screenId) {
 }
 
 // ========== AUTH HANDLERS ==========
-function handleLogin(event) {
+async function handleLogin(event) {
     event.preventDefault();
 
     // Validate reCAPTCHA first
@@ -101,20 +101,17 @@ function handleLogin(event) {
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
 
-    const users = getUsers();
-    const user = users.find(u => u.username === username && u.password === password);
-
-    if (user) {
+    try {
+        const user = await apiLogin(username, password);
         currentUser = user;
-        localStorage.setItem('luyende_currentUser', JSON.stringify(user));
         showDashboard();
-    } else {
-        alert('Tên đăng nhập hoặc mật khẩu không đúng!');
+    } catch (err) {
+        alert(err.message || 'Tên đăng nhập hoặc mật khẩu không đúng!');
         resetRecaptcha();
     }
 }
 
-function handleRegister(event) {
+async function handleRegister(event) {
     event.preventDefault();
 
     // Validate reCAPTCHA first
@@ -143,28 +140,15 @@ function handleRegister(event) {
     }
     clearError('registerPasswordConfirm');
 
-    const users = getUsers();
-    if (users.find(u => u.username === username)) {
-        showError('registerUsername', 'Tên đăng nhập đã tồn tại!');
-        return;
+    try {
+        await apiRegister(name, email, username, password);
+        alert('Đăng ký thành công! Vui lòng đăng nhập.');
+        showScreen('loginScreen');
+        document.getElementById('loginUsername').value = username;
+    } catch (err) {
+        alert(err.message || 'Đăng ký thất bại!');
+        resetRecaptcha();
     }
-    clearError('registerUsername');
-
-    const newUser = {
-        id: Date.now(),
-        name: name.toUpperCase(),
-        email: document.getElementById('registerEmail').value,
-        username,
-        password,
-        completedExams: []
-    };
-
-    users.push(newUser);
-    saveUsers(users);
-
-    alert('Đăng ký thành công! Vui lòng đăng nhập.');
-    showScreen('loginScreen');
-    document.getElementById('loginUsername').value = username;
 }
 
 // Toggle password visibility
@@ -217,7 +201,7 @@ function clearError(inputId) {
 
 function handleLogout() {
     currentUser = null;
-    localStorage.removeItem('luyende_currentUser');
+    apiLogout(); // Clear token and localStorage
     showScreen('loginScreen');
 }
 
@@ -713,8 +697,11 @@ function viewAnswers(examId) {
 
 // ========== CHECK LOGIN ON LOAD ==========
 document.addEventListener('DOMContentLoaded', function () {
+    // Check for existing token and user data
+    const token = getToken();
     const savedUser = localStorage.getItem('luyende_currentUser');
-    if (savedUser) {
+
+    if (token && savedUser) {
         currentUser = JSON.parse(savedUser);
         showDashboard();
     }
