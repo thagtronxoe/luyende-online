@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Luyện Đề Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <!-- TinyMCE CDN -->
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- MathJax for LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <!-- Admin Login Screen -->
+    <div id="adminLoginScreen" class="screen active">
+        <div class="auth-container auth-layout-center">
+            <div class="auth-form-side auth-form-full">
+                <div class="auth-form-card auth-form-wide">
+                    <div class="logo-text">
+                        <div class="logo-brand">
+                            <span class="logo-main">LUYỆN ĐỀ</span>
+                            <span class="logo-sub">ADMIN</span>
+                        </div>
+                    </div>
+
+                    <h1 class="auth-title">Đăng nhập Admin</h1>
+                    <p class="auth-subtitle">Quản lý hệ thống Luyện Đề Online</p>
+
+                    <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+                        <div class="form-group">
+                            <label for="adminUsername">Tên đăng nhập</label>
+                            <input type="text" id="adminUsername" placeholder="Nhập tên đăng nhập" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminPassword">Mật khẩu</label>
+                            <div class="input-with-icon">
+                                <input type="password" id="adminPassword" placeholder="Nhập mật khẩu" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large btn-full">Đăng nhập</button>
+                    </form>
+
+                    <p class="auth-switch">
+                        <a href="index.html">← Về trang Student Portal</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="screen">
+        <div class="admin-layout">
+            <!-- Sidebar -->
+            <aside class="admin-sidebar">
+                <div class="admin-sidebar-header">
+                    <div class="admin-logo">
+                        <span class="logo-main">LUYỆN ĐỀ</span>
+                        <span class="logo-sub">ADMIN</span>
+                    </div>
+                </div>
+
+                <nav class="admin-nav">
+                    <button class="admin-nav-item active" onclick="showAdminTab('dashboard')">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Dashboard</span>
+                    </button>
+                    <button class="admin-nav-item" onclick="showAdminTab('users')">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-text">Quản lý Users</span>
+                    </button>
+                    <button class="admin-nav-item" onclick="showAdminTab('packages')">
+                        <span class="nav-icon">📦</span>
+                        <span class="nav-text">Quản lý Gói đề</span>
+                    </button>
+                    <button class="admin-nav-item" onclick="showAdminTab('exams')">
+                        <span class="nav-icon">📝</span>
+                        <span class="nav-text">Quản lý Đề thi</span>
+                    </button>
+                    <button class="admin-nav-item" onclick="showAdminTab('admins')">
+                        <span class="nav-icon">🔐</span>
+                        <span class="nav-text">Quản lý Admins</span>
+                    </button>
+                    <button class="admin-nav-item" onclick="showAdminTab('settings')">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">Cài đặt</span>
+                    </button>
+                </nav>
+
+                <div class="admin-sidebar-footer">
+                    <div class="admin-user-info">
+                        <span class="admin-name" id="currentAdminName">Admin</span>
+                        <span class="admin-role" id="currentAdminRole">Super Admin</span>
+                    </div>
+                    <button class="btn-logout" onclick="handleAdminLogout()">Đăng xuất</button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="admin-main">
+                <!-- Dashboard Tab -->
+                <div class="admin-tab active" id="dashboardTab">
+                    <div class="admin-header">
+                        <h1>Dashboard</h1>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="totalUsers">0</span>
+                                <span class="stat-label">Người dùng</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📦</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="totalPackages">0</span>
+                                <span class="stat-label">Gói đề</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="totalExams">0</span>
+                                <span class="stat-label">Đề thi</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="totalAttempts">0</span>
+                                <span class="stat-label">Lượt thi</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div class="admin-tab" id="usersTab">
+                    <div class="admin-header">
+                        <h1>Quản lý Users</h1>
+                        <div class="search-box">
+                            <input type="text" id="userSearchInput" placeholder="Tìm theo username hoặc email..."
+                                oninput="filterUsers()">
+                            <button class="btn btn-secondary" onclick="clearUserSearch()">Xóa</button>
+                        </div>
+                    </div>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th>Username</th>
+                                    <th>Ngày đăng ký</th>
+                                    <th>Gói đã kích hoạt</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Packages Tab -->
+                <div class="admin-tab" id="packagesTab">
+                    <div class="admin-header">
+                        <h1>Quản lý Gói đề</h1>
+                        <button class="btn btn-primary" onclick="showPackageModal()">+ Tạo gói mới</button>
+                    </div>
+                    <div class="packages-grid" id="adminPackagesGrid">
+                        <!-- Packages will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Exams Tab -->
+                <div class="admin-tab" id="examsTab">
+                    <div class="admin-header">
+                        <h1 id="examTabTitle">Quản lý Đề thi</h1>
+                        <button class="btn btn-primary" id="btnCreateExam" onclick="showExamCreator()">+ Tạo đề
+                            mới</button>
+                        <button class="btn btn-secondary" id="btnBackToExamList" onclick="showExamList()"
+                            style="display: none;">← Quay lại danh sách</button>
+                    </div>
+
+                    <!-- Exam List View -->
+                    <div id="examListView">
+                        <div class="admin-table-container">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tên đề thi</th>
+                                        <th>Gói đề</th>
+                                        <th>Ngày tạo</th>
+                                        <th>Người tạo</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="examsTableBody">
+                                    <!-- Exams will be rendered here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Exam Creator View -->
+                    <div id="examCreatorView" class="exam-creator" style="display: none;">
+                        <input type="hidden" id="editingExamId">
+
+                        <!-- Action Buttons Header (like Khaothi) -->
+                        <div class="exam-action-bar">
+                            <div class="exam-action-left">
+                                <button type="button" class="btn btn-secondary" onclick="showExamList()">
+                                    ← Quay lại
+                                </button>
+                            </div>
+                            <div class="exam-action-right">
+                                <button type="button" class="btn btn-outline" onclick="previewExam()">
+                                    👁 Xem trước
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="saveExam()">
+                                    💾 Lưu
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="saveExamAndNew()">
+                                    💾 Lưu & Thêm mới
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Exam Info Header -->
+                        <div class="exam-creator-header">
+                            <div class="form-group">
+                                <label>Chọn gói đề</label>
+                                <select id="examPackageSelect" class="form-select">
+                                    <!-- Packages will be populated here -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tên đề thi</label>
+                                <input type="text" id="examTitle" placeholder="VD: Đề số 1 - Giữa kì 2"
+                                    class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Mã môn (Tag)</label>
+                                <input type="text" id="examTag" placeholder="VD: THPT Toán" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Trạng thái</label>
+                                <select id="examStatus" class="form-select">
+                                    <option value="draft">Đang soạn (Ẩn)</option>
+                                    <option value="published">Đã xuất bản (Cho thi)</option>
+                                    <option value="view_only">Chỉ xem (Không cho thi)</option>
+                                    <option value="updating">Đang cập nhật</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Part I: Multiple Choice -->
+                        <div class="exam-section">
+                            <h3>Phần I: Trắc nghiệm (12 câu - 0.25đ/câu)</h3>
+                            <div id="mcQuestions">
+                                <!-- MC questions will be rendered here -->
+                            </div>
+                        </div>
+
+                        <!-- Part II: True/False -->
+                        <div class="exam-section">
+                            <h3>Phần II: Đúng/Sai (4 câu - lũy tiến tối đa 1đ/câu)</h3>
+                            <div id="tfQuestions">
+                                <!-- TF questions will be rendered here -->
+                            </div>
+                        </div>
+
+                        <!-- Part III: Fill-in-blank -->
+                        <div class="exam-section">
+                            <h3>Phần III: Trả lời ngắn (6 câu - 0.5đ/câu)</h3>
+                            <div id="fillQuestions">
+                                <!-- Fill questions will be rendered here -->
+                            </div>
+                        </div>
+
+                        <div class="exam-creator-footer">
+                            <button class="btn btn-primary btn-large" onclick="saveExam()">💾 Lưu đề thi</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admins Tab -->
+                <div class="admin-tab" id="adminsTab">
+                    <div class="admin-header">
+                        <h1>Quản lý Admins</h1>
+                        <button class="btn btn-primary" onclick="showAdminModal()">+ Thêm Admin</button>
+                    </div>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên</th>
+                                    <th>Username</th>
+                                    <th>Vai trò</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminsTableBody">
+                                <!-- Admins will be rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="admin-tab" id="settingsTab">
+                    <div class="admin-header">
+                        <h1>⚙️ Cài đặt</h1>
+                    </div>
+                    <div class="settings-section">
+                        <h3>📞 Thông tin liên hệ</h3>
+                        <p class="settings-desc">Các link này sẽ hiển thị trong modal liên hệ khi học sinh muốn đăng ký
+                            gói.</p>
+                        <form id="contactSettingsForm" onsubmit="saveContactSettings(event)">
+                            <div class="form-group">
+                                <label>Link Zalo</label>
+                                <input type="text" id="contactZalo" placeholder="https://zalo.me/your_id">
+                            </div>
+                            <div class="form-group">
+                                <label>Link Facebook</label>
+                                <input type="text" id="contactFacebook" placeholder="https://m.me/your_page">
+                            </div>
+                            <div class="form-group">
+                                <label>Link Telegram</label>
+                                <input type="text" id="contactTelegram" placeholder="https://t.me/your_username">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Lưu cài đặt</button>
+                        </form>
+                    </div>
+
+                    <div class="settings-section" style="margin-top: 24px;">
+                        <h3>🧪 Dữ liệu test</h3>
+                        <p class="settings-desc">Tạo tài khoản học sinh mẫu để kiểm tra giao diện.</p>
+                        <button type="button" class="btn btn-secondary" onclick="createTestUser()">Tạo học sinh
+                            test</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Package Modal -->
+    <div id="packageModal" class="modal">
+        <div class="modal-content modal-form">
+            <button class="modal-close" onclick="closePackageModal()">&times;</button>
+            <h2>Tạo gói đề mới</h2>
+            <form id="packageForm" onsubmit="savePackage(event)">
+                <div class="form-group">
+                    <label>Tên gói đề</label>
+                    <input type="text" id="packageName" placeholder="VD: Đề thi giữa kì 2 lớp 12" required>
+                </div>
+                <div class="form-group">
+                    <label>Mô tả</label>
+                    <textarea id="packageDesc" rows="3" placeholder="Mô tả ngắn về gói đề"></textarea>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Icon (emoji)</label>
+                        <input type="text" id="packageIcon" value="📝" maxlength="2">
+                    </div>
+                    <div class="form-group">
+                        <label>Thời lượng (phút)</label>
+                        <input type="number" id="packageDuration" value="90" min="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Trạng thái truy cập</label>
+                    <select id="packageAccessType" class="form-select">
+                        <option value="open">✓ Đã đăng kí</option>
+                        <option value="register">🔒 Cần đăng kí</option>
+                        <option value="updating">🔄 Đang cập nhật</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Lưu gói đề</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content modal-form">
+            <button class="modal-close" onclick="closeAdminModal()">&times;</button>
+            <h2>Thêm Admin mới</h2>
+            <form id="adminForm" onsubmit="saveNewAdmin(event)">
+                <div class="form-group">
+                    <label>Tên Admin</label>
+                    <input type="text" id="newAdminName" placeholder="Họ và tên" required>
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="newAdminUsername" placeholder="Tên đăng nhập" required>
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="newAdminPassword" placeholder="Mật khẩu" required>
+                </div>
+                <div class="form-group">
+                    <label>Vai trò</label>
+                    <select id="newAdminRole" class="form-select">
+                        <option value="editor">Soạn đề</option>
+                        <option value="admin">Admin</option>
+                        <option value="super">Super Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Thêm Admin</button>
+                <div style="margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary btn-full" onclick="closeAdminModal()">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Exam Preview Modal -->
+    <div id="examPreviewModal" class="modal">
+        <div class="modal-content modal-preview">
+            <div class="preview-header">
+                <h2>Xem trước đề thi</h2>
+                <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+            </div>
+            <div id="previewContent" class="preview-body">
+                <!-- Preview content will be rendered here -->
+            </div>
+            <div class="preview-footer">
+                <button class="btn btn-secondary" onclick="closePreviewModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Single Question Preview Modal -->
+    <div id="singlePreviewModal" class="modal">
+        <div class="modal-content modal-preview-single">
+            <div class="preview-header">
+                <h2 id="singlePreviewTitle">Xem trước câu hỏi</h2>
+                <button class="modal-close" onclick="closeSinglePreviewModal()">&times;</button>
+            </div>
+            <div id="singlePreviewContent" class="preview-body">
+                <!-- Single question preview will be rendered here -->
+            </div>
+            <div class="preview-footer">
+                <button class="btn btn-secondary" onclick="closeSinglePreviewModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div id="userDetailModal" class="modal">
+        <div class="modal-content modal-form" style="max-width: 500px;">
+            <button class="modal-close" onclick="closeUserDetailModal()">&times;</button>
+            <h2>👤 Thông tin học sinh</h2>
+            <input type="hidden" id="detailUserId">
+            <div class="user-detail-info">
+                <div class="detail-row">
+                    <span class="detail-label">Họ tên:</span>
+                    <span id="detailUserName" class="detail-value">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Email:</span>
+                    <span id="detailUserEmail" class="detail-value">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Username:</span>
+                    <span id="detailUserUsername" class="detail-value">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Ngày đăng ký:</span>
+                    <span id="detailUserDate" class="detail-value">-</span>
+                </div>
+            </div>
+            <hr style="margin: 16px 0; border: none; border-top: 1px solid #e5e7eb;">
+            <h3 style="margin-bottom: 12px; font-size: 16px;">📦 Kích hoạt gói đề</h3>
+            <div id="userPackagesList" class="user-packages-list">
+                <!-- Package checkboxes will be rendered here -->
+            </div>
+            <button type="button" class="btn btn-primary btn-full" style="margin-top: 16px;"
+                onclick="saveUserPackages()">Lưu thay đổi</button>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>

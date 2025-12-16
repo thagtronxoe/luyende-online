@@ -1,0 +1,1630 @@
+// ========== USER & AUTH SYSTEM ==========
+let currentUser = null;
+
+// Get users from localStorage or use default
+function getUsers() {
+    const stored = localStorage.getItem('luyende_users');
+    if (stored) return JSON.parse(stored);
+    return [
+        { id: 1, name: "PHẠM ĐỨC THẮNG", username: "thang01", password: "123456", completedExams: [] }
+    ];
+}
+
+function saveUsers(users) {
+    localStorage.setItem('luyende_users', JSON.stringify(users));
+}
+
+// Exam Packages - Gói đề
+// accessType: 'updating' (đang cập nhật), 'open' (mở thoải mái), 'register' (cần đăng kí)
+const examPackages = [
+    {
+        id: "giua-ki-2-lop-12",
+        name: "Đề thi giữa kì 2 lớp 12",
+        icon: "📝",
+        description: "Bộ đề ôn thi giữa kì 2 môn Toán lớp 12 theo cấu trúc THPT mới. Gồm 22 câu hỏi trắc nghiệm, đúng/sai và điền khuyết.",
+        examCount: 10,
+        duration: 90,
+        questionFormat: "THPT_MATH",
+        accessType: "open" // mở thoải mái
+    },
+    {
+        id: "cuoi-ki-2-lop-12",
+        name: "Đề thi cuối kì 2 lớp 12",
+        icon: "🎓",
+        description: "Bộ đề ôn thi cuối kì 2 môn Toán lớp 12 theo chuẩn thi tốt nghiệp THPT. Giúp chuẩn bị tốt cho kì thi chính thức.",
+        examCount: 10,
+        duration: 90,
+        questionFormat: "THPT_MATH",
+        accessType: "register" // cần đăng kí
+    }
+];
+
+// Generate 10 exams for each package
+function generateExamsForPackage(packageId, baseName) {
+    const exams = [];
+    for (let i = 1; i <= 10; i++) {
+        exams.push({
+            id: `${packageId}-${i}`,
+            title: `Đề số ${i} - ${baseName}`,
+            duration: 90,
+            questions: 22,
+            completed: false,
+            packageId: packageId
+        });
+    }
+    return exams;
+}
+
+// Exams data by package
+const examsData = {
+    "giua-ki-2-lop-12": generateExamsForPackage("giua-ki-2-lop-12", "Giữa kì 2"),
+    "cuoi-ki-2-lop-12": generateExamsForPackage("cuoi-ki-2-lop-12", "Cuối kì 2")
+};
+
+let currentPackageId = null;
+
+// ========== SCREEN NAVIGATION ==========
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+
+// ========== AUTH HANDLERS ==========
+function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+
+    const users = getUsers();
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (user) {
+        currentUser = user;
+        localStorage.setItem('luyende_currentUser', JSON.stringify(user));
+        showDashboard();
+    } else {
+        alert('Tên đăng nhập hoặc mật khẩu không đúng!');
+    }
+}
+
+function handleRegister(event) {
+    event.preventDefault();
+    const name = document.getElementById('registerName').value;
+    const email = document.getElementById('registerEmail').value;
+    const username = document.getElementById('registerUsername').value;
+    const password = document.getElementById('registerPassword').value;
+    const confirmPassword = document.getElementById('registerPasswordConfirm').value;
+
+    // Validate Gmail format
+    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    if (!gmailRegex.test(email)) {
+        showError('registerEmail', 'Vui lòng nhập địa chỉ Gmail hợp lệ (ví dụ: ten@gmail.com)');
+        return;
+    }
+    clearError('registerEmail');
+
+    // Check password match
+    if (password !== confirmPassword) {
+        showError('registerPasswordConfirm', 'Mật khẩu xác nhận không khớp!');
+        return;
+    }
+    clearError('registerPasswordConfirm');
+
+    const users = getUsers();
+    if (users.find(u => u.username === username)) {
+        showError('registerUsername', 'Tên đăng nhập đã tồn tại!');
+        return;
+    }
+    clearError('registerUsername');
+
+    const newUser = {
+        id: Date.now(),
+        name: name.toUpperCase(),
+        email: document.getElementById('registerEmail').value,
+        username,
+        password,
+        completedExams: []
+    };
+
+    users.push(newUser);
+    saveUsers(users);
+
+    alert('Đăng ký thành công! Vui lòng đăng nhập.');
+    showScreen('loginScreen');
+    document.getElementById('loginUsername').value = username;
+}
+
+// Toggle password visibility
+function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>`;
+    } else {
+        input.type = 'password';
+        button.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>`;
+    }
+}
+
+// Show error message under input
+function showError(inputId, message) {
+    const input = document.getElementById(inputId);
+    const formGroup = input.closest('.form-group');
+
+    // Remove existing error
+    clearError(inputId);
+
+    // Add error class and message
+    input.classList.add('input-error');
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = message;
+    formGroup.appendChild(errorDiv);
+
+    // Focus on the input
+    input.focus();
+}
+
+function clearError(inputId) {
+    const input = document.getElementById(inputId);
+    const formGroup = input.closest('.form-group');
+
+    input.classList.remove('input-error');
+    const existingError = formGroup.querySelector('.error-message');
+    if (existingError) {
+        existingError.remove();
+    }
+}
+
+function handleLogout() {
+    currentUser = null;
+    localStorage.removeItem('luyende_currentUser');
+    showScreen('loginScreen');
+}
+
+// ========== DASHBOARD ==========
+function showDashboard() {
+    document.getElementById('dashboardUserName').textContent = 'Xin chào, ' + currentUser.name;
+    document.getElementById('examListUserName').textContent = 'Xin chào, ' + currentUser.name;
+
+    renderPackages();
+    showScreen('dashboardScreen');
+}
+
+// Switch between tabs
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    if (tabName === 'myPackages') {
+        document.getElementById('myPackagesTab').classList.add('active');
+    } else if (tabName === 'allPackages') {
+        document.getElementById('allPackagesTab').classList.add('active');
+    }
+}
+
+function renderPackages() {
+    const myGrid = document.getElementById('myPackagesGrid');
+    const allGrid = document.getElementById('allPackagesGrid');
+
+    // Get current user's activated packages
+    const users = JSON.parse(localStorage.getItem('luyende_users') || '[]');
+    const currentUserData = users.find(u => u.id === currentUser?.id);
+    const userActivatedPackages = currentUserData?.activatedPackages || [];
+
+    // Helper to get status badge HTML based on user access
+    function getStatusBadge(pkg) {
+        if (pkg.accessType === 'updating') {
+            return '<div class="package-status updating">🔄 Đang cập nhật</div>';
+        }
+        // Check if user has this package activated
+        if (userActivatedPackages.includes(pkg.id)) {
+            return '<div class="package-status open">✓ Đã đăng kí</div>';
+        }
+        return '<div class="package-status register">🔒 Cần đăng kí</div>';
+    }
+
+    // Helper to get user's effective access type
+    function getUserAccessType(pkg) {
+        if (pkg.accessType === 'updating') return 'updating';
+        if (userActivatedPackages.includes(pkg.id)) return 'open';
+        return 'register';
+    }
+
+    // Render my packages (only packages user has access to)
+    const accessiblePackages = examPackages.filter(p =>
+        p.accessType !== 'updating' && userActivatedPackages.includes(p.id)
+    );
+
+    if (accessiblePackages.length === 0) {
+        myGrid.innerHTML = '<div class="no-packages">Bạn chưa đăng ký gói nào. Liên hệ admin để kích hoạt gói!</div>';
+    } else {
+        myGrid.innerHTML = accessiblePackages.map(pkg => `
+            <div class="package-card" onclick="showExamList('${pkg.id}')">
+                <div class="package-icon">${pkg.icon}</div>
+                <div class="package-name">${pkg.name}</div>
+                <div class="package-description">${pkg.description}</div>
+                <div class="package-stats">
+                    <span class="package-stat">📝 ${pkg.examCount} đề</span>
+                    <span class="package-stat">⏱️ ${pkg.duration} phút</span>
+                </div>
+                ${getStatusBadge(pkg)}
+            </div>
+        `).join('');
+    }
+
+    // All packages with different click behaviors
+    allGrid.innerHTML = examPackages.map(pkg => {
+        const effectiveAccess = getUserAccessType(pkg);
+        return `
+        <div class="package-card ${effectiveAccess}" onclick="handlePackageClick('${pkg.id}')">
+            <div class="package-icon">${pkg.icon}</div>
+            <div class="package-name">${pkg.name}</div>
+            <div class="package-description">${pkg.description}</div>
+            <div class="package-stats">
+                <span class="package-stat">📝 ${pkg.examCount} đề</span>
+                <span class="package-stat">⏱️ ${pkg.duration} phút</span>
+            </div>
+            ${getStatusBadge(pkg)}
+        </div>
+    `}).join('');
+}
+
+// Handle package click based on user's access
+function handlePackageClick(packageId) {
+    const pkg = examPackages.find(p => p.id === packageId);
+    if (!pkg) return;
+
+    // Check if updating
+    if (pkg.accessType === 'updating') {
+        alert('Gói đề này đang được cập nhật. Vui lòng quay lại sau!');
+        return;
+    }
+
+    // Check if user has access
+    const users = JSON.parse(localStorage.getItem('luyende_users') || '[]');
+    const currentUserData = users.find(u => u.id === currentUser?.id);
+    const userActivatedPackages = currentUserData?.activatedPackages || [];
+
+    if (!userActivatedPackages.includes(packageId)) {
+        showContactModal();
+        return;
+    }
+
+    // User has access - go to exam list
+    showExamList(packageId);
+}
+
+// Show contact modal for registration
+function showContactModal() {
+    // Load saved contact settings
+    const settings = JSON.parse(localStorage.getItem('luyende_contactSettings') || '{}');
+    const modal = document.getElementById('contactModal');
+
+    // Update links if they exist
+    const zaloLink = modal.querySelector('.contact-option.zalo');
+    const fbLink = modal.querySelector('.contact-option.facebook');
+    const teleLink = modal.querySelector('.contact-option.telegram');
+
+    if (zaloLink && settings.zalo) zaloLink.href = settings.zalo;
+    if (fbLink && settings.facebook) fbLink.href = settings.facebook;
+    if (teleLink && settings.telegram) teleLink.href = settings.telegram;
+
+    modal.classList.add('active');
+}
+
+// Close contact modal
+function closeContactModal() {
+    document.getElementById('contactModal').classList.remove('active');
+}
+
+// ========== EXAM LIST ==========
+function showExamList(packageId) {
+    currentPackageId = packageId;
+    const pkg = examPackages.find(p => p.id === packageId);
+    const exams = examsData[packageId] || [];
+
+    document.getElementById('examListTitle').textContent = pkg.name;
+
+    const grid = document.getElementById('examGrid');
+    grid.innerHTML = exams.map(exam => {
+        // Status Handling
+        if (exam.status === 'draft') return ''; // Don't show drafts
+
+        const isCompleted = currentUser.completedExams && currentUser.completedExams.includes(exam.id);
+        const description = `Đề thi theo cấu trúc THPT mới - 22 câu, 90 phút`;
+        const examTag = exam.tag || 'THPT Toán';
+        const displayId = exam.displayId || `#${exam.id.slice(-6)}`;
+
+        // Button Logic based on Status
+        let actionBtn = `<button class="btn-start-exam" onclick="startExamFromList('${exam.id}')">Bắt đầu làm bài</button>`;
+        let statusBadge = '';
+
+        if (exam.status === 'view_only') {
+            actionBtn = `<button class="btn-start-exam disabled" disabled>Chỉ xem đề</button>`;
+        } else if (exam.status === 'updating') {
+            actionBtn = `<button class="btn-start-exam disabled" disabled>Đang cập nhật</button>`;
+            statusBadge = `<span class="exam-status-badge updating">Đang cập nhật</span>`;
+        } else if (isCompleted) {
+            actionBtn = `<button class="btn-start-exam" onclick="startExamFromList('${exam.id}')">Làm lại bài</button>`;
+        }
+
+        return `
+            <div class="exam-card ${exam.status || ''}">
+                <div class="exam-card-header">
+                    <span class="exam-tag">${examTag}</span>
+                    ${statusBadge}
+                    <div class="exam-card-title">${exam.title}</div>
+                    <div class="exam-card-desc">${description}</div>
+                </div>
+                <div class="exam-card-meta">
+                    <div class="exam-meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                        </svg>
+                        ${exam.duration} phút
+                    </div>
+                    <div class="exam-meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        ${exam.questions && exam.questions.length ? exam.questions.length : 22} câu
+                    </div>
+                </div>
+                <div class="exam-card-footer">
+                    ${actionBtn}
+                    ${isCompleted ? '<button class="btn-view-answers" onclick="viewAnswers(\'' + exam.id + '\')">Xem đáp án</button>' : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Also render history for this package
+    renderHistory(packageId);
+
+    showScreen('examListScreen');
+}
+
+// Switch between exam tabs (Đề thi / Lịch sử làm bài)
+function switchExamTab(tabName) {
+    // Update tab buttons
+    const tabBtns = document.querySelectorAll('#examListScreen .tab-btn');
+    tabBtns.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Update tab content
+    document.getElementById('examsTab').classList.remove('active');
+    document.getElementById('historyTab').classList.remove('active');
+
+    if (tabName === 'exams') {
+        document.getElementById('examsTab').classList.add('active');
+    } else if (tabName === 'history') {
+        document.getElementById('historyTab').classList.add('active');
+    }
+}
+
+// Render exam history for current package
+function renderHistory(packageId) {
+    const historyList = document.getElementById('historyList');
+    const examHistory = getExamHistory();
+
+    // Filter history for current package ONLY (strict filter - exclude entries without packageId)
+    const packageHistory = examHistory
+        .map((record, index) => ({ ...record, globalIndex: index })) // Keep track of original index
+        .filter(h => h.packageId === packageId)
+        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort newest first
+
+    if (packageHistory.length === 0) {
+        historyList.innerHTML = `
+            <div class="history-empty">
+                <p>📝 Bạn chưa làm bài thi nào trong gói này.</p>
+                <p>Hãy bắt đầu làm bài để xem lịch sử ở đây!</p>
+            </div>
+        `;
+        return;
+    }
+
+    historyList.innerHTML = packageHistory.map((record) => {
+        const date = new Date(record.date).toLocaleDateString('vi-VN');
+        const time = new Date(record.date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+        return `
+            <div class="history-item">
+                <div class="history-item-info">
+                    <div class="history-item-title">${record.examTitle || 'Đề thi'} <span style="font-size: 11px; color: #888;">(Mã: ${record.displayId || '---'})</span></div>
+                    <div class="history-item-meta">
+                        <span>📅 ${date} lúc ${time}</span>
+                        <span>⏱️ ${record.timeSpent || 'N/A'}</span>
+                    </div>
+                </div>
+                <div class="history-item-score">
+                    <span class="score-value">${record.score}/10</span>
+                    <span class="score-label">điểm</span>
+                </div>
+                <button class="btn btn-view-answers" onclick="showAnswerReview(${record.globalIndex})">Xem đáp án</button>
+            </div>
+        `;
+    }).join('');
+}
+
+// Show answer review screen
+function showAnswerReview(historyIndex) {
+    const examHistory = getExamHistory();
+    const record = examHistory[historyIndex];
+
+    if (!record) return;
+
+    // Update review header
+    document.getElementById('reviewTitle').textContent = record.examTitle || 'Xem đáp án';
+    document.getElementById('reviewScore').textContent = `Điểm: ${record.score}/10`;
+    document.getElementById('reviewDate').textContent = `Ngày làm: ${new Date(record.date).toLocaleDateString('vi-VN')}`;
+    document.getElementById('reviewUserName').textContent = 'Xin chào, ' + (currentUser ? currentUser.name : record.studentName);
+
+    // Render questions with answers - use questions from saved record, not current examData
+    const reviewContainer = document.getElementById('reviewQuestions');
+    const examId = record.displayId || record.examId || '---';
+    const questions = record.questions || examData.questions; // Use saved questions or fallback to current
+
+    reviewContainer.innerHTML = questions.map((question, index) => {
+        const userAnswer = record.answers ? record.answers[index] : null;
+
+        if (question.type === 'multiple-choice') {
+            return renderMultipleChoiceReview(question, index, userAnswer, examId);
+        } else if (question.type === 'true-false') {
+            return renderTrueFalseReview(question, index, userAnswer, examId);
+        } else if (question.type === 'fill-in-blank') {
+            return renderFillInBlankReview(question, index, userAnswer, examId);
+        }
+        return '';
+    }).join('');
+
+    showScreen('answerReviewScreen');
+}
+
+// Render multiple choice review
+function renderMultipleChoiceReview(question, index, userAnswer, examId) {
+    const isCorrect = userAnswer === question.correctAnswer;
+    const statusClass = userAnswer ? (isCorrect ? 'correct' : 'wrong') : 'unanswered';
+    const statusIcon = userAnswer ? (isCorrect ? '✓' : '✗') : '○';
+
+    return `
+        <div class="review-question ${statusClass}">
+            <div class="review-question-header">
+                <span class="review-question-number">Câu ${question.id} <span style="font-size: 11px; color: #888; font-weight: normal;">(Mã: ${examId})</span></span>
+                <span class="review-status ${statusClass}">${statusIcon} ${isCorrect ? 'Đúng' : (userAnswer ? 'Sai' : 'Chưa trả lời')}</span>
+            </div>
+            <div class="review-question-text">${question.question}</div>
+            <div class="review-options">
+                ${question.options.map((opt, i) => {
+        const isUserChoice = userAnswer === opt;
+        const isCorrectAns = question.correctAnswer === opt;
+        let optClass = '';
+        if (isCorrectAns) optClass = 'correct-answer';
+        else if (isUserChoice && !isCorrectAns) optClass = 'wrong-answer';
+
+        return `<div class="review-option ${optClass}">
+                        <span class="option-letter">${String.fromCharCode(65 + i)}.</span>
+                        ${opt}
+                        ${isCorrectAns ? '<span class="correct-mark">✓ Đáp án đúng</span>' : ''}
+                        ${isUserChoice && !isCorrectAns ? '<span class="wrong-mark">✗ Bạn chọn</span>' : ''}
+                    </div>`;
+    }).join('')}
+            </div>
+            <div class="review-explanation">
+                <strong>Lời giải chi tiết:</strong>
+                ${question.explanation ? `<div class="explanation-content">${question.explanation}</div>` : '<div class="explanation-empty">Chưa có lời giải cho câu này.</div>'}
+            </div>
+        </div>
+    `;
+}
+
+// Render true-false review
+function renderTrueFalseReview(question, index, userAnswers, examId) {
+    const correctCount = question.correctAnswers.filter((correct, i) =>
+        userAnswers && userAnswers[i] === correct
+    ).length;
+    const isFullCorrect = correctCount === question.correctAnswers.length;
+    const statusClass = correctCount > 0 ? (isFullCorrect ? 'correct' : 'partial') : 'wrong';
+
+    return `
+        <div class="review-question ${statusClass}">
+            <div class="review-question-header">
+                <span class="review-question-number">Câu ${question.id} <span style="font-size: 11px; color: #888; font-weight: normal;">(Mã: ${examId})</span></span>
+                <span class="review-status ${statusClass}">${correctCount}/${question.correctAnswers.length} ý đúng</span>
+            </div>
+            <div class="review-question-text">${question.question}</div>
+            <div class="review-tf-options">
+                ${question.options.map((opt, i) => {
+        const userAns = userAnswers ? userAnswers[i] : null;
+        const correctAns = question.correctAnswers[i];
+        const isCorrect = userAns === correctAns;
+        const optClass = userAns ? (isCorrect ? 'correct-answer' : 'wrong-answer') : 'unanswered';
+
+        return `<div class="review-tf-row ${optClass}">
+                        <span class="tf-label">${String.fromCharCode(97 + i)})</span>
+                        <span class="tf-text">${opt}</span>
+                        <span class="tf-answer">Bạn: ${userAns || '-'}</span>
+                        <span class="tf-correct">Đáp án: ${correctAns}</span>
+                        <span class="tf-status">${isCorrect ? '✓' : '✗'}</span>
+                    </div>`;
+    }).join('')}
+            </div>
+            <div class="review-explanation">
+                <strong>Lời giải chi tiết:</strong>
+                ${question.explanation ? `<div class="explanation-content">${question.explanation}</div>` : '<div class="explanation-empty">Chưa có lời giải cho câu này.</div>'}
+            </div>
+        </div>
+    `;
+}
+
+// Render fill-in-blank review
+function renderFillInBlankReview(question, index, userAnswer, examId) {
+    const isCorrect = userAnswer && userAnswer.toString().trim() === question.correctAnswer.toString().trim();
+    const statusClass = userAnswer ? (isCorrect ? 'correct' : 'wrong') : 'unanswered';
+
+    return `
+        <div class="review-question ${statusClass}">
+            <div class="review-question-header">
+                <span class="review-question-number">Câu ${question.id} <span style="font-size: 11px; color: #888; font-weight: normal;">(Mã: ${examId})</span></span>
+                <span class="review-status ${statusClass}">${isCorrect ? '✓ Đúng' : (userAnswer ? '✗ Sai' : '○ Chưa trả lời')}</span>
+            </div>
+            <div class="review-question-text">${question.question}</div>
+            <div class="review-fill-answer">
+                <div class="fill-row">
+                    <span class="fill-label">Bạn trả lời:</span>
+                    <span class="${userAnswer ? (isCorrect ? 'correct-answer' : 'wrong-answer') : 'unanswered'}">${userAnswer || 'Chưa trả lời'}</span>
+                </div>
+                <div class="fill-row">
+                    <span class="fill-label">Đáp án đúng:</span>
+                    <span class="correct-answer">${question.correctAnswer}</span>
+                </div>
+            </div>
+            <div class="review-explanation">
+                <strong>Lời giải chi tiết:</strong>
+                ${question.explanation ? `<div class="explanation-content">${question.explanation}</div>` : '<div class="explanation-empty">Chưa có lời giải cho câu này.</div>'}
+            </div>
+        </div>
+    `;
+}
+
+function startExamFromList(examId) {
+    // Update student name from current user
+    examData.studentName = currentUser.name;
+
+    // FIND AND SET EXAM TITLE & ID
+    if (currentPackageId && examsData[currentPackageId]) {
+        const exam = examsData[currentPackageId].find(e => e.id === examId);
+        if (exam) {
+            examData.examTitle = exam.title;
+            examData.id = exam.id;
+
+            // Auto-generate numeric displayId if not exists or is text-based
+            if (!exam.displayId || !/^\d+$/.test(exam.displayId)) {
+                const STORAGE_KEY = 'luyende_examIdCounter';
+                let counter = parseInt(localStorage.getItem(STORAGE_KEY)) || 1000;
+                exam.displayId = counter.toString();
+                localStorage.setItem(STORAGE_KEY, (counter + 1).toString());
+                // Save back to examsData
+                localStorage.setItem('luyende_exams_' + currentPackageId, JSON.stringify(examsData[currentPackageId]));
+            }
+            examData.displayId = exam.displayId;
+
+            // Update question array to match the selected exam
+            if (exam.questions && exam.questions.length > 0) {
+                examData.questions = exam.questions;
+            }
+        }
+    }
+
+    // Update pre-exam screen info
+    document.getElementById('preStudentName').textContent = currentUser.name;
+    document.getElementById('preExamTitle').textContent = examData.examTitle;
+
+    // Also update exam screen student name
+    const sidebarStudentName = document.querySelector('.sidebar-info .info-value');
+    if (sidebarStudentName) {
+        sidebarStudentName.textContent = currentUser.name;
+    }
+
+    // Reset loading bar UI for retake
+    const loadingContainer = document.getElementById('loadingContainer');
+    const loadingProgress = document.getElementById('loadingProgress');
+    const startBtn = document.getElementById('startExamBtn');
+    if (loadingContainer) loadingContainer.style.display = 'none';
+    if (loadingProgress) loadingProgress.style.width = '0%';
+    if (startBtn) startBtn.style.display = 'block';
+
+    showScreen('preExamScreen');
+}
+
+// Start exam with loading animation
+function startExamWithLoading() {
+    const loadingContainer = document.getElementById('loadingContainer');
+    const loadingProgress = document.getElementById('loadingProgress');
+    const startBtn = document.getElementById('startExamBtn');
+
+    // Hide button, show loading
+    startBtn.style.display = 'none';
+    loadingContainer.style.display = 'block';
+
+    // Animate loading bar
+    let progress = 0;
+    const loadingInterval = setInterval(() => {
+        progress += Math.random() * 15 + 5;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(loadingInterval);
+
+            // After loading complete, start exam
+            setTimeout(() => {
+                startExam();
+            }, 300);
+        }
+        loadingProgress.style.width = progress + '%';
+    }, 150);
+}
+
+function viewAnswers(examId) {
+    alert('Tính năng xem đáp án đang phát triển!');
+}
+
+// ========== CHECK LOGIN ON LOAD ==========
+document.addEventListener('DOMContentLoaded', function () {
+    const savedUser = localStorage.getItem('luyende_currentUser');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        showDashboard();
+    }
+
+    // Network status detection
+    updateConnectionStatus();
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+});
+
+// Update connection status indicator
+function updateConnectionStatus() {
+    const statusDot = document.getElementById('statusDot');
+    const connectionText = document.getElementById('connectionText');
+
+    if (navigator.onLine) {
+        if (statusDot) {
+            statusDot.style.background = '#4CAF50';
+        }
+        if (connectionText) {
+            connectionText.textContent = 'Đã kết nối máy chủ';
+            connectionText.style.color = '';
+        }
+    } else {
+        if (statusDot) {
+            statusDot.style.background = '#ef4444';
+        }
+        if (connectionText) {
+            connectionText.textContent = 'Mất kết nối đến máy chủ';
+            connectionText.style.color = '#ef4444';
+        }
+    }
+}
+
+// Toggle sidebar for mobile
+function toggleSidebar() {
+    const sidebar = document.getElementById('examSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('hamburgerBtn');
+
+    if (sidebar) {
+        sidebar.classList.toggle('sidebar-open');
+    }
+    if (overlay) {
+        overlay.classList.toggle('active');
+    }
+    if (hamburger) {
+        hamburger.classList.toggle('active');
+    }
+}
+
+// Exam Data - THPT Toán Format (22 questions)
+const examData = {
+    studentName: "PHẠM ĐỨC THẮNG",
+    studentId: "SV001",
+    examTitle: "đề số 1 khóa TSA",
+    examType: "THPT_MATH",
+    duration: 90,
+    questions: [
+        // PHẦN I: TRẮC NGHIỆM (câu 1-12)
+        { id: 1, question: "Cho hàm số f(x) = 2x + 3. Giá trị của f(2) bằng:", type: "multiple-choice", options: ["5", "7", "9", "11"], correctAnswer: "7" },
+        { id: 2, question: "Phương trình x² - 5x + 6 = 0 có nghiệm là:", type: "multiple-choice", options: ["x = 1 hoặc x = 6", "x = 2 hoặc x = 3", "x = -2 hoặc x = -3", "Vô nghiệm"], correctAnswer: "x = 2 hoặc x = 3" },
+        { id: 3, question: "Diện tích hình tròn bán kính r = 5cm là:", type: "multiple-choice", options: ["25π cm²", "10π cm²", "50π cm²", "100π cm²"], correctAnswer: "25π cm²" },
+        { id: 4, question: "Giới hạn lim(x→∞) (3x + 1)/(x - 2) bằng:", type: "multiple-choice", options: ["0", "1", "3", "∞"], correctAnswer: "3" },
+        { id: 5, question: "Trong không gian Oxyz, cho vector a = (1, 2, 3). Độ dài của vector a là:", type: "multiple-choice", options: ["√6", "√14", "6", "14"], correctAnswer: "√14" },
+        { id: 6, question: "Tích phân ∫₀¹ x dx bằng:", type: "multiple-choice", options: ["1/4", "1/3", "1/2", "1"], correctAnswer: "1/2" },
+        { id: 7, question: "Đạo hàm của hàm số y = x³ - 3x + 2 tại x = 1 bằng:", type: "multiple-choice", options: ["0", "1", "2", "3"], correctAnswer: "0" },
+        { id: 8, question: "Số nghiệm của phương trình sin(x) = 1/2 trong [0, 2π] là:", type: "multiple-choice", options: ["1", "2", "3", "4"], correctAnswer: "2" },
+        { id: 9, question: "Cho cấp số cộng có u₁ = 3, d = 2. Số hạng u₁₀ bằng:", type: "multiple-choice", options: ["19", "21", "23", "25"], correctAnswer: "21" },
+        { id: 10, question: "Logarit cơ số 2 của 8 bằng:", type: "multiple-choice", options: ["2", "3", "4", "8"], correctAnswer: "3" },
+        { id: 11, question: "Phương trình mặt cầu tâm O(0,0,0) bán kính r = 3 là:", type: "multiple-choice", options: ["x² + y² + z² = 3", "x² + y² + z² = 9", "x + y + z = 3", "x + y + z = 9"], correctAnswer: "x² + y² + z² = 9" },
+        { id: 12, question: "Số cách chọn 3 học sinh từ nhóm 5 học sinh là:", type: "multiple-choice", options: ["10", "15", "20", "60"], correctAnswer: "10" },
+        // PHẦN II: ĐÚNG/SAI (câu 13-16)
+        { id: 13, question: "Xét tính đúng sai của các mệnh đề về đạo hàm:", type: "true-false", options: ["Đạo hàm của y = x² là y' = 2x", "Đạo hàm của y = sin(x) là y' = cos(x)", "Đạo hàm của y = eˣ là y' = xeˣ⁻¹", "Đạo hàm của y = ln(x) là y' = 1/x"], correctAnswers: ["Đúng", "Đúng", "Sai", "Đúng"] },
+        { id: 14, question: "Xét tính đúng sai của các phát biểu về hình học:", type: "true-false", options: ["Đa giác đều n cạnh có n trục đối xứng", "Hai đường tròn phân biệt có tối đa 2 trục đối xứng", "Tam giác đều có 3 trục đối xứng", "Hình vuông có 4 trục đối xứng"], correctAnswers: ["Đúng", "Sai", "Đúng", "Đúng"] },
+        { id: 15, question: "Xét tính đúng sai của các mệnh đề về giới hạn:", type: "true-false", options: ["lim(x→0) sin(x)/x = 1", "lim(x→∞) 1/x = 0", "lim(x→0) (1-cos(x))/x² = 1/2", "lim(x→∞) (1 + 1/x)ˣ = e"], correctAnswers: ["Đúng", "Đúng", "Đúng", "Đúng"] },
+        { id: 16, question: "Xét tính đúng sai của các phát biểu về tích phân:", type: "true-false", options: ["∫ x dx = x²/2 + C", "∫ eˣ dx = eˣ + C", "∫ 1/x dx = ln|x| + C", "∫ cos(x) dx = -sin(x) + C"], correctAnswers: ["Đúng", "Đúng", "Đúng", "Sai"] },
+        // PHẦN III: ĐIỀN KHUYẾT (câu 17-22)
+        { id: 17, question: "Cho hàm số f(x) = x³ - 3x² + 2. Giá trị cực đại của hàm số là", type: "fill-in-blank", correctAnswer: "2" },
+        { id: 18, question: "Phương trình 2ˣ = 8 có nghiệm x =", type: "fill-in-blank", correctAnswer: "3" },
+        { id: 19, question: "Cho cấp số nhân có u₁ = 2, q = 3. Tổng S₃ =", type: "fill-in-blank", correctAnswer: "26" },
+        { id: 20, question: "Diện tích tam giác có 3 cạnh 3, 4, 5 bằng", type: "fill-in-blank", correctAnswer: "6" },
+        { id: 21, question: "Số hoán vị của 4 phần tử là", type: "fill-in-blank", correctAnswer: "24" },
+        { id: 22, question: "Thể tích hình cầu bán kính r = 3 (tính theo π) là", type: "fill-in-blank", correctAnswer: "36π" }
+    ]
+};
+
+// State Management
+let currentQuestionIndex = 0;
+let userAnswers = new Array(examData.questions.length).fill(null);
+let flaggedQuestions = new Set();
+let timeRemaining = examData.duration * 60; // in seconds
+let timerInterval = null;
+let examStartTime = null;
+let questionStartTime = Date.now();
+
+// Initialize
+function init() {
+    // Set student names
+    document.getElementById('preStudentName').textContent = examData.studentName;
+    document.getElementById('headerStudentName').textContent = examData.studentName;
+    document.getElementById('sidebarStudentName').textContent = examData.studentName;
+    document.getElementById('resultStudentName').textContent = examData.studentName;
+}
+
+// Start Exam
+function startExam() {
+    // Request fullscreen
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) { // Safari
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { // IE11
+        elem.msRequestFullscreen();
+    }
+
+    document.getElementById('preExamScreen').classList.remove('active');
+    document.getElementById('examScreen').classList.add('active');
+
+    // Update exam title in header (no ID here)
+    const headerTitle = document.getElementById('examTitleHeader');
+    if (headerTitle) {
+        headerTitle.textContent = examData.examTitle;
+    }
+
+    // Update sidebar Exam ID ("Mã phòng thi") - only show numeric IDs
+    const sidebarExamId = document.getElementById('sidebarExamId');
+    if (sidebarExamId) {
+        const idToShow = examData.displayId || examData.id || '';
+        // Only show if it's a numeric ID (new format)
+        sidebarExamId.textContent = /^\d+$/.test(idToShow) ? idToShow : '---';
+    }
+
+    examStartTime = Date.now();
+    generateQuestionGrid();
+    displayQuestion(0);
+    startTimer();
+}
+
+// Timer
+function startTimer() {
+    updateTimerDisplay();
+    updateQuestionTimer();
+
+    timerInterval = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+        updateQuestionTimer();
+
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            submitExam();
+        }
+    }, 1000);
+}
+
+function updateQuestionTimer() {
+    const elapsed = Math.floor((Date.now() - questionStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')} `;
+    document.getElementById('questionTime').textContent = timeString;
+}
+
+function updateTimerDisplay() {
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} `;
+
+    const timerElement = document.getElementById('timerSidebar');
+    if (timerElement) {
+        timerElement.textContent = timeString;
+    }
+}
+
+// Generate Question Grid with THPT sections
+function generateQuestionGrid() {
+    const grid = document.getElementById('questionGrid');
+    grid.innerHTML = '';
+
+    // Define THPT sections
+    const sections = [
+        { title: 'I. Trắc nghiệm', start: 1, end: 12 },
+        { title: 'II. Đúng / Sai', start: 13, end: 16 },
+        { title: 'III. Trả lời ngắn', start: 17, end: 22 }
+    ];
+
+    sections.forEach(section => {
+        // Add section header
+        const header = document.createElement('div');
+        header.className = 'grid-section-header';
+        header.textContent = section.title;
+        grid.appendChild(header);
+
+        // Add section grid container
+        const sectionGrid = document.createElement('div');
+        sectionGrid.className = 'grid-section-items';
+
+        // Add question items for this section
+        for (let id = section.start; id <= section.end; id++) {
+            const questionIndex = examData.questions.findIndex(q => q.id === id);
+            if (questionIndex !== -1) {
+                const item = document.createElement('div');
+                item.className = 'grid-item';
+                item.textContent = id;
+                item.onclick = () => jumpToQuestion(questionIndex);
+                sectionGrid.appendChild(item);
+            }
+        }
+
+        grid.appendChild(sectionGrid);
+    });
+}
+
+// Display Question
+function displayQuestion(index) {
+    currentQuestionIndex = index;
+    const question = examData.questions[index];
+
+    // Reset question timer
+    questionStartTime = Date.now();
+
+    // Update question number and text
+    document.getElementById('questionNumber').textContent = `${question.id} `;
+    document.getElementById('questionText').textContent = question.question;
+
+    // Update flag button
+    const flagBtn = document.getElementById('flagBtn');
+    if (flaggedQuestions.has(index)) {
+        flagBtn.classList.add('active');
+    } else {
+        flagBtn.classList.remove('active');
+    }
+
+    // Display answers based on question type
+    const answersContainer = document.getElementById('answersContainer');
+    answersContainer.innerHTML = '';
+
+    if (question.type === 'true-false') {
+        // Create table-like layout with border
+        const tfContainer = document.createElement('div');
+        tfContainer.className = 'tf-container';
+
+        // Header row
+        const headerRow = document.createElement('div');
+        headerRow.className = 'tf-header';
+        headerRow.innerHTML = `
+        <div class="tf-header-text"></div>
+            <div class="tf-header-option">Đúng</div>
+            <div class="tf-header-option">Sai</div>
+    `;
+        tfContainer.appendChild(headerRow);
+
+        // Statement rows (a, b, c, d for THPT)
+        const labels = ['a)', 'b)', 'c)', 'd)'];
+        question.options.forEach((option, i) => {
+            const row = document.createElement('div');
+            row.className = 'tf-row';
+
+            const text = document.createElement('div');
+            text.className = 'tf-text';
+            text.innerHTML = `<span class="tf-label">${labels[i] || ''}</span> ${option} `;
+
+            const trueOption = document.createElement('div');
+            trueOption.className = 'tf-option';
+            trueOption.innerHTML = `
+        <input type="radio"
+    id="q${index}_o${i}_true"
+    name="q${index}_o${i}"
+    value="Đúng"
+                       ${userAnswers[index]?.[i] === 'Đúng' ? 'checked' : ''}
+    onchange="selectAnswer(${index}, ${i}, 'Đúng')">
+        `;
+
+            const falseOption = document.createElement('div');
+            falseOption.className = 'tf-option';
+            falseOption.innerHTML = `
+        <input type="radio"
+    id="q${index}_o${i}_false"
+    name="q${index}_o${i}"
+    value="Sai"
+                       ${userAnswers[index]?.[i] === 'Sai' ? 'checked' : ''}
+    onchange="selectAnswer(${index}, ${i}, 'Sai')">
+        `;
+
+            row.appendChild(text);
+            row.appendChild(trueOption);
+            row.appendChild(falseOption);
+            tfContainer.appendChild(row);
+        });
+
+        answersContainer.appendChild(tfContainer);
+    } else if (question.type === 'fill-in-blank') {
+        // Fill-in-blank question type
+        const fillContainer = document.createElement('div');
+        fillContainer.className = 'fill-container';
+
+        fillContainer.innerHTML = `
+        <div class="fill-answer-row">
+                <span class="fill-label">Đáp án:</span>
+                <input type="text" 
+                       class="fill-input" 
+                       id="fillInput_${index}"
+                       value="${userAnswers[index] || ''}"
+                       oninput="selectAnswer(${index}, null, this.value)">
+                <span class="fill-period">.</span>
+            </div>
+    `;
+
+        answersContainer.appendChild(fillContainer);
+    } else {
+        question.options.forEach((option, i) => {
+            const row = document.createElement('div');
+            row.className = 'answer-row mc-row';
+
+            const radio = document.createElement('div');
+            radio.className = 'answer-option mc-radio';
+            radio.innerHTML = `
+        <input type="radio"
+    id="q${index}_o${i}"
+    name="q${index}"
+    value="${option}"
+                       ${userAnswers[index] === option ? 'checked' : ''}
+    onchange="selectAnswer(${index}, null, '${option}')">
+        `;
+
+            const text = document.createElement('div');
+            text.className = 'answer-text mc-text';
+            text.textContent = option;
+
+            row.appendChild(radio);
+            row.appendChild(text);
+            answersContainer.appendChild(row);
+        });
+    }
+
+    // Update navigation buttons
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    // Prev button: disabled at question 1, active (blue) at other questions
+    prevBtn.disabled = index === 0;
+    if (index === 0) {
+        prevBtn.classList.remove('active');
+    } else {
+        prevBtn.classList.add('active');
+    }
+
+    // Next button text
+    const arrowSvg = '<svg width="16" height="16" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 4px;"><path d="M4 2L8 6L4 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    nextBtn.innerHTML = index === examData.questions.length - 1 ? 'Hoàn thành' : 'Câu tiếp ' + arrowSvg;
+
+    // Next button: muted if current question not answered, bold if answered
+    const isCurrentAnswered = userAnswers[index] !== null &&
+        (Array.isArray(userAnswers[index]) ? userAnswers[index].some(a => a !== null) : true);
+
+    if (isCurrentAnswered) {
+        nextBtn.classList.remove('muted');
+    } else {
+        nextBtn.classList.add('muted');
+    }
+
+    // Update grid
+    updateQuestionGrid();
+
+    // Update answered count
+    updateAnsweredCount();
+
+    // Render LaTeX if available
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(document.getElementById('questionText'), {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
+        renderMathInElement(document.getElementById('answersContainer'), {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
+    }
+}
+
+// Select Answer
+function selectAnswer(questionIndex, optionIndex, value) {
+    if (examData.questions[questionIndex].type === 'true-false') {
+        if (!userAnswers[questionIndex]) {
+            userAnswers[questionIndex] = new Array(examData.questions[questionIndex].options.length).fill(null);
+        }
+        userAnswers[questionIndex][optionIndex] = value;
+    } else {
+        userAnswers[questionIndex] = value;
+    }
+
+    updateQuestionGrid();
+    updateAnsweredCount();
+
+    // Update next button state
+    updateNextButtonState();
+}
+
+// Update Next Button State
+function updateNextButtonState() {
+    const nextBtn = document.getElementById('nextBtn');
+    const isCurrentAnswered = userAnswers[currentQuestionIndex] !== null &&
+        (Array.isArray(userAnswers[currentQuestionIndex]) ? userAnswers[currentQuestionIndex].some(a => a !== null) : true);
+
+    if (isCurrentAnswered) {
+        nextBtn.classList.remove('muted');
+    } else {
+        nextBtn.classList.add('muted');
+    }
+}
+
+// Navigate Question
+function navigateQuestion(direction) {
+    const newIndex = currentQuestionIndex + direction;
+    if (newIndex >= 0 && newIndex < examData.questions.length) {
+        // Show loading animation for next button
+        if (direction === 1) {
+            showNavigationLoading();
+            setTimeout(() => {
+                hideNavigationLoading();
+                displayQuestion(newIndex);
+            }, 200); // Brief loading effect
+        } else {
+            displayQuestion(newIndex);
+        }
+    }
+}
+
+// Show Navigation Loading State
+function showNavigationLoading() {
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+
+    // Add loading class to buttons
+    nextBtn.classList.add('loading');
+    prevBtn.classList.add('loading');
+    prevBtn.classList.remove('active');
+
+    // Store original text and add spinner on the LEFT
+    nextBtn.dataset.originalText = nextBtn.textContent;
+    nextBtn.innerHTML = '<span class="btn-spinner"></span> Câu tiếp <svg width="16" height="16" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 4px;"><path d="M4 2L8 6L4 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+// Hide Navigation Loading State
+function hideNavigationLoading() {
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+
+    // Remove loading class
+    nextBtn.classList.remove('loading');
+    prevBtn.classList.remove('loading');
+
+    // Restore original text (will be updated by displayQuestion)
+}
+
+// Jump to Question
+function jumpToQuestion(index) {
+    displayQuestion(index);
+    scrollToGridItem(index);
+
+    // Close sidebar on mobile after selecting question
+    const sidebar = document.getElementById('examSidebar');
+    if (sidebar && sidebar.classList.contains('sidebar-open')) {
+        toggleSidebar();
+    }
+}
+
+// Scroll grid to show selected question
+function scrollToGridItem(index) {
+    const gridWrapper = document.getElementById('gridScrollWrapper');
+    const gridItems = document.querySelectorAll('.grid-item');
+    const colorIndicators = gridWrapper?.querySelector('.color-indicators');
+
+    if (gridWrapper && gridItems[index]) {
+        const item = gridItems[index];
+
+        // Get the row of the current item (6 items per row)
+        const itemsPerRow = 6;
+        const currentRow = Math.floor(index / itemsPerRow);
+
+        // Calculate scroll position - push row to TOP, hide rows above
+        const itemHeight = item.offsetHeight + 10; // item height + gap
+        const indicatorHeight = colorIndicators?.offsetHeight || 0;
+
+        // Scroll to hide color indicators AND previous rows
+        const scrollTo = (currentRow * itemHeight) + indicatorHeight;
+
+        gridWrapper.scrollTo({
+            top: Math.max(0, scrollTo),
+            behavior: 'smooth'
+        });
+    }
+}
+
+// Toggle Flag
+function toggleFlag() {
+    if (flaggedQuestions.has(currentQuestionIndex)) {
+        flaggedQuestions.delete(currentQuestionIndex);
+        document.getElementById('flagBtn').classList.remove('active');
+    } else {
+        flaggedQuestions.add(currentQuestionIndex);
+        document.getElementById('flagBtn').classList.add('active');
+    }
+    updateQuestionGrid();
+    updateAnsweredCount(); // Update flagged badge count
+}
+
+// Update Question Grid
+function updateQuestionGrid() {
+    const gridItems = document.querySelectorAll('.grid-item');
+    gridItems.forEach((item, index) => {
+        item.className = 'grid-item';
+
+        // Check if answered
+        const isAnswered = userAnswers[index] !== null &&
+            (Array.isArray(userAnswers[index]) ? userAnswers[index].some(a => a !== null) : true);
+
+        if (index === currentQuestionIndex) {
+            item.classList.add('current');
+        } else if (isAnswered) {
+            item.classList.add('answered');
+        }
+
+        if (flaggedQuestions.has(index)) {
+            item.classList.add('flagged');
+        }
+    });
+}
+
+// Update Answered Count
+function updateAnsweredCount() {
+    const answeredCount = userAnswers.filter(answer => {
+        if (Array.isArray(answer)) {
+            return answer.some(a => a !== null);
+        }
+        return answer !== null;
+    }).length;
+
+    const totalQuestions = examData.questions.length;
+    const unansweredCount = totalQuestions - answeredCount;
+    const flaggedCount = flaggedQuestions.size;
+
+    // Update answered count display
+    document.getElementById('answeredCount').textContent = answeredCount;
+    document.getElementById('modalAnsweredCount').textContent = answeredCount;
+
+    // Update color indicator badges
+    const unansweredBadge = document.getElementById('unansweredCount');
+    const answeredBadge = document.getElementById('answeredBadge');
+    const flaggedBadge = document.getElementById('flaggedBadge');
+
+    if (unansweredBadge) unansweredBadge.textContent = unansweredCount;
+    if (answeredBadge) answeredBadge.textContent = answeredCount;
+    if (flaggedBadge) flaggedBadge.textContent = flaggedCount;
+
+    // Update progress bar
+    const percentage = Math.round((answeredCount / totalQuestions) * 100);
+    document.getElementById('progressFill').style.width = percentage + '%';
+    document.getElementById('progressPercentage').textContent = percentage + '%';
+}
+
+// Confirm Submit
+function confirmSubmit() {
+    updateAnsweredCount();
+    const answeredCount = userAnswers.filter(answer => {
+        if (Array.isArray(answer)) {
+            return answer.some(a => a !== null);
+        }
+        return answer !== null;
+    }).length;
+    const totalQuestions = examData.questions.length;
+
+    // Update modal progress
+    document.getElementById('modalProgressText').textContent = answeredCount + '/' + totalQuestions;
+    document.getElementById('modalAnsweredCount').textContent = answeredCount;
+
+    // Update question count in modal text
+    const modalMessage = document.querySelector('.modal-message');
+    if (modalMessage) {
+        modalMessage.innerHTML = `Đã trả lời <span id="modalAnsweredCount">${answeredCount}</span>/${totalQuestions} câu. Bạn vẫn còn thời gian làm bài, bạn có chắc chắn muốn kết thúc bài thi.`;
+    }
+
+    document.getElementById('confirmModal').classList.add('active');
+}
+
+// Close Modal
+function closeModal() {
+    document.getElementById('confirmModal').classList.remove('active');
+}
+
+// Submit Exam
+function submitExam() {
+    clearInterval(timerInterval);
+    closeModal();
+
+    // Calculate THPT Math score
+    // Part I (1-12): 0.25 points each, max 3.0 points
+    // Part II (13-16): Progressive scoring (1/4 correct: 0.1, 2/4: 0.25, 3/4: 0.5, 4/4: 1.0 points), max 4.0 points
+    // Part III (17-22): 0.5 points each, max 3.0 points
+    // Total: 10.0 points
+
+    let totalScore = 0;
+    let correctCountPartI = 0;  // For display
+    let correctCountPartII = 0; // Number of questions with any correct
+    let correctCountPartIII = 0;
+
+    examData.questions.forEach((question, index) => {
+        const questionId = question.id;
+
+        if (questionId >= 1 && questionId <= 12) {
+            // Part I: Multiple choice - 0.25 points each
+            if (userAnswers[index] === question.correctAnswer) {
+                totalScore += 0.25;
+                correctCountPartI++;
+            }
+        } else if (questionId >= 13 && questionId <= 16) {
+            // Part II: True/False - Progressive scoring
+            if (userAnswers[index] && Array.isArray(userAnswers[index])) {
+                let correctInQuestion = 0;
+                question.correctAnswers.forEach((correct, i) => {
+                    if (userAnswers[index][i] === correct) {
+                        correctInQuestion++;
+                    }
+                });
+
+                // Progressive scoring based on number of correct answers
+                if (correctInQuestion === 1) {
+                    totalScore += 0.1;
+                } else if (correctInQuestion === 2) {
+                    totalScore += 0.25;
+                } else if (correctInQuestion === 3) {
+                    totalScore += 0.5;
+                } else if (correctInQuestion === 4) {
+                    totalScore += 1.0;
+                }
+
+                if (correctInQuestion > 0) correctCountPartII++;
+            }
+        } else if (questionId >= 17 && questionId <= 22) {
+            // Part III: Fill-in-blank - 0.5 points each
+            if (userAnswers[index] && userAnswers[index].toString().trim() === question.correctAnswer.toString().trim()) {
+                totalScore += 0.5;
+                correctCountPartIII++;
+            }
+        }
+    });
+
+    // Round to 2 decimal places
+    const score = totalScore.toFixed(2);
+    const totalCorrect = correctCountPartI + correctCountPartII + correctCountPartIII;
+
+    // Calculate actual time spent
+    const timeSpent = Math.floor((Date.now() - examStartTime) / 1000);
+    const hours = Math.floor(timeSpent / 3600);
+    const minutes = Math.floor((timeSpent % 3600) / 60);
+    const seconds = timeSpent % 60;
+    const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} `;
+
+    // Save exam result to localStorage
+    saveExamResult({
+        examId: examData.id,
+        displayId: examData.displayId,
+        packageId: currentPackageId,
+        examTitle: examData.examTitle,
+        studentName: currentUser ? currentUser.name : examData.studentName,
+        score: score,
+        correctCount: totalCorrect,
+        totalQuestions: examData.questions.length,
+        timeSpent: timeString,
+        answers: userAnswers.slice(), // Copy of answers
+        questions: examData.questions, // Save questions for review
+        date: new Date().toISOString()
+    });
+
+    // Display results
+    document.getElementById('correctAnswers').textContent = totalCorrect;
+    document.getElementById('finalScore').textContent = `${score}/10`;
+    document.getElementById('actualTime').textContent = timeString;
+
+    // Update total questions count in result
+    const resultTotalQuestions = document.querySelector('.info-value span#correctAnswers').parentNode;
+    if (resultTotalQuestions) {
+        resultTotalQuestions.innerHTML = `<span id="correctAnswers">${totalCorrect}</span>/${examData.questions.length}`;
+    }
+
+    // Update exam duration in result
+    const durationRow = document.querySelectorAll('.info-row')[2]; // Assuming 3rd row is Duration
+    if (durationRow) {
+        const durationValue = durationRow.querySelector('.info-value');
+        if (durationValue) {
+            durationValue.textContent = `${examData.duration} phút`;
+        }
+    }
+
+    // Update exam title in result
+    const resultExamTitle = document.getElementById('resultExamTitle');
+    if (resultExamTitle) {
+        resultExamTitle.textContent = examData.examTitle;
+    }
+
+    // Update result screen student name
+    const resultStudentName = document.getElementById('resultStudentName');
+    if (resultStudentName && currentUser) {
+        resultStudentName.textContent = currentUser.name;
+    }
+
+    // Reset exam state for next attempt
+    resetExamState();
+
+    // Switch to result screen
+    document.getElementById('examScreen').classList.remove('active');
+    document.getElementById('resultScreen').classList.add('active');
+}
+
+// Save exam result to localStorage
+function saveExamResult(result) {
+    let examHistory = JSON.parse(localStorage.getItem('luyende_examHistory') || '[]');
+    examHistory.push(result);
+    localStorage.setItem('luyende_examHistory', JSON.stringify(examHistory));
+    console.log('Exam result saved:', result);
+}
+
+// Get exam history
+function getExamHistory() {
+    return JSON.parse(localStorage.getItem('luyende_examHistory') || '[]');
+}
+
+// Reset exam state (for retaking)
+function resetExamState() {
+    currentQuestionIndex = 0;
+    userAnswers = new Array(examData.questions.length).fill(null);
+    flaggedQuestions.clear();
+    timeRemaining = examData.duration * 60;
+    examStartTime = null;
+    questionStartTime = Date.now();
+}
+
+// Reset Exam
+function resetExam() {
+    currentQuestionIndex = 0;
+    userAnswers = new Array(examData.questions.length).fill(null);
+    flaggedQuestions.clear();
+    timeRemaining = examData.duration * 60;
+
+    document.getElementById('resultScreen').classList.remove('active');
+    document.getElementById('preExamScreen').classList.add('active');
+}
+
+// Initialize on page load
+window.onload = function () {
+    init();
+    setupTooltips();
+};
+
+// Tooltip attached to body - won't be clipped by overflow
+function setupTooltips() {
+    // Create tooltip container
+    const tooltipEl = document.createElement('div');
+    tooltipEl.id = 'globalTooltip';
+    tooltipEl.innerHTML = '<div class="tooltip-text"></div><div class="tooltip-arrow"></div>';
+    document.body.appendChild(tooltipEl);
+
+    // Style the tooltip
+    const style = document.createElement('style');
+    style.textContent = `
+        #globalTooltip {
+            position: fixed;
+            background: #333;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 400;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            z-index: 99999;
+        }
+        #globalTooltip .tooltip-arrow {
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid #333;
+        }
+    `;
+    document.head.appendChild(style);
+
+    const tooltipText = tooltipEl.querySelector('.tooltip-text');
+    let currentTarget = null;
+
+    // Show tooltip on mouseover
+    document.addEventListener('mouseover', function (e) {
+        const target = e.target.closest('[data-tooltip]');
+        if (target && target !== currentTarget) {
+            currentTarget = target;
+            const text = target.getAttribute('data-tooltip');
+            tooltipText.textContent = text;
+
+            // Need to show first to measure
+            tooltipEl.style.opacity = '1';
+
+            // Position above element
+            setTimeout(function () {
+                const rect = target.getBoundingClientRect();
+                const tooltipWidth = tooltipEl.offsetWidth;
+                const tooltipHeight = tooltipEl.offsetHeight;
+
+                let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+                let top = rect.top - tooltipHeight - 8;
+
+                // Keep within viewport
+                if (left < 5) left = 5;
+                if (left + tooltipWidth > window.innerWidth - 5) {
+                    left = window.innerWidth - tooltipWidth - 5;
+                }
+
+                tooltipEl.style.left = left + 'px';
+                tooltipEl.style.top = top + 'px';
+            }, 0);
+        }
+    });
+
+    // Hide tooltip on mouseout
+    document.addEventListener('mouseout', function (e) {
+        const target = e.target.closest('[data-tooltip]');
+        if (target && target === currentTarget) {
+            // Check if we're moving to a child element
+            const relatedTarget = e.relatedTarget;
+            if (!target.contains(relatedTarget)) {
+                tooltipEl.style.opacity = '0';
+                currentTarget = null;
+            }
+        }
+    });
+}
+
+// Tooltip System - Creates tooltips that attach to body to avoid overflow clipping
+function initTooltips() {
+    // Create tooltip element
+    const tooltip = document.createElement('div');
+    tooltip.id = 'customTooltip';
+    tooltip.style.cssText =
+        'position: fixed;' +
+        'background: #333;' +
+        'color: white;' +
+        'padding: 6px 12px;' +
+        'border-radius: 6px;' +
+        'font-size: 12px;' +
+        'font-weight: 400;' +
+        'white-space: nowrap;' +
+        'pointer-events: none;' +
+        'opacity: 0;' +
+        'transition: opacity 0.15s ease;' +
+        'z-index: 10000;';
+    document.body.appendChild(tooltip);
+
+    // Create arrow element
+    const arrow = document.createElement('div');
+    arrow.id = 'tooltipArrow';
+    arrow.style.cssText =
+        'position: fixed;' +
+        'width: 0;' +
+        'height: 0;' +
+        'border-left: 6px solid transparent;' +
+        'border-right: 6px solid transparent;' +
+        'border-top: 6px solid #333;' +
+        'pointer-events: none;' +
+        'opacity: 0;' +
+        'transition: opacity 0.15s ease;' +
+        'z-index: 10000;';
+    document.body.appendChild(arrow);
+
+    // Show tooltip function
+    function showTooltip(target) {
+        const text = target.getAttribute('data-tooltip');
+        if (!text) return;
+
+        tooltip.textContent = text;
+        tooltip.style.opacity = '1';
+        arrow.style.opacity = '1';
+
+        // Use requestAnimationFrame to ensure layout is calculated
+        requestAnimationFrame(function () {
+            const rect = target.getBoundingClientRect();
+            const tooltipWidth = tooltip.offsetWidth;
+            const tooltipHeight = tooltip.offsetHeight;
+
+            // Position tooltip above the element
+            let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+            let top = rect.top - tooltipHeight - 10;
+
+            // Keep tooltip within viewport
+            if (left < 5) left = 5;
+            if (left + tooltipWidth > window.innerWidth - 5) {
+                left = window.innerWidth - tooltipWidth - 5;
+            }
+
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+
+            // Position arrow
+            arrow.style.left = (rect.left + rect.width / 2 - 6) + 'px';
+            arrow.style.top = (rect.top - 8) + 'px';
+        });
+    }
+
+    // Hide tooltip function
+    function hideTooltip() {
+        tooltip.style.opacity = '0';
+        arrow.style.opacity = '0';
+    }
+
+    // Event delegation for mouseover
+    document.body.addEventListener('mouseover', function (e) {
+        const target = e.target.closest('[data-tooltip]');
+        if (target) {
+            showTooltip(target);
+        }
+    });
+
+    // Event delegation for mouseout
+    document.body.addEventListener('mouseout', function (e) {
+        const target = e.target.closest('[data-tooltip]');
+        if (target && !target.contains(e.relatedTarget)) {
+            hideTooltip();
+        }
+    });
+}
