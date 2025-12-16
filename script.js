@@ -62,54 +62,36 @@ function saveUsers(users) {
     localStorage.setItem('luyende_users', JSON.stringify(users));
 }
 
-// Exam Packages - Gói đề
+// Exam Packages - Gói đề (fetched from API)
 // accessType: 'updating' (đang cập nhật), 'open' (mở thoải mái), 'register' (cần đăng kí)
-const examPackages = [
-    {
-        id: "giua-ki-2-lop-12",
-        name: "Đề thi giữa kì 2 lớp 12",
-        icon: "📝",
-        description: "Bộ đề ôn thi giữa kì 2 môn Toán lớp 12 theo cấu trúc THPT mới. Gồm 22 câu hỏi trắc nghiệm, đúng/sai và điền khuyết.",
-        examCount: 10,
-        duration: 90,
-        questionFormat: "THPT_MATH",
-        accessType: "open" // mở thoải mái
-    },
-    {
-        id: "cuoi-ki-2-lop-12",
-        name: "Đề thi cuối kì 2 lớp 12",
-        icon: "🎓",
-        description: "Bộ đề ôn thi cuối kì 2 môn Toán lớp 12 theo chuẩn thi tốt nghiệp THPT. Giúp chuẩn bị tốt cho kì thi chính thức.",
-        examCount: 10,
-        duration: 90,
-        questionFormat: "THPT_MATH",
-        accessType: "register" // cần đăng kí
-    }
-];
-
-// Generate 10 exams for each package
-function generateExamsForPackage(packageId, baseName) {
-    const exams = [];
-    for (let i = 1; i <= 10; i++) {
-        exams.push({
-            id: `${packageId}-${i}`,
-            title: `Đề số ${i} - ${baseName}`,
-            duration: 90,
-            questions: 22,
-            completed: false,
-            packageId: packageId
-        });
-    }
-    return exams;
-}
-
-// Exams data by package
-const examsData = {
-    "giua-ki-2-lop-12": generateExamsForPackage("giua-ki-2-lop-12", "Giữa kì 2"),
-    "cuoi-ki-2-lop-12": generateExamsForPackage("cuoi-ki-2-lop-12", "Cuối kì 2")
-};
+let examPackages = [];
+let examsData = {};
 
 let currentPackageId = null;
+
+// Load packages from API
+async function loadPackages() {
+    try {
+        examPackages = await apiGetPackages();
+        console.log('Loaded packages:', examPackages.length);
+    } catch (err) {
+        console.error('Error loading packages:', err);
+        examPackages = [];
+    }
+}
+
+// Load exams for a package from API
+async function loadExamsForPackage(packageId) {
+    try {
+        const exams = await apiGetExams(packageId);
+        examsData[packageId] = exams;
+        console.log(`Loaded ${exams.length} exams for package ${packageId}`);
+        return exams;
+    } catch (err) {
+        console.error('Error loading exams:', err);
+        return [];
+    }
+}
 
 // ========== SCREEN NAVIGATION ==========
 function showScreen(screenId) {
@@ -234,10 +216,12 @@ function handleLogout() {
 }
 
 // ========== DASHBOARD ==========
-function showDashboard() {
+async function showDashboard() {
     document.getElementById('dashboardUserName').textContent = 'Xin chào, ' + currentUser.name;
     document.getElementById('examListUserName').textContent = 'Xin chào, ' + currentUser.name;
 
+    // Load packages from API
+    await loadPackages();
     renderPackages();
     showScreen('dashboardScreen');
 }

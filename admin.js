@@ -217,35 +217,49 @@ function deleteUser(userId) {
 }
 
 // ========== PACKAGE MANAGEMENT ==========
-function getPackages() {
-    const stored = localStorage.getItem('luyende_packages');
-    if (stored) return JSON.parse(stored);
-    // Return default packages
-    return [
-        {
-            id: "giua-ki-2-lop-12",
-            name: "Đề thi giữa kì 2 lớp 12",
-            icon: "📝",
-            description: "Bộ đề ôn thi giữa kì 2 môn Toán lớp 12 theo cấu trúc THPT mới.",
-            duration: 90
-        },
-        {
-            id: "cuoi-ki-2-lop-12",
-            name: "Đề thi cuối kì 2 lớp 12",
-            icon: "🎓",
-            description: "Bộ đề ôn thi cuối kì 2 môn Toán lớp 12 theo chuẩn thi tốt nghiệp THPT.",
-            duration: 90
-        }
-    ];
+let cachedPackages = [];
+
+async function getPackages() {
+    try {
+        cachedPackages = await apiGetPackages();
+        return cachedPackages;
+    } catch (err) {
+        console.error('Error loading packages:', err);
+        return cachedPackages;
+    }
 }
 
-function savePackages(packages) {
-    localStorage.setItem('luyende_packages', JSON.stringify(packages));
+async function createPackage(packageData) {
+    try {
+        await apiCreatePackage(packageData);
+        return true;
+    } catch (err) {
+        console.error('Error creating package:', err);
+        alert('Lỗi tạo gói đề: ' + err.message);
+        return false;
+    }
 }
 
-function renderPackages() {
-    const packages = getPackages();
+async function updatePackage(packageId, packageData) {
+    try {
+        await apiUpdatePackage(packageId, packageData);
+        return true;
+    } catch (err) {
+        console.error('Error updating package:', err);
+        alert('Lỗi cập nhật gói đề: ' + err.message);
+        return false;
+    }
+}
+
+async function renderPackages() {
+    const packages = await getPackages();
     const grid = document.getElementById('adminPackagesGrid');
+
+    // Pre-load exam counts
+    const examCounts = {};
+    for (const pkg of packages) {
+        examCounts[pkg.id] = await countExamsInPackage(pkg.id);
+    }
 
     grid.innerHTML = packages.map(pkg => `
         <div class="admin-package-card">
@@ -254,7 +268,7 @@ function renderPackages() {
             <div class="package-description">${pkg.description}</div>
             <div class="package-meta">
                 <span>⏱️ ${pkg.duration} phút</span>
-                <span>📝 ${countExamsInPackage(pkg.id)} đề</span>
+                <span>📝 ${examCounts[pkg.id] || 0} đề</span>
             </div>
             <div class="package-actions">
                 <button class="btn-action btn-edit" onclick="editPackage('${pkg.id}')">✏️ Sửa</button>
@@ -264,16 +278,20 @@ function renderPackages() {
     `).join('');
 
     // Update package select in exam creator
-    updatePackageSelect();
+    await updatePackageSelect();
 }
 
-function countExamsInPackage(packageId) {
-    const exams = getAllExams();
-    return exams.filter(e => e.packageId === packageId).length;
+async function countExamsInPackage(packageId) {
+    try {
+        const exams = await apiGetExams(packageId);
+        return exams.length;
+    } catch (err) {
+        return 0;
+    }
 }
 
-function updatePackageSelect() {
-    const packages = getPackages();
+async function updatePackageSelect() {
+    const packages = await getPackages();
     const select = document.getElementById('examPackageSelect');
     if (!select) return;
 
@@ -291,13 +309,12 @@ function closePackageModal() {
     document.getElementById('packageModal').classList.remove('active');
 }
 
-function savePackage(event) {
+async function savePackage(event) {
     event.preventDefault();
 
-    const packages = getPackages();
     const editId = document.getElementById('packageForm').dataset.editId;
 
-    const newPackage = {
+    const packageData = {
         id: editId || 'pkg-' + Date.now(),
         name: document.getElementById('packageName').value,
         description: document.getElementById('packageDesc').value,
@@ -306,17 +323,18 @@ function savePackage(event) {
         accessType: document.getElementById('packageAccessType').value || 'open'
     };
 
+    let success;
     if (editId) {
-        const index = packages.findIndex(p => p.id === editId);
-        if (index !== -1) packages[index] = newPackage;
+        success = await updatePackage(editId, packageData);
     } else {
-        packages.push(newPackage);
+        success = await createPackage(packageData);
     }
 
-    savePackages(packages);
-    closePackageModal();
-    renderPackages();
-    updateDashboardStats();
+    if (success) {
+        closePackageModal();
+        await renderPackages();
+        await updateDashboardStats();
+    }
 }
 
 function editPackage(packageId) {
@@ -351,14 +369,38 @@ function deletePackage(packageId) {
 }
 
 // ========== EXAM MANAGEMENT ==========
-function getAllExams() {
-    const stored = localStorage.getItem('luyende_exams');
-    if (stored) return JSON.parse(stored);
-    return [];
+let cachedExams = [];
+
+async function getAllExams() {
+    try {
+        cachedExams = await apiGetExams();
+        return cachedExams;
+    } catch (err) {
+        console.error('Error loading exams:', err);
+        return cachedExams;
+    }
 }
 
-function saveAllExams(exams) {
-    localStorage.setItem('luyende_exams', JSON.stringify(exams));
+async function createExam(examData) {
+    try {
+        await apiCreateExam(examData);
+        return true;
+    } catch (err) {
+        console.error('Error creating exam:', err);
+        alert('Lỗi tạo đề: ' + err.message);
+        return false;
+    }
+}
+
+async function updateExamAPI(examId, examData) {
+    try {
+        await apiUpdateExam(examId, examData);
+        return true;
+    } catch (err) {
+        console.error('Error updating exam:', err);
+        alert('Lỗi cập nhật đề: ' + err.message);
+        return false;
+    }
 }
 
 function getExamHistory() {
