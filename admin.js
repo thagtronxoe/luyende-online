@@ -82,6 +82,7 @@ function showAdminTab(tabName) {
     if (tabName === 'packages') renderPackages();
     if (tabName === 'exams') showExamList();
     if (tabName === 'dashboard') updateDashboardStats();
+    if (tabName === 'history') renderAllHistory();
 }
 
 // ========== DASHBOARD STATS ==========
@@ -900,6 +901,128 @@ function createTestUser() {
     renderUsers();
     updateDashboardStats();
     alert('Đã tạo tài khoản test!\n\nUsername: testuser\nPassword: test123');
+}
+
+// ========== HISTORY MANAGEMENT ==========
+function getAllHistory() {
+    // Get all history from all users
+    const users = getUsers();
+    const packages = getPackages();
+    let allHistory = [];
+
+    users.forEach(user => {
+        const userHistory = JSON.parse(localStorage.getItem(`luyende_history_${user.id}`) || '[]');
+        userHistory.forEach(h => {
+            allHistory.push({
+                ...h,
+                userId: user.id,
+                userName: user.name,
+                userUsername: user.username
+            });
+        });
+    });
+
+    // Sort by date descending (most recent first)
+    allHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return allHistory;
+}
+
+function renderAllHistory(filterText = '', packageFilter = '') {
+    const tbody = document.getElementById('historyTableBody');
+    if (!tbody) return;
+
+    const history = getAllHistory();
+    const packages = getPackages();
+
+    // Populate package filter dropdown
+    const packageSelect = document.getElementById('historyPackageFilter');
+    if (packageSelect && packageSelect.options.length <= 1) {
+        packages.forEach(pkg => {
+            const option = document.createElement('option');
+            option.value = pkg.id;
+            option.textContent = pkg.name;
+            packageSelect.appendChild(option);
+        });
+    }
+
+    // Filter history
+    let filtered = history;
+    if (filterText) {
+        const search = filterText.toLowerCase();
+        filtered = filtered.filter(h =>
+            h.userName?.toLowerCase().includes(search) ||
+            h.userUsername?.toLowerCase().includes(search)
+        );
+    }
+    if (packageFilter) {
+        filtered = filtered.filter(h => h.packageId === packageFilter);
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#666;">Chưa có lịch sử làm bài nào</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = filtered.map((h, index) => {
+        const pkg = packages.find(p => p.id === h.packageId);
+        const pkgName = pkg ? pkg.name : h.packageId || 'N/A';
+        const date = h.date ? new Date(h.date).toLocaleDateString('vi-VN') + ' ' + new Date(h.date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td>
+                    <strong>${h.userName || 'N/A'}</strong><br>
+                    <small style="color:#666;">@${h.userUsername || 'N/A'}</small>
+                </td>
+                <td>${pkgName}</td>
+                <td>${h.examTitle || 'N/A'}</td>
+                <td><strong style="color: ${parseFloat(h.score) >= 5 ? '#10b981' : '#ef4444'}">${h.score || 'N/A'}</strong></td>
+                <td>${h.actualTime || 'N/A'}</td>
+                <td>${date}</td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="viewHistoryDetail('${h.odl}')">Xem chi tiết</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function filterHistory() {
+    const filterText = document.getElementById('historySearchInput')?.value || '';
+    const packageFilter = document.getElementById('historyPackageFilter')?.value || '';
+    renderAllHistory(filterText, packageFilter);
+}
+
+function clearHistorySearch() {
+    const searchInput = document.getElementById('historySearchInput');
+    const packageFilter = document.getElementById('historyPackageFilter');
+    if (searchInput) searchInput.value = '';
+    if (packageFilter) packageFilter.value = '';
+    renderAllHistory();
+}
+
+function viewHistoryDetail(odl) {
+    // Find the history entry
+    const history = getAllHistory();
+    const entry = history.find(h => h.odl === odl);
+    if (!entry) {
+        alert('Không tìm thấy thông tin bài làm!');
+        return;
+    }
+
+    // Show detailed modal (simplified version - can be enhanced later)
+    let details = `
+📋 Chi tiết bài làm
+
+👤 Học sinh: ${entry.userName} (@${entry.userUsername})
+📝 Đề thi: ${entry.examTitle}
+📊 Điểm số: ${entry.score}
+⏱️ Thời gian làm: ${entry.actualTime}
+📅 Ngày làm: ${new Date(entry.date).toLocaleString('vi-VN')}
+✅ Số câu đúng: ${entry.correct || 'N/A'}/${entry.total || 'N/A'}
+    `;
+    alert(details);
 }
 
 // Helper: Generate Sequential ID starting from 1000

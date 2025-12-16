@@ -84,6 +84,10 @@
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Quản lý Đề thi</span>
                     </button>
+                    <button class="admin-nav-item" onclick="showAdminTab('history')">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-text">Lịch sử làm bài</span>
+                    </button>
                     <button class="admin-nav-item" onclick="showAdminTab('admins')">
                         <span class="nav-icon">🔐</span>
                         <span class="nav-text">Quản lý Admins</span>
@@ -293,6 +297,40 @@
                         <div class="exam-creator-footer">
                             <button class="btn btn-primary btn-large" onclick="saveExam()">💾 Lưu đề thi</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div class="admin-tab" id="historyTab">
+                    <div class="admin-header">
+                        <h1>Lịch sử làm bài</h1>
+                        <div class="search-box">
+                            <input type="text" id="historySearchInput" placeholder="Tìm theo tên hoặc username..."
+                                oninput="filterHistory()">
+                            <select id="historyPackageFilter" onchange="filterHistory()">
+                                <option value="">Tất cả gói đề</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="clearHistorySearch()">Xóa</button>
+                        </div>
+                    </div>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Học sinh</th>
+                                    <th>Gói đề</th>
+                                    <th>Tên đề</th>
+                                    <th>Điểm</th>
+                                    <th>Thời gian làm</th>
+                                    <th>Ngày làm</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- History will be rendered here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
