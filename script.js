@@ -8,6 +8,12 @@ let currentUser = null;
 let recaptchaWidgets = {};
 
 function validateRecaptcha(formId) {
+    // Skip reCAPTCHA validation on localhost for testing
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('Skipping reCAPTCHA on localhost');
+        return true;
+    }
+
     // Check if reCAPTCHA response exists
     try {
         // Try to get response from specific widget, or default widget
