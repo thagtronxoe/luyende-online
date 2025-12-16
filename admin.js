@@ -17,26 +17,23 @@ function saveAdmins(admins) {
     localStorage.setItem('luyende_admins', JSON.stringify(admins));
 }
 
-function handleAdminLogin(event) {
+async function handleAdminLogin(event) {
     event.preventDefault();
     const username = document.getElementById('adminUsername').value;
     const password = document.getElementById('adminPassword').value;
 
-    const admins = getAdmins();
-    const admin = admins.find(a => a.username === username && a.password === password);
-
-    if (admin) {
+    try {
+        const admin = await apiAdminLogin(username, password);
         currentAdmin = admin;
-        localStorage.setItem('luyende_currentAdmin', JSON.stringify(admin));
         showAdminDashboard();
-    } else {
-        alert('Tên đăng nhập hoặc mật khẩu không đúng!');
+    } catch (err) {
+        alert(err.message || 'Tên đăng nhập hoặc mật khẩu không đúng!');
     }
 }
 
 function handleAdminLogout() {
     currentAdmin = null;
-    localStorage.removeItem('luyende_currentAdmin');
+    apiLogout(); // Clear token
     showScreen('adminLoginScreen');
 }
 
@@ -99,15 +96,21 @@ function updateDashboardStats() {
 }
 
 // ========== USER MANAGEMENT ==========
-function getUsers() {
-    const stored = localStorage.getItem('luyende_users');
-    if (stored) return JSON.parse(stored);
-    return [];
+let cachedUsers = [];
+
+async function getUsers() {
+    try {
+        cachedUsers = await apiGetUsers();
+        return cachedUsers;
+    } catch (err) {
+        console.error('Error loading users:', err);
+        return cachedUsers;
+    }
 }
 
-function renderUsers(filterText = '') {
-    const users = getUsers();
-    const packages = getPackages();
+async function renderUsers(filterText = '') {
+    const users = await getUsers();
+    const packages = await getPackages();
     const tbody = document.getElementById('usersTableBody');
 
     // Filter users by username or email
@@ -128,15 +131,15 @@ function renderUsers(filterText = '') {
         const pkgCount = activatedPkgs.length;
         return `
         <tr>
-            <td>${user.id}</td>
+            <td>${user._id || user.id}</td>
             <td>${user.name}</td>
             <td>${user.email || 'N/A'}</td>
             <td>${user.username}</td>
             <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'N/A'}</td>
             <td><span class="badge ${pkgCount > 0 ? 'badge-success' : 'badge-secondary'}">${pkgCount}/${packages.length} gói</span></td>
             <td>
-                <button class="btn-action btn-edit" onclick="showUserDetail(${user.id})">👁 Xem</button>
-                <button class="btn-action btn-delete" onclick="deleteUser(${user.id})">🗑️ Xóa</button>
+                <button class="btn-action btn-edit" onclick="showUserDetail('${user._id || user.id}')">👁 Xem</button>
+                <button class="btn-action btn-delete" onclick="deleteUser('${user._id || user.id}')">🗑️ Xóa</button>
             </td>
         </tr>
     `}).join('');
@@ -152,10 +155,10 @@ function clearUserSearch() {
     renderUsers();
 }
 
-function showUserDetail(userId) {
-    const users = getUsers();
-    const packages = getPackages();
-    const user = users.find(u => u.id === userId);
+async function showUserDetail(userId) {
+    const users = await getUsers();
+    const packages = await getPackages();
+    const user = users.find(u => (u._id || u.id) === userId);
     if (!user) return;
 
     // Populate user info
@@ -184,11 +187,8 @@ function closeUserDetailModal() {
     document.getElementById('userDetailModal').classList.remove('active');
 }
 
-function saveUserPackages() {
-    const userId = parseInt(document.getElementById('detailUserId').value);
-    const users = getUsers();
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex === -1) return;
+async function saveUserPackages() {
+    const userId = document.getElementById('detailUserId').value;
 
     // Get selected packages
     const checkboxes = document.querySelectorAll('#userPackagesList input[type="checkbox"]');
@@ -197,23 +197,26 @@ function saveUserPackages() {
         if (cb.checked) activatedPackages.push(cb.value);
     });
 
-    // Update user
-    users[userIndex].activatedPackages = activatedPackages;
-    localStorage.setItem('luyende_users', JSON.stringify(users));
-
-    alert('Đã cập nhật gói cho học sinh!');
-    closeUserDetailModal();
-    renderUsers();
+    try {
+        await apiUpdateUserPackages(userId, activatedPackages);
+        alert('Đã cập nhật gói cho học sinh!');
+        closeUserDetailModal();
+        await renderUsers();
+    } catch (err) {
+        alert('Lỗi cập nhật: ' + err.message);
+    }
 }
 
-function deleteUser(userId) {
+async function deleteUser(userId) {
     if (!confirm('Bạn có chắc muốn xóa người dùng này?')) return;
 
-    let users = getUsers();
-    users = users.filter(u => u.id !== userId);
-    localStorage.setItem('luyende_users', JSON.stringify(users));
-    renderUsers();
-    updateDashboardStats();
+    try {
+        await apiDeleteUser(userId);
+        await renderUsers();
+        await updateDashboardStats();
+    } catch (err) {
+        alert('Lỗi xóa user: ' + err.message);
+    }
 }
 
 // ========== PACKAGE MANAGEMENT ==========
