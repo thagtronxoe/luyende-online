@@ -61,7 +61,7 @@
             <div class="auth-form-side">
                 <div class="auth-form-container">
                     <div class="auth-form-logo">
-                        <img src="luyen_de_logo_white.svg" alt="Luyện Đề Online" style="height: 50px;">
+                        <img src="logo.png" alt="Luyện Đề Online" style="height: 50px;">
                     </div>
 
                     <h2 class="auth-title">Đăng nhập</h2>
@@ -92,6 +92,15 @@
                             </label>
                             <a href="#" class="forgot-link">Quên mật khẩu?</a>
                         </div>
+                        <div class="form-group captcha-group">
+                            <label>Xác minh bảo mật</label>
+                            <div class="captcha-box">
+                                <span class="captcha-question" id="loginCaptchaQuestion">5 + 3 = ?</span>
+                                <button type="button" class="captcha-refresh"
+                                    onclick="refreshCaptcha('login')">🔄</button>
+                            </div>
+                            <input type="text" id="loginCaptcha" placeholder="Nhập kết quả" required>
+                        </div>
                         <button type="submit" class="btn btn-primary btn-large btn-full">Đăng nhập</button>
                     </form>
 
@@ -109,7 +118,7 @@
             <div class="auth-form-side auth-form-full">
                 <div class="auth-form-container auth-form-wide">
                     <div class="auth-form-logo">
-                        <img src="luyen_de_logo_white.svg" alt="Luyện Đề Online" style="height: 50px;">
+                        <img src="logo.png" alt="Luyện Đề Online" style="height: 50px;">
                     </div>
 
                     <h2 class="auth-title">Đăng ký tài khoản</h2>
@@ -157,6 +166,15 @@
                                 </button>
                             </div>
                         </div>
+                        <div class="form-group captcha-group">
+                            <label>Xác minh bảo mật</label>
+                            <div class="captcha-box">
+                                <span class="captcha-question" id="registerCaptchaQuestion">7 + 2 = ?</span>
+                                <button type="button" class="captcha-refresh"
+                                    onclick="refreshCaptcha('register')">🔄</button>
+                            </div>
+                            <input type="text" id="registerCaptcha" placeholder="Nhập kết quả" required>
+                        </div>
                         <button type="submit" class="btn btn-primary btn-large btn-full">Đăng ký</button>
                     </form>
 
@@ -173,7 +191,7 @@
         <div class="dashboard-container">
             <header class="dashboard-header">
                 <div class="header-left">
-                    <img src="luyen_de_logo_white.svg" alt="Luyện Đề Online" class="header-logo">
+                    <img src="logo.png" alt="Luyện Đề Online" class="header-logo">
                 </div>
                 <div class="header-right">
                     <span class="user-name" id="dashboardUserName">Xin chào, User</span>
@@ -210,7 +228,7 @@
         <div class="exam-list-container">
             <header class="dashboard-header">
                 <div class="header-left">
-                    <img src="luyen_de_logo_white.svg" alt="Luyện Đề Online" class="header-logo clickable"
+                    <img src="logo.png" alt="Luyện Đề Online" class="header-logo clickable"
                         onclick="showScreen('dashboardScreen')" title="Về trang chủ">
                 </div>
                 <div class="header-right">
@@ -250,7 +268,7 @@
         <div class="container">
             <div class="card pre-exam-card">
                 <div class="logo-container">
-                    <img src="luyen_de_logo_white.svg" alt="Luyện Đề Online" style="height: 60px;">
+                    <img src="logo.png" alt="Luyện Đề Online" style="height: 60px;">
                 </div>
 
                 <h2 class="pre-exam-title">Xác nhận thông tin dự thi</h2>
@@ -293,7 +311,7 @@
             <div class="question-section">
                 <div class="question-header-bar">
                     <div class="logo-header">
-                        <img src="luyen_de_logo_white.svg" alt="Luyện Đề Online" style="height: 36px;">
+                        <img src="logo.png" alt="Luyện Đề Online" style="height: 36px;">
                     </div>
                     <span class="exam-title" id="examTitleHeader">đề số 1 khóa TSA</span>
 
@@ -429,7 +447,7 @@
         <div class="container">
             <div class="card result-card">
                 <div class="logo-container">
-                    <img src="luyen_de_logo_white.svg" alt="Luyện Đề Online" style="height: 60px;">
+                    <img src="logo.png" alt="Luyện Đề Online" style="height: 60px;">
                 </div>
 
                 <h2 class="result-title">Thông tin bài thi</h2>
@@ -471,7 +489,7 @@
         <div class="answer-review-container">
             <header class="dashboard-header">
                 <div class="header-left">
-                    <img src="luyen_de_logo_white.svg" alt="Luyện Đề Online" class="header-logo clickable"
+                    <img src="logo.png" alt="Luyện Đề Online" class="header-logo clickable"
                         onclick="showScreen('examListScreen')" title="Quay lại">
                 </div>
                 <div class="header-right">

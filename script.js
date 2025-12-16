@@ -1,6 +1,45 @@
 // ========== USER & AUTH SYSTEM ==========
 let currentUser = null;
 
+// ========== CAPTCHA SYSTEM ==========
+let captchaData = {
+    login: { num1: 5, num2: 3, answer: 8 },
+    register: { num1: 7, num2: 2, answer: 9 }
+};
+
+function generateCaptcha(type) {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    captchaData[type] = { num1, num2, answer: num1 + num2 };
+    return `${num1} + ${num2} = ?`;
+}
+
+function refreshCaptcha(type) {
+    const question = generateCaptcha(type);
+    const element = document.getElementById(type + 'CaptchaQuestion');
+    if (element) {
+        element.textContent = question;
+    }
+    // Clear input
+    const input = document.getElementById(type + 'Captcha');
+    if (input) {
+        input.value = '';
+    }
+}
+
+function validateCaptcha(type) {
+    const input = document.getElementById(type + 'Captcha');
+    if (!input) return true;
+    const userAnswer = parseInt(input.value);
+    return userAnswer === captchaData[type].answer;
+}
+
+// Initialize captcha on page load
+document.addEventListener('DOMContentLoaded', function () {
+    refreshCaptcha('login');
+    refreshCaptcha('register');
+});
+
 // Get users from localStorage or use default
 function getUsers() {
     const stored = localStorage.getItem('luyende_users');
@@ -72,6 +111,14 @@ function showScreen(screenId) {
 // ========== AUTH HANDLERS ==========
 function handleLogin(event) {
     event.preventDefault();
+
+    // Validate CAPTCHA first
+    if (!validateCaptcha('login')) {
+        alert('Kết quả xác minh không đúng!');
+        refreshCaptcha('login');
+        return;
+    }
+
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
 
@@ -84,11 +131,20 @@ function handleLogin(event) {
         showDashboard();
     } else {
         alert('Tên đăng nhập hoặc mật khẩu không đúng!');
+        refreshCaptcha('login');
     }
 }
 
 function handleRegister(event) {
     event.preventDefault();
+
+    // Validate CAPTCHA first
+    if (!validateCaptcha('register')) {
+        alert('Kết quả xác minh không đúng!');
+        refreshCaptcha('register');
+        return;
+    }
+
     const name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
     const username = document.getElementById('registerUsername').value;
@@ -789,6 +845,12 @@ function init() {
 
 // Start Exam
 function startExam() {
+    // Set zoom to 100%
+    document.body.style.zoom = '100%';
+
+    // Enable exam security
+    enableExamSecurity();
+
     // Request fullscreen
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
@@ -820,6 +882,61 @@ function startExam() {
     generateQuestionGrid();
     displayQuestion(0);
     startTimer();
+}
+
+// ========== EXAM SECURITY ==========
+let examSecurityEnabled = false;
+
+function enableExamSecurity() {
+    examSecurityEnabled = true;
+
+    // Block right-click
+    document.addEventListener('contextmenu', blockContextMenu);
+
+    // Block F12 and other dev tools shortcuts
+    document.addEventListener('keydown', blockDevTools);
+}
+
+function disableExamSecurity() {
+    examSecurityEnabled = false;
+
+    // Remove right-click block
+    document.removeEventListener('contextmenu', blockContextMenu);
+
+    // Remove dev tools block
+    document.removeEventListener('keydown', blockDevTools);
+}
+
+function blockContextMenu(e) {
+    if (examSecurityEnabled) {
+        e.preventDefault();
+        return false;
+    }
+}
+
+function blockDevTools(e) {
+    if (!examSecurityEnabled) return;
+
+    // Block F12
+    if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+    }
+    // Block Ctrl+Shift+I (Dev Tools)
+    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+        return false;
+    }
+    // Block Ctrl+Shift+C (Inspect)
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        return false;
+    }
+    // Block Ctrl+U (View Source)
+    if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+        return false;
+    }
 }
 
 // Timer
@@ -1402,6 +1519,17 @@ function submitExam() {
 
     // Reset exam state for next attempt
     resetExamState();
+
+    // Disable exam security and reset zoom
+    disableExamSecurity();
+    document.body.style.zoom = '';
+
+    // Exit fullscreen
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+    }
 
     // Switch to result screen
     document.getElementById('examScreen').classList.remove('active');
