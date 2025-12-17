@@ -303,7 +303,7 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 8px;
 }
 
 .question-number-badge {

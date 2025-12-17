@@ -673,15 +673,10 @@ function startExamFromList(examId) {
             examData.id = exam.id;
 
             // Auto-generate numeric displayId if not exists or is text-based
-            if (!exam.displayId || !/^\d+$/.test(exam.displayId)) {
-                const STORAGE_KEY = 'luyende_examIdCounter';
-                let counter = parseInt(localStorage.getItem(STORAGE_KEY)) || 1000;
-                exam.displayId = counter.toString();
-                localStorage.setItem(STORAGE_KEY, (counter + 1).toString());
-                // Save back to examsData
-                localStorage.setItem('luyende_exams_' + currentPackageId, JSON.stringify(examsData[currentPackageId]));
-            }
-            examData.displayId = exam.displayId;
+            // Use exam.displayId coming from server (populated from DB) or fallback to ID
+            examData.displayId = exam.displayId || exam.id || exam._id;
+
+            // Note: We removed the auto-increment counter logic to ensure we show the real Exam ID set by admin
 
             // Update question array to match the selected exam
             if (exam.questions && exam.questions.length > 0) {
