@@ -55,7 +55,7 @@ const examSchema = new mongoose.Schema({
         question: String,
         options: [String],
         correctAnswer: mongoose.Schema.Types.Mixed,
-        correctAnswers: [Boolean],
+        correctAnswers: [mongoose.Schema.Types.Mixed],  // Support both Boolean and String
         explanation: String
     }],
     createdBy: String,

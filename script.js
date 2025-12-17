@@ -1021,7 +1021,7 @@ function displayQuestion(index) {
 
     // Update question number and text
     document.getElementById('questionNumber').textContent = `${question.id} `;
-    document.getElementById('questionText').textContent = question.question;
+    document.getElementById('questionText').innerHTML = question.question;
 
     // Update flag button
     const flagBtn = document.getElementById('flagBtn');
@@ -1125,7 +1125,7 @@ function displayQuestion(index) {
 
             const text = document.createElement('div');
             text.className = 'answer-text mc-text';
-            text.textContent = option;
+            text.innerHTML = option;
 
             row.appendChild(radio);
             row.appendChild(text);

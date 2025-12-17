@@ -437,31 +437,32 @@ function getExamHistory() {
     return [];
 }
 
-function renderExams() {
-    const exams = getAllExams();
-    const packages = getPackages();
+async function renderExams() {
+    const exams = await getAllExams();
+    const packages = await getPackages();
     const tbody = document.getElementById('examsTableBody');
 
-    if (exams.length === 0) {
+    if (!exams || exams.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Chưa có đề thi nào</td></tr>';
         return;
     }
 
     tbody.innerHTML = exams.map(exam => {
-        const pkg = packages.find(p => p.id === exam.packageId);
+        const pkg = packages.find(p => (p._id || p.id) === exam.packageId);
         const pkgName = pkg ? pkg.name : 'Unknown';
         const date = new Date(exam.createdAt).toLocaleDateString('vi-VN');
+        const examId = exam._id || exam.id;
 
         return `
             <tr>
-                <td>#${exam.id.slice(-6)}</td>
+                <td>#${examId.slice(-6)}</td>
                 <td title="${exam.title}"><strong>${exam.title}</strong></td>
                 <td>${pkgName}</td>
                 <td>${date}</td>
                 <td>${exam.createdBy || 'Admin'}</td>
                 <td>
-                    <button class="btn-action btn-edit" onclick="editExam('${exam.id}')">✏️ Sửa</button>
-                    <button class="btn-action btn-delete" onclick="deleteExam('${exam.id}')">🗑️ Xóa</button>
+                    <button class="btn-action btn-edit" onclick="editExam('${examId}')">✏️ Sửa</button>
+                    <button class="btn-action btn-delete" onclick="deleteExam('${examId}')">🗑️ Xóa</button>
                 </td>
             </tr>
         `;
