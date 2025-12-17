@@ -1525,6 +1525,51 @@ body {
         height: 32px;
         font-size: 12px;
     }
+
+    /* MOBILE EXAM LAYOUT FIX */
+    #examScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 100%;
+        height: 100dvh;
+        /* Dynamic viewport height for mobile */
+    }
+
+    .exam-content {
+        height: 100%;
+        height: 100dvh;
+    }
+
+    .question-section {
+        position: relative;
+        right: 0;
+        height: 100%;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .question-scroll-wrapper {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+    }
+
+    .navigation-buttons {
+        position: relative;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        flex-shrink: 0;
+        background: #f8fafc;
+        z-index: 100;
+        padding: 10px 12px;
+        border-top: 1px solid #e2e8f0;
+    }
 }
 
 /* ========== NEW AUTH LAYOUT ========== */
