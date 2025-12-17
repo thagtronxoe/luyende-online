@@ -117,6 +117,7 @@ function showScreen(screenId, updateHash = true) {
 
 // ========== AUTH HANDLERS ==========
 async function handleLogin(event) {
+    console.log("Login initiated");
     event.preventDefault();
 
     // Validate reCAPTCHA first
@@ -422,10 +423,10 @@ function showContactModal() {
     if (teleLink && settings.telegram) teleLink.href = settings.telegram;
 
     // Reset content to default (Package Registration)
-    const title = modal.querySelector('h2');
-    const desc = modal.querySelector('.contact-desc') || modal.querySelector('p');
+    const header = modal.querySelector('.modal-header h3');
+    const desc = modal.querySelector('.contact-desc') || modal.querySelector('.modal-body p');
 
-    if (title) title.textContent = 'Liên hệ đăng ký gói';
+    if (header) header.innerHTML = '📞 Liên hệ đăng ký gói';
     if (desc) desc.textContent = 'Để đăng ký gói luyện đề này, vui lòng liên hệ admin qua một trong các kênh sau:';
 
     modal.classList.add('active');
@@ -635,7 +636,7 @@ function renderMultipleChoiceReview(question, index, userAnswer, examId) {
         <div class="review-question ${statusClass}">
             <div class="review-question-header">
                 <span class="review-question-number">Câu ${question.id} <span style="font-size: 11px; color: #888; font-weight: normal;">(Mã: ${examId})</span></span>
-                <span class="review-status ${statusClass}">${statusIcon} ${isCorrect ? 'Đúng' : (userAnswer ? 'Sai' : 'Chưa trả lời')}</span>
+                <span class="review-status ${statusClass}">${isCorrect ? 'Đúng' : (userAnswer ? 'Sai' : 'Chưa trả lời')}</span>
             </div>
             <div class="review-question-text">${formatMathContent(question.question)}</div>
             <div class="review-options">
@@ -2101,11 +2102,11 @@ function showForgotPasswordContact() {
     const modal = document.getElementById('contactModal');
     if (modal) {
         // Update content for support context
-        const title = modal.querySelector('h2');
-        const desc = modal.querySelector('.contact-desc') || modal.querySelector('p');
+        const header = modal.querySelector('.modal-header h3');
+        const desc = modal.querySelector('.contact-desc') || modal.querySelector('.modal-body p');
 
-        if (title) title.textContent = 'Liên hệ hỗ trợ';
-        if (desc) desc.textContent = 'Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ admin qua các kênh sau:';
+        if (header) header.innerHTML = '🔐 Liên hệ lấy lại mật khẩu';
+        if (desc) desc.textContent = 'Để lấy lại mật khẩu, vui lòng liên hệ admin qua các kênh sau để được hỗ trợ xác minh danh tính:';
 
         modal.classList.add('active');
     } else {

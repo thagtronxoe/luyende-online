@@ -1849,6 +1849,9 @@ body {
 
 .btn-full {
     width: 100%;
+    z-index: 100;
+    position: relative;
+    cursor: pointer;
 }
 
 .btn-primary.btn-large {
