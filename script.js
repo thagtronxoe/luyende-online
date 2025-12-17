@@ -767,14 +767,14 @@ function viewAnswers(examId) {
                     ${exam.questions.map((q, idx) => `
                         <div class="answer-item">
                             <div class="answer-question">
-                                <strong>Câu ${q.id || idx + 1}:</strong> ${q.question}
+                                <strong>Câu ${q.id || idx + 1}:</strong> ${formatMathContent(q.question)}
                             </div>
                             <div class="answer-options">
                                 ${q.type === 'multiple-choice' || q.type === 'true-false' ?
             q.options.map((opt, i) => `
                                         <div class="answer-option ${isCorrectAnswer(q, opt) ? 'correct' : ''}">
                                             <span class="option-label">${String.fromCharCode(65 + i)}.</span>
-                                            <span class="option-text">${opt}</span>
+                                            <span class="option-text">${formatMathContent(opt)}</span>
                                             ${isCorrectAnswer(q, opt) ? '<span class="check-mark">✓</span>' : ''}
                                         </div>
                                     `).join('')
@@ -852,11 +852,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Back to Exam List Context
 window.backToExamList = function () {
-    if (currentPackageId) {
-        showExamList(currentPackageId);
+    const pkgId = currentPackageId || (examData && examData.packageId);
+    if (pkgId) {
+        showExamList(pkgId);
     } else {
         showDashboard();
     }
+}
+
+// Helper to format Latex content
+function formatMathContent(text) {
+    if (!text) return '';
+    return text
+        .replace(/\\frac/g, '\\dfrac')
+        .replace(/\\vec/g, '\\overrightarrow')
+        .replace(/\\lim\s*_/g, '\\lim\\limits_');
 }
 
 // Update connection status indicator
@@ -1148,7 +1158,10 @@ function displayQuestion(index) {
 
     // Update question number and text
     document.getElementById('questionNumber').textContent = `${question.id} `;
-    document.getElementById('questionText').innerHTML = question.question;
+    // Update question number and text
+    document.getElementById('questionNumber').textContent = `${question.id} `;
+    // Format Latex content before setting innerHTML
+    document.getElementById('questionText').innerHTML = formatMathContent(question.question);
 
     // Update flag button
     const flagBtn = document.getElementById('flagBtn');

@@ -3184,40 +3184,147 @@ body {
         font-size: 14px;
     }
 }
+
 /* --- FIX: Selection & Mobile Overflow --- */
-#examScreen, .exam-container, .question-card, .question-text, .question-options, .exam-sidebar { -webkit-user-select: none !important; -moz-user-select: none !important; -ms-user-select: none !important; user-select: none !important; }
+#examScreen,
+.exam-container,
+.question-card,
+.question-text,
+.question-options,
+.exam-sidebar {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+}
 
 /* Allow input selection */
-#examScreen input, #examScreen textarea { -webkit-user-select: text !important; -moz-user-select: text !important; -ms-user-select: text !important; user-select: text !important; }
+#examScreen input,
+#examScreen textarea {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+}
 
 /* Image Resizing */
-.question-text img, .mc-question-text img, .question-content img { max-width: 100% !important; height: auto !important; object-fit: contain; }
+.question-text img,
+.mc-question-text img,
+.question-content img {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain;
+}
 
 /* Card Overflow Fix */
-.question-card { max-width: 100%; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; }
-.exam-content { overflow-x: hidden; }
+.question-card {
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.exam-content {
+    overflow-x: hidden;
+}
 
 /* Mobile Spacing */
-@media (max-width: 768px) { .question-card { padding: 16px; margin-bottom: 16px; } .exam-main { padding: 12px; } }
+@media (max-width: 768px) {
+    .question-card {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .exam-main {
+        padding: 12px;
+    }
+}
 
 /* FIX: Mobile Result Card & Review Math */
 @media (max-width: 480px) {
-    .result-card { padding: 16px; width: 95%; margin: 10px auto; }
-    .info-row { flex-direction: column; align-items: flex-start; margin-bottom: 12px; }
-    .info-label { font-size: 13px; color: #666; margin-bottom: 4px; }
-    .info-value { font-size: 16px; width: 100%; word-break: break-all; }
+    .result-card {
+        padding: 16px;
+        width: 95%;
+        margin: 10px auto;
+    }
+
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .info-label {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-size: 16px;
+        width: 100%;
+        word-break: break-all;
+    }
 }
 
 /* Review Modal Math & Images */
-.answer-modal-body img { max-width: 100%; height: auto; display: block; margin: 8px auto; }
-.answer-item { overflow-x: hidden; }
-.katex-display { overflow-x: auto; overflow-y: hidden; }
+.answer-modal-body img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 8px auto;
+}
+
+.answer-item {
+    overflow-x: hidden;
+}
+
+.katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
 
 /* FIX: Table Overflow & Vector Display */
-#questionText { overflow-x: auto; }
-.katex-display { overflow-x: auto; }
+/* FIX: Table Overflow & Vector Display */
+#questionText {
+    overflow-x: hidden !important;
+    width: 100%;
+}
+
+.katex-display {
+    overflow-x: auto;
+}
+
+/* Allow math scroll if absolutely needed, or hidden if strict? User said strict. */
+/* User demanded NO horizontal scroll bar anywhere. So math must wrap or scale. Katex handles wrapping poorly. */
+/* But 'overflow-x: auto' creates the scrollbar. */
+.katex-display {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 /* Ensure table inside question doesn't break layout */
-#questionText table { display: block; overflow-x: auto; width: 100%; border-collapse: collapse; }
-#questionText th, #questionText td { min-width: 40px; padding: 4px; box-sizing: border-box; }
+#questionText table {
+    display: table;
+    width: 100% !important;
+    table-layout: fixed;
+    word-wrap: break-word;
+}
+
+#questionText th,
+#questionText td {
+    padding: 4px;
+    box-sizing: border-box;
+    word-break: break-all;
+}
+
 /* Extend vector symbol if possible - general math font fix */
-.katex { font-size: 1.1em; }
+.katex {
+    font-size: 1.1em;
+}
+
+.katex .overrightarrow-arrow {
+    min-width: 2em;
+}
+
+/* Force vector arrow length if standard CSS allows? Katex handles this internally. */
