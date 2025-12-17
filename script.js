@@ -436,7 +436,7 @@ async function showExamList(packageId) {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                         </svg>
-                        ${exam.duration} phút
+                        ${exam.duration || 90} phút
                     </div>
                     <div class="exam-meta-item">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1126,22 +1126,23 @@ function displayQuestion(index) {
             const row = document.createElement('div');
             row.className = 'answer-row mc-row';
 
-            const radio = document.createElement('div');
-            radio.className = 'answer-option mc-radio';
-            radio.innerHTML = `
-        <input type="radio"
-    id="q${index}_o${i}"
-    name="q${index}"
-    value="${option}"
-                       ${userAnswers[index] === option ? 'checked' : ''}
-    onchange="selectAnswer(${index}, null, '${option}')">
-        `;
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.id = `q${index}_o${i}`;
+            radio.name = `q${index}`;
+            radio.value = i; // Use index instead of text
+            radio.checked = userAnswers[index] === option;
+            radio.addEventListener('change', () => selectAnswer(index, null, option));
+
+            const radioContainer = document.createElement('div');
+            radioContainer.className = 'answer-option mc-radio';
+            radioContainer.appendChild(radio);
 
             const text = document.createElement('div');
             text.className = 'answer-text mc-text';
             text.innerHTML = option;
 
-            row.appendChild(radio);
+            row.appendChild(radioContainer);
             row.appendChild(text);
             answersContainer.appendChild(row);
         });
