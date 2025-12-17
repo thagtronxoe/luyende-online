@@ -108,7 +108,8 @@ const auth = async (req, res, next) => {
 
 const adminAuth = async (req, res, next) => {
     await auth(req, res, () => {
-        if (req.user.role === 'admin' || req.user.role === 'super') {
+        if (req.user.role === 'admin' || req.user.role === 'super' || req.user.role === 'editor') {
+            req.admin = req.user; // Set req.admin for admin routes
             next();
         } else {
             res.status(403).json({ error: 'Không có quyền truy cập' });
