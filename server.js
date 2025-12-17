@@ -406,15 +406,24 @@ app.post('/api/exams', adminAuth, async (req, res) => {
     }
 });
 
+// Helper to check if string is valid ObjectId
+function isValidObjectId(id) {
+    return mongoose.Types.ObjectId.isValid(id) && (String(new mongoose.Types.ObjectId(id)) === id);
+}
+
 // Update exam
 app.put('/api/exams/:id', adminAuth, async (req, res) => {
     try {
-        // Try to find by MongoDB _id first, then by custom id field
-        let exam = await Exam.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-        );
+        let exam;
+        // Only try findById if ID is valid ObjectId format
+        if (isValidObjectId(req.params.id)) {
+            exam = await Exam.findByIdAndUpdate(
+                req.params.id,
+                req.body,
+                { new: true }
+            );
+        }
+        // If not found, try custom id field
         if (!exam) {
             exam = await Exam.findOneAndUpdate(
                 { id: req.params.id },
@@ -434,8 +443,12 @@ app.put('/api/exams/:id', adminAuth, async (req, res) => {
 // Delete exam
 app.delete('/api/exams/:id', adminAuth, async (req, res) => {
     try {
-        // Try to delete by MongoDB _id first, then by custom id field
-        let result = await Exam.findByIdAndDelete(req.params.id);
+        let result;
+        // Only try findByIdAndDelete if ID is valid ObjectId format
+        if (isValidObjectId(req.params.id)) {
+            result = await Exam.findByIdAndDelete(req.params.id);
+        }
+        // If not found, try custom id field
         if (!result) {
             result = await Exam.findOneAndDelete({ id: req.params.id });
         }
