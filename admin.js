@@ -328,7 +328,10 @@ async function updatePackageSelect() {
     if (!select) return;
 
     select.innerHTML = '<option value="">-- Chọn gói đề --</option>' +
-        packages.map(pkg => `<option value="${pkg.id}">${pkg.name}</option>`).join('');
+        packages.map(pkg => {
+            const pkgId = pkg._id || pkg.id;
+            return `<option value="${pkgId}">${pkg.name}</option>`;
+        }).join('');
 }
 
 function showPackageModal() {
