@@ -606,7 +606,7 @@ app.post('/api/settings', adminAuth, async (req, res) => {
 // Get all admins
 app.get('/api/admins', adminAuth, async (req, res) => {
     try {
-        const admins = await User.find({ role: { $in: ['admin', 'super'] } }).select('-password');
+        const admins = await User.find({ role: { $in: ['admin', 'super', 'editor'] } }).select('-password');
         res.json(admins);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -617,6 +617,13 @@ app.get('/api/admins', adminAuth, async (req, res) => {
 app.post('/api/admins', adminAuth, async (req, res) => {
     try {
         const { name, username, password, role } = req.body;
+
+        // Check if username already exists
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Tên đăng nhập đã tồn tại!' });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const admin = new User({
@@ -630,6 +637,10 @@ app.post('/api/admins', adminAuth, async (req, res) => {
         await admin.save();
         res.status(201).json({ message: 'Tạo admin thành công' });
     } catch (err) {
+        // Handle duplicate key error
+        if (err.code === 11000) {
+            return res.status(400).json({ error: 'Tên đăng nhập hoặc email đã tồn tại!' });
+        }
         res.status(500).json({ error: err.message });
     }
 });
