@@ -65,7 +65,7 @@ function getRoleName(role) {
 }
 
 // ========== TAB NAVIGATION ==========
-function showAdminTab(tabName) {
+async function showAdminTab(tabName) {
     // Update nav items
     document.querySelectorAll('.admin-nav-item').forEach(item => item.classList.remove('active'));
     event.target.closest('.admin-nav-item').classList.add('active');
@@ -75,11 +75,11 @@ function showAdminTab(tabName) {
     document.getElementById(tabName + 'Tab').classList.add('active');
 
     // Refresh data when switching tabs
-    if (tabName === 'users') renderUsers();
-    if (tabName === 'packages') renderPackages();
-    if (tabName === 'exams') showExamList();
-    if (tabName === 'dashboard') updateDashboardStats();
-    if (tabName === 'history') renderAllHistory();
+    if (tabName === 'users') await renderUsers();
+    if (tabName === 'packages') await renderPackages();
+    if (tabName === 'exams') await showExamList();
+    if (tabName === 'dashboard') await updateDashboardStats();
+    if (tabName === 'history') await renderAllHistory();
 }
 
 // ========== DASHBOARD STATS ==========
