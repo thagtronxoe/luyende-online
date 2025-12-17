@@ -749,7 +749,83 @@ function startExamWithLoading() {
 }
 
 function viewAnswers(examId) {
-    alert('Tính năng xem đáp án đang phát triển!');
+    // Find the exam
+    let exam = null;
+    if (currentPackageId && examsData[currentPackageId]) {
+        exam = examsData[currentPackageId].find(e => (e._id || e.id) === examId);
+    }
+
+    if (!exam || !exam.questions) {
+        alert('Không tìm thấy đáp án cho đề thi này');
+        return;
+    }
+
+    // Create modal HTML
+    const modalHTML = `
+        <div class="answer-modal-overlay" id="answerModalOverlay" onclick="closeAnswerModal()">
+            <div class="answer-modal" onclick="event.stopPropagation()">
+                <div class="answer-modal-header">
+                    <h2>Đáp án chi tiết - ${exam.title}</h2>
+                    <button class="close-btn" onclick="closeAnswerModal()">✕</button>
+                </div>
+                <div class="answer-modal-body" id="answerModalBody">
+                    ${exam.questions.map((q, idx) => `
+                        <div class="answer-item">
+                            <div class="answer-question">
+                                <strong>Câu ${q.id || idx + 1}:</strong> ${q.question}
+                            </div>
+                            <div class="answer-options">
+                                ${q.type === 'multiple-choice' || q.type === 'true-false' ?
+            q.options.map((opt, i) => `
+                                        <div class="answer-option ${isCorrectAnswer(q, opt) ? 'correct' : ''}">
+                                            <span class="option-label">${String.fromCharCode(65 + i)}.</span>
+                                            <span class="option-text">${opt}</span>
+                                            ${isCorrectAnswer(q, opt) ? '<span class="check-mark">✓</span>' : ''}
+                                        </div>
+                                    `).join('')
+            :
+            `<div class="answer-option correct">
+                                        <strong>Đáp án:</strong> ${q.correctAnswer || q.correctAnswers}
+                                    </div>`
+        }
+                            </div>
+                            ${q.explanation ? `<div class="answer-explanation">
+                                <strong>Giải thích:</strong> ${q.explanation}
+                            </div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existing = document.getElementById('answerModalOverlay');
+    if (existing) existing.remove();
+
+    // Add to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Trigger MathJax rendering if available
+    if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([document.getElementById('answerModalBody')])
+            .catch(err => console.error('MathJax error:', err));
+    }
+}
+
+// Helper to check if option is correct answer
+function isCorrectAnswer(question, option) {
+    if (question.type === 'true-false') {
+        const optIndex = question.options.indexOf(option);
+        return question.correctAnswers && question.correctAnswers[optIndex];
+    }
+    return question.correctAnswer === option;
+}
+
+// Close answer modal
+function closeAnswerModal() {
+    const modal = document.getElementById('answerModalOverlay');
+    if (modal) modal.remove();
 }
 
 // ========== CHECK LOGIN ON LOAD ==========
@@ -1136,16 +1212,25 @@ function displayQuestion(index) {
             const row = document.createElement('div');
             row.className = 'answer-row mc-row';
 
+            const radioContainer = document.createElement('div');
+            radioContainer.className = 'answer-option mc-radio';
+
             const radio = document.createElement('input');
             radio.type = 'radio';
             radio.id = `q${index}_o${i}`;
             radio.name = `q${index}`;
-            radio.value = i; // Use index instead of text
-            radio.checked = userAnswers[index] === option;
-            radio.addEventListener('change', () => selectAnswer(index, null, option));
+            radio.value = i;
 
-            const radioContainer = document.createElement('div');
-            radioContainer.className = 'answer-option mc-radio';
+            // Set checked BEFORE appending
+            if (userAnswers[index] === option) {
+                radio.checked = true;
+            }
+
+            // Add event listener
+            radio.addEventListener('change', () => {
+                selectAnswer(index, null, option);
+            });
+
             radioContainer.appendChild(radio);
 
             const text = document.createElement('div');
