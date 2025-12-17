@@ -703,7 +703,7 @@ function startExamFromList(examId) {
     // Update exam ID in sidebar (use actual exam ID from admin panel)
     const sidebarExamId = document.getElementById('sidebarExamId');
     if (sidebarExamId && currentPackageId && examsData[currentPackageId]) {
-        const exam = examsData[currentPackageId].find(e => e.id === examId);
+        const exam = examsData[currentPackageId].find(e => (e._id || e.id) === examId);
         if (exam) {
             const displayExamId = exam._id || exam.id || examId;
             sidebarExamId.textContent = `#${displayExamId.toString().slice(-6)}`;

@@ -372,19 +372,47 @@ body {
     display: grid;
     grid-template-columns: 1fr 120px 120px;
     gap: 20px;
-    padding: 16px 12px;
+    padding: 8px 12px;
     border-bottom: 1px solid #F0F0F0;
     align-items: center;
     transition: background 0.2s;
 }
 
+
 .answer-row:hover {
     background: #F8F9FA;
 }
 
+/* Multiple Choice Rows */
+.mc-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    margin: 4px 0;
+}
+
+.mc-radio {
+    display: flex;
+    align-items: center;
+}
+
+.mc-radio input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.mc-text {
+    flex: 1;
+    line-height: 1.5;
+}
+
 /* True-False Table Layout */
 .tf-container {
-    margin-top: 20px;
+    margin-top: 4px;
+    /* Reduced from 12px */
 }
 
 .answers-grid:has(.tf-container) {
@@ -3125,5 +3153,4 @@ body {
     .package-name {
         font-size: 14px;
     }
-} 
- 
+}
