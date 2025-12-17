@@ -424,7 +424,7 @@ function showContactModal() {
 
     // Reset content to default (Package Registration)
     const header = modal.querySelector('.modal-header h3');
-    const desc = modal.querySelector('.contact-desc') || modal.querySelector('.modal-body p');
+    const desc = modal.querySelector('.modal-body > p');
 
     if (header) header.innerHTML = '📞 Liên hệ đăng ký gói';
     if (desc) desc.textContent = 'Để đăng ký gói luyện đề này, vui lòng liên hệ admin qua một trong các kênh sau:';
@@ -2103,7 +2103,7 @@ function showForgotPasswordContact() {
     if (modal) {
         // Update content for support context
         const header = modal.querySelector('.modal-header h3');
-        const desc = modal.querySelector('.contact-desc') || modal.querySelector('.modal-body p');
+        const desc = modal.querySelector('.modal-body > p');
 
         if (header) header.innerHTML = '🔐 Liên hệ lấy lại mật khẩu';
         if (desc) desc.textContent = 'Để lấy lại mật khẩu, vui lòng liên hệ admin qua các kênh sau để được hỗ trợ xác minh danh tính:';

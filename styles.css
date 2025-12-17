@@ -1847,6 +1847,11 @@ body {
     text-decoration: underline;
 }
 
+.auth-switch a {
+    position: relative;
+    z-index: 100;
+}
+
 .btn-full {
     width: 100%;
     z-index: 100;
