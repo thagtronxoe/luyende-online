@@ -1632,6 +1632,52 @@ function updateAnsweredCount() {
 
     if (progressFill) progressFill.style.width = percentage + '%';
     if (progressPercentage) progressPercentage.textContent = percentage + '%';
+
+    // Update Next button state (Hoàn thành when all answered)
+    updateNextButtonState();
+}
+
+// Update Next Button State - Show "Hoàn thành" only on last question
+function updateNextButtonState() {
+    const nextBtn = document.getElementById('nextBtn');
+    if (!nextBtn || !examData) return;
+
+    const isLastQuestion = currentQuestionIndex === examData.questions.length - 1;
+
+    const answeredCount = userAnswers.filter(answer => {
+        if (Array.isArray(answer)) {
+            return answer.some(a => a !== null);
+        }
+        return answer !== null;
+    }).length;
+
+    const totalQuestions = examData.questions.length;
+    const allAnswered = answeredCount === totalQuestions;
+
+    if (isLastQuestion) {
+        // On last question - show "Hoàn thành" button
+        nextBtn.innerHTML = `Hoàn thành <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 4px;">
+            <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+        nextBtn.classList.add('complete-mode');
+        nextBtn.onclick = function () { confirmSubmit(); };
+
+        // Highlight the button when all questions are answered
+        if (allAnswered) {
+            nextBtn.classList.add('all-answered');
+            nextBtn.classList.remove('not-complete');
+        } else {
+            nextBtn.classList.remove('all-answered');
+            nextBtn.classList.add('not-complete');
+        }
+    } else {
+        // Not on last question - show "Câu tiếp" button
+        nextBtn.innerHTML = `Câu tiếp <svg width="16" height="16" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left: 4px;">
+            <path d="M4 2L8 6L4 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+        nextBtn.classList.remove('complete-mode', 'all-answered', 'not-complete');
+        nextBtn.onclick = function () { navigateQuestion(1); };
+    }
 }
 
 // Confirm Submit

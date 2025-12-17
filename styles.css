@@ -3339,3 +3339,33 @@ body {
 }
 
 /* Force vector arrow length if standard CSS allows? Katex handles this internally. */
+
+/* ========== COMPLETE BUTTON STATES ========== */
+#nextBtn.complete-mode {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+#nextBtn.complete-mode.not-complete {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    opacity: 0.7;
+}
+
+#nextBtn.complete-mode.all-answered {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+
+    0%,
+    100% {
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(16, 185, 129, 0.8);
+    }
+}
+
+   
