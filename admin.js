@@ -17,14 +17,19 @@ async function getAdmins() {
 
 async function handleAdminLogin(event) {
     event.preventDefault();
+    console.log('handleAdminLogin called');
+
     const username = document.getElementById('adminUsername').value;
     const password = document.getElementById('adminPassword').value;
+    console.log('Login attempt:', username);
 
     try {
         const admin = await apiAdminLogin(username, password);
+        console.log('Login success:', admin);
         currentAdmin = admin;
         showAdminDashboard();
     } catch (err) {
+        console.error('Login error:', err);
         alert(err.message || 'Tên đăng nhập hoặc mật khẩu không đúng!');
     }
 }
