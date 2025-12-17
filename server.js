@@ -319,7 +319,21 @@ app.put('/api/auth/change-password', auth, async (req, res) => {
 app.get('/api/packages', async (req, res) => {
     try {
         const packages = await Package.find();
-        res.json(packages);
+
+        // Populate examCount for each package
+        const packagesWithCount = await Promise.all(packages.map(async (pkg) => {
+            const pkgObj = pkg.toObject();
+            const pkgId = String(pkg._id);
+            // Count exams for this package
+            const examCount = await Exam.countDocuments({
+                packageId: pkgId,
+                status: 'published'  // Only count published exams
+            });
+            pkgObj.examCount = examCount;
+            return pkgObj;
+        }));
+
+        res.json(packagesWithCount);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
