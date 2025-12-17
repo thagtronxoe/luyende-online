@@ -59,7 +59,7 @@ const examSchema = new mongoose.Schema({
         correctAnswers: [mongoose.Schema.Types.Mixed],  // Support both Boolean and String
         explanation: String
     }],
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    createdBy: mongoose.Schema.Types.Mixed, // Can be ObjectId or String (for legacy data)
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -408,7 +408,11 @@ app.get('/api/admin/exams', adminAuth, async (req, res) => {
 
         // Editors can only see their own exams
         if (req.admin.role === 'editor') {
-            query.createdBy = req.admin._id;
+            // Match either ObjectId or string username
+            query.$or = [
+                { createdBy: req.admin._id },
+                { createdBy: req.admin._id.toString() }
+            ];
         }
 
         // Optional package filter
@@ -416,7 +420,7 @@ app.get('/api/admin/exams', adminAuth, async (req, res) => {
             query.packageId = req.query.packageId;
         }
 
-        const exams = await Exam.find(query).populate('createdBy', 'name username');
+        const exams = await Exam.find(query);
         res.json(exams);
     } catch (err) {
         res.status(500).json({ error: err.message });
