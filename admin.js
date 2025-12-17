@@ -90,13 +90,18 @@ function getRoleName(role) {
 
 // ========== TAB NAVIGATION ==========
 async function showAdminTab(tabName) {
-    // Update nav items
+    // Update nav items - find by data-tab attribute
     document.querySelectorAll('.admin-nav-item').forEach(item => item.classList.remove('active'));
-    event.target.closest('.admin-nav-item').classList.add('active');
+    const navItem = document.querySelector(`.admin-nav-item[data-tab="${tabName}"]`);
+    if (navItem) navItem.classList.add('active');
+
+    // Show screen first (for editor redirect)
+    showScreen('adminDashboard');
 
     // Update tabs
     document.querySelectorAll('.admin-tab').forEach(tab => tab.classList.remove('active'));
-    document.getElementById(tabName + 'Tab').classList.add('active');
+    const tabElement = document.getElementById(tabName + 'Tab');
+    if (tabElement) tabElement.classList.add('active');
 
     // Refresh data when switching tabs
     if (tabName === 'users') await renderUsers();
