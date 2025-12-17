@@ -1,0 +1,140 @@
+/* ========== ANSWER MODAL STYLES ========== */
+.answer-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s;
+}
+
+.answer-modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s;
+}
+
+.answer-modal-header {
+    padding: 24px 28px;
+    border-bottom: 1px solid #e8e8e8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.answer-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #1890ff;
+}
+
+.answer-modal-header .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    padding: 4px 8px;
+    transition: color 0.2s;
+}
+
+.answer-modal-header .close-btn:hover {
+    color: #333;
+}
+
+.answer-modal-body {
+    padding: 20px 28px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.answer-item {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.answer-item:last-child {
+    border-bottom: none;
+}
+
+.answer-question {
+    font-size: 15px;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.answer-options {
+    margin-left: 20px;
+}
+
+.answer-option {
+    padding: 10px 14px;
+    margin: 6px 0;
+    border-radius: 6px;
+    background: #f9f9f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.answer-option.correct {
+    background: #f6ffed;
+    border: 1px solid #b7eb8f;
+}
+
+.answer-option .option-label {
+    font-weight: 600;
+    color: #666;
+    min-width: 24px;
+}
+
+.answer-option .check-mark {
+    margin-left: auto;
+    color: #52c41a;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.answer-explanation {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: #fff7e6;
+    border-left: 3px solid #ffa940;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #595959;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
