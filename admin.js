@@ -474,10 +474,14 @@ async function renderExams() {
     }
 
     tbody.innerHTML = filteredExams.map(exam => {
-        // Convert both to strings for comparison
+        // Convert both to strings for comparison and log for debugging
         const examPkgId = String(exam.packageId || '');
-        const pkg = packages.find(p => String(p._id || p.id || '') === examPkgId);
-        const pkgName = pkg ? pkg.name : (examPkgId ? 'Gói không tồn tại' : 'Chưa gán');
+        const pkg = packages.find(p => {
+            const pid = String(p._id || p.id || '');
+            return pid === examPkgId;
+        });
+
+        const pkgName = pkg ? pkg.name : 'Chưa gán';
         const date = exam.createdAt ? new Date(exam.createdAt).toLocaleDateString('vi-VN') : 'N/A';
         const examId = exam._id || exam.id || '';
 
