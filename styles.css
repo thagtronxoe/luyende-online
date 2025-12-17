@@ -2887,3 +2887,259 @@ body {
     background: #2563eb;
     transform: rotate(180deg);
 }
+
+/* ========== MOBILE RESPONSIVE - AUTH & DASHBOARD ========== */
+@media (max-width: 900px) {
+
+    /* Auth layout - stack on mobile */
+    .auth-layout {
+        flex-direction: column;
+    }
+
+    .auth-hero {
+        min-height: 200px;
+        padding: 32px 24px;
+    }
+
+    .auth-hero-content {
+        max-width: 100%;
+    }
+
+    .auth-hero-title {
+        font-size: 28px;
+        margin-bottom: 12px;
+    }
+
+    .auth-hero-desc {
+        font-size: 14px;
+        margin-bottom: 24px;
+    }
+
+    .auth-features {
+        display: none;
+        /* Hide on mobile to save space */
+    }
+
+    .auth-form-side {
+        padding: 24px 20px;
+    }
+
+    .auth-form-container {
+        max-width: 100%;
+    }
+
+    .auth-title {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 600px) {
+
+    /* Auth layout - full mobile */
+    .auth-hero {
+        min-height: 150px;
+        padding: 24px 16px;
+    }
+
+    .auth-hero-title {
+        font-size: 22px;
+    }
+
+    .auth-form-side {
+        padding: 20px 16px;
+    }
+
+    .auth-form-container,
+    .auth-form-wide {
+        max-width: 100%;
+        padding: 20px 16px;
+    }
+
+    .auth-title {
+        font-size: 20px;
+        text-align: center;
+    }
+
+    .auth-subtitle {
+        text-align: center;
+        font-size: 13px;
+    }
+
+    .form-group input {
+        font-size: 16px;
+        /* Prevent zoom on iOS */
+    }
+
+    .btn-primary.btn-large {
+        padding: 14px 20px;
+        font-size: 15px;
+    }
+
+    /* Dashboard mobile */
+    .dashboard-header {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .header-logo {
+        height: 32px;
+    }
+
+    .user-name {
+        font-size: 13px;
+    }
+
+    .dashboard-main {
+        padding: 24px 16px;
+    }
+
+    .dashboard-title {
+        font-size: 22px;
+    }
+
+    .dashboard-subtitle {
+        font-size: 14px;
+        margin-bottom: 24px;
+    }
+
+    /* Tab navigation */
+    .tab-navigation {
+        margin-bottom: 20px;
+    }
+
+    .tab-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    /* Package grid */
+    .package-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .package-card {
+        padding: 16px;
+    }
+
+    .package-icon {
+        font-size: 36px;
+    }
+
+    .package-name {
+        font-size: 16px;
+    }
+
+    /* Exam list */
+    .exam-list-main {
+        padding: 20px 16px;
+    }
+
+    .exam-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .exam-card {
+        border-radius: 12px;
+    }
+
+    .exam-card-title {
+        font-size: 16px;
+    }
+
+    /* History list */
+    .history-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .history-item-score {
+        align-self: flex-end;
+    }
+
+    /* Pre-exam card */
+    .container {
+        padding: 20px 16px;
+    }
+
+    .card {
+        padding: 24px 16px;
+    }
+
+    .info-table {
+        font-size: 14px;
+    }
+
+    /* Result card */
+    .result-card {
+        padding: 24px 16px;
+    }
+
+    /* Answer review */
+    .answer-review-main {
+        padding: 20px 16px;
+    }
+
+    .review-question {
+        padding: 16px;
+        border-radius: 8px;
+    }
+
+    /* reCAPTCHA responsive */
+    .g-recaptcha {
+        transform: scale(0.85);
+        transform-origin: 0 0;
+    }
+
+    .captcha-group {
+        overflow: hidden;
+    }
+
+    /* Contact modal */
+    .contact-modal {
+        margin: 16px;
+        max-width: calc(100% - 32px);
+    }
+
+    .contact-options {
+        gap: 10px;
+    }
+
+    .contact-option {
+        padding: 12px;
+    }
+
+    .contact-option .contact-icon {
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+    .auth-hero-title {
+        font-size: 18px;
+    }
+
+    .auth-title {
+        font-size: 18px;
+    }
+
+    .btn-primary.btn-large {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .tab-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .package-name {
+        font-size: 14px;
+    }
+}
