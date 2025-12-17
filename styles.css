@@ -3368,4 +3368,25 @@ body {
     }
 }
 
+/* ========== HIDE SCROLLBARS ON QUESTION CONTAINERS ========== */
+.question-text,
+.question-content,
+.question-scroll-wrapper,
+.question-header-row {
+    overflow: visible !important;
+    overflow-y: visible !important;
+    overflow-x: visible !important;
+    max-height: none !important;
+}
+
+/* Hide scrollbar but allow scroll if needed */
+.question-scroll-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.question-scroll-wrapper {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
    
