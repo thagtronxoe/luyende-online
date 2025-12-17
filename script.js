@@ -246,10 +246,8 @@ function renderPackages() {
     const myGrid = document.getElementById('myPackagesGrid');
     const allGrid = document.getElementById('allPackagesGrid');
 
-    // Get current user's activated packages
-    const users = JSON.parse(localStorage.getItem('luyende_users') || '[]');
-    const currentUserData = users.find(u => u.id === currentUser?.id);
-    const userActivatedPackages = currentUserData?.activatedPackages || [];
+    // Get current user's activated packages from currentUser object
+    const userActivatedPackages = currentUser?.activatedPackages || [];
 
     // Helper to get status badge HTML based on user access
     function getStatusBadge(pkg) {
@@ -257,8 +255,12 @@ function renderPackages() {
             return '<div class="package-status updating">🔄 Đang cập nhật</div>';
         }
         // Check if user has this package activated
-        if (userActivatedPackages.includes(pkg.id)) {
+        const pkgId = pkg._id || pkg.id;
+        if (userActivatedPackages.includes(pkgId)) {
             return '<div class="package-status open">✓ Đã đăng kí</div>';
+        }
+        if (pkg.accessType === 'open') {
+            return '<div class="package-status open">✓ Mở thoải mái</div>';
         }
         return '<div class="package-status register">🔒 Cần đăng kí</div>';
     }
@@ -266,26 +268,28 @@ function renderPackages() {
     // Helper to get user's effective access type
     function getUserAccessType(pkg) {
         if (pkg.accessType === 'updating') return 'updating';
-        if (userActivatedPackages.includes(pkg.id)) return 'open';
+        const pkgId = pkg._id || pkg.id;
+        if (userActivatedPackages.includes(pkgId) || pkg.accessType === 'open') return 'open';
         return 'register';
     }
 
     // Render my packages (only packages user has access to)
-    const accessiblePackages = examPackages.filter(p =>
-        p.accessType !== 'updating' && userActivatedPackages.includes(p.id)
-    );
+    const accessiblePackages = examPackages.filter(p => {
+        const pkgId = p._id || p.id;
+        return p.accessType !== 'updating' && (userActivatedPackages.includes(pkgId) || p.accessType === 'open');
+    });
 
     if (accessiblePackages.length === 0) {
         myGrid.innerHTML = '<div class="no-packages">Bạn chưa đăng ký gói nào. Liên hệ admin để kích hoạt gói!</div>';
     } else {
         myGrid.innerHTML = accessiblePackages.map(pkg => `
-            <div class="package-card" onclick="showExamList('${pkg.id}')">
-                <div class="package-icon">${pkg.icon}</div>
+            <div class="package-card" onclick="showExamList('${pkg._id || pkg.id}')">
+                <div class="package-icon">${pkg.icon || '📝'}</div>
                 <div class="package-name">${pkg.name}</div>
-                <div class="package-description">${pkg.description}</div>
+                <div class="package-description">${pkg.description || ''}</div>
                 <div class="package-stats">
-                    <span class="package-stat">📝 ${pkg.examCount} đề</span>
-                    <span class="package-stat">⏱️ ${pkg.duration} phút</span>
+                    <span class="package-stat">📝 ${pkg.examCount || 0} đề</span>
+                    <span class="package-stat">⏱️ ${pkg.duration || 90} phút</span>
                 </div>
                 ${getStatusBadge(pkg)}
             </div>
@@ -296,13 +300,13 @@ function renderPackages() {
     allGrid.innerHTML = examPackages.map(pkg => {
         const effectiveAccess = getUserAccessType(pkg);
         return `
-        <div class="package-card ${effectiveAccess}" onclick="handlePackageClick('${pkg.id}')">
-            <div class="package-icon">${pkg.icon}</div>
+        <div class="package-card ${effectiveAccess}" onclick="handlePackageClick('${pkg._id || pkg.id}')">
+            <div class="package-icon">${pkg.icon || '📝'}</div>
             <div class="package-name">${pkg.name}</div>
-            <div class="package-description">${pkg.description}</div>
+            <div class="package-description">${pkg.description || ''}</div>
             <div class="package-stats">
-                <span class="package-stat">📝 ${pkg.examCount} đề</span>
-                <span class="package-stat">⏱️ ${pkg.duration} phút</span>
+                <span class="package-stat">📝 ${pkg.examCount || 0} đề</span>
+                <span class="package-stat">⏱️ ${pkg.duration || 90} phút</span>
             </div>
             ${getStatusBadge(pkg)}
         </div>

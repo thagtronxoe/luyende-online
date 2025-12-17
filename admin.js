@@ -83,16 +83,20 @@ function showAdminTab(tabName) {
 }
 
 // ========== DASHBOARD STATS ==========
-function updateDashboardStats() {
-    const users = getUsers();
-    const packages = getPackages();
-    const exams = getAllExams();
-    const history = getExamHistory();
+async function updateDashboardStats() {
+    try {
+        const users = await getUsers();
+        const packages = await getPackages();
+        const exams = await getAllExams();
+        const history = getExamHistory();
 
-    document.getElementById('totalUsers').textContent = users.length;
-    document.getElementById('totalPackages').textContent = packages.length;
-    document.getElementById('totalExams').textContent = exams.length;
-    document.getElementById('totalAttempts').textContent = history.length;
+        document.getElementById('totalUsers').textContent = users.length;
+        document.getElementById('totalPackages').textContent = packages.length;
+        document.getElementById('totalExams').textContent = exams.length;
+        document.getElementById('totalAttempts').textContent = history.length;
+    } catch (err) {
+        console.error('Error updating stats:', err);
+    }
 }
 
 // ========== USER MANAGEMENT ==========
@@ -340,9 +344,9 @@ async function savePackage(event) {
     }
 }
 
-function editPackage(packageId) {
-    const packages = getPackages();
-    const pkg = packages.find(p => p.id === packageId);
+async function editPackage(packageId) {
+    const packages = await getPackages();
+    const pkg = packages.find(p => (p._id || p.id) === packageId);
     if (!pkg) return;
 
     document.getElementById('packageName').value = pkg.name;
@@ -355,20 +359,16 @@ function editPackage(packageId) {
     document.getElementById('packageModal').classList.add('active');
 }
 
-function deletePackage(packageId) {
+async function deletePackage(packageId) {
     if (!confirm('Bạn có chắc muốn xóa gói đề này? Các đề thi trong gói cũng sẽ bị xóa!')) return;
 
-    let packages = getPackages();
-    packages = packages.filter(p => p.id !== packageId);
-    savePackages(packages);
-
-    // Also delete exams in this package
-    let exams = getAllExams();
-    exams = exams.filter(e => e.packageId !== packageId);
-    saveAllExams(exams);
-
-    renderPackages();
-    updateDashboardStats();
+    try {
+        await apiDeletePackage(packageId);
+        await renderPackages();
+        await updateDashboardStats();
+    } catch (err) {
+        alert('Lỗi xóa gói đề: ' + err.message);
+    }
 }
 
 // ========== EXAM MANAGEMENT ==========
