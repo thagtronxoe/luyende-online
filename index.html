@@ -7,6 +7,21 @@
     <title>Luyện Đề Online - Hệ Thống Thi Trực Tuyến</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="styles.css">
+    <!-- Mobile fix: hide auth-hero section -->
+    <style>
+        @media (max-width: 900px) {
+            .auth-hero {
+                display: none !important;
+                width: 0 !important;
+                visibility: hidden !important;
+            }
+
+            .auth-form-side {
+                width: 100% !important;
+                flex: 1 !important;
+            }
+        }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap"
