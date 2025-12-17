@@ -125,6 +125,11 @@ async function apiDeletePackage(packageId) {
 
 // ========== EXAM API ==========
 
+async function apiGetAdminExams(packageId = null) {
+    const query = packageId ? `?packageId=${packageId}` : '';
+    return await apiCall(`/admin/exams${query}`);
+}
+
 async function apiGetExams(packageId = null) {
     const query = packageId ? `?packageId=${packageId}` : '';
     return await apiCall(`/exams${query}`);

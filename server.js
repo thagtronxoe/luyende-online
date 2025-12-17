@@ -59,7 +59,7 @@ const examSchema = new mongoose.Schema({
         correctAnswers: [mongoose.Schema.Types.Mixed],  // Support both Boolean and String
         explanation: String
     }],
-    createdBy: String,
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -207,7 +207,7 @@ app.post('/api/auth/admin-login', async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        const user = await User.findOne({ username, role: { $in: ['admin', 'super'] } });
+        const user = await User.findOne({ username, role: { $in: ['admin', 'super', 'editor'] } });
         if (!user) {
             return res.status(400).json({ error: 'Tài khoản admin không tồn tại' });
         }
@@ -400,7 +400,29 @@ app.delete('/api/packages/:id', adminAuth, async (req, res) => {
 
 // ========== EXAM ROUTES ==========
 
-// Get exams by package
+// Get exams for admin (with role-based filtering)
+app.get('/api/admin/exams', adminAuth, async (req, res) => {
+    try {
+        let query = {};
+
+        // Editors can only see their own exams
+        if (req.admin.role === 'editor') {
+            query.createdBy = req.admin._id;
+        }
+
+        // Optional package filter
+        if (req.query.packageId) {
+            query.packageId = req.query.packageId;
+        }
+
+        const exams = await Exam.find(query).populate('createdBy', 'name username');
+        res.json(exams);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get exams by package (public - for students)
 app.get('/api/exams', async (req, res) => {
     try {
         const query = req.query.packageId ? { packageId: req.query.packageId } : {};
@@ -424,7 +446,11 @@ app.get('/api/exams/:id', async (req, res) => {
 // Create exam
 app.post('/api/exams', adminAuth, async (req, res) => {
     try {
-        const exam = new Exam(req.body);
+        const examData = {
+            ...req.body,
+            createdBy: req.admin._id // Track who created this exam
+        };
+        const exam = new Exam(examData);
         await exam.save();
         res.status(201).json(exam);
     } catch (err) {
@@ -441,25 +467,27 @@ function isValidObjectId(id) {
 app.put('/api/exams/:id', adminAuth, async (req, res) => {
     try {
         let exam;
-        // Only try findById if ID is valid ObjectId format
+
+        // First, find the exam to check ownership
         if (isValidObjectId(req.params.id)) {
-            exam = await Exam.findByIdAndUpdate(
-                req.params.id,
-                req.body,
-                { new: true }
-            );
+            exam = await Exam.findById(req.params.id);
         }
-        // If not found, try custom id field
         if (!exam) {
-            exam = await Exam.findOneAndUpdate(
-                { id: req.params.id },
-                req.body,
-                { new: true }
-            );
+            exam = await Exam.findOne({ id: req.params.id });
         }
         if (!exam) {
             return res.status(404).json({ error: 'Không tìm thấy đề thi' });
         }
+
+        // Editors can only update their own exams
+        if (req.admin.role === 'editor' && exam.createdBy && exam.createdBy.toString() !== req.admin._id.toString()) {
+            return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa đề thi này' });
+        }
+
+        // Perform update
+        Object.assign(exam, req.body);
+        await exam.save();
+
         res.json(exam);
     } catch (err) {
         res.status(500).json({ error: err.message });

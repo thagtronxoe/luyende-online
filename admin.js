@@ -46,13 +46,34 @@ function showAdminDashboard() {
     document.getElementById('currentAdminName').textContent = currentAdmin.name;
     document.getElementById('currentAdminRole').textContent = getRoleName(currentAdmin.role);
 
-    updateDashboardStats();
-    renderUsers();
-    renderPackages();
-    renderAdmins();
-    initExamCreator();
+    // Hide tabs based on role
+    const isEditor = currentAdmin.role === 'editor';
 
-    showScreen('adminDashboard');
+    // Get all nav items
+    const navItems = document.querySelectorAll('.admin-nav-item');
+    navItems.forEach(item => {
+        const tabName = item.getAttribute('data-tab');
+        if (isEditor && tabName !== 'exams') {
+            item.style.display = 'none';
+        } else {
+            item.style.display = '';
+        }
+    });
+
+    // Only load what's needed based on role
+    if (isEditor) {
+        // Editor only sees Exam Creation
+        initExamCreator();
+        showAdminTab('exams');
+    } else {
+        // Full admin
+        updateDashboardStats();
+        renderUsers();
+        renderPackages();
+        renderAdmins();
+        initExamCreator();
+        showScreen('adminDashboard');
+    }
 }
 
 function getRoleName(role) {
@@ -322,7 +343,7 @@ async function renderPackages() {
 
 async function countExamsInPackage(packageId) {
     try {
-        const exams = await apiGetExams(packageId);
+        const exams = await apiGetAdminExams(packageId);
         return exams.length;
     } catch (err) {
         return 0;
@@ -411,7 +432,7 @@ let cachedExams = [];
 
 async function getAllExams() {
     try {
-        const result = await apiGetExams();
+        const result = await apiGetAdminExams();
         // Ensure we always return an array
         cachedExams = Array.isArray(result) ? result : [];
         return cachedExams;
@@ -949,30 +970,27 @@ function closeAdminModal() {
     document.getElementById('adminModal').classList.remove('active');
 }
 
-function saveNewAdmin(event) {
+async function saveNewAdmin(event) {
     event.preventDefault();
 
-    const admins = getAdmins();
     const newAdmin = {
-        id: Date.now(),
         name: document.getElementById('newAdminName').value,
         username: document.getElementById('newAdminUsername').value,
         password: document.getElementById('newAdminPassword').value,
         role: document.getElementById('newAdminRole').value
     };
 
-    // Check duplicate username
-    if (admins.find(a => a.username === newAdmin.username)) {
-        alert('Tên đăng nhập đã tồn tại!');
-        return;
+    try {
+        await apiCreateAdmin(newAdmin);
+        closeAdminModal();
+        renderAdmins();
+        alert('Đã thêm admin mới!');
+
+        // Clear form
+        document.getElementById('adminForm').reset();
+    } catch (err) {
+        alert('Lỗi: ' + (err.message || 'Không thể tạo admin'));
     }
-
-    admins.push(newAdmin);
-    saveAdmins(admins);
-
-    closeAdminModal();
-    renderAdmins();
-    alert('Đã thêm admin mới!');
 }
 
 function deleteAdmin(adminId) {
