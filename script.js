@@ -139,6 +139,7 @@ async function handleLogin(event) {
 
 async function handleRegister(event) {
     event.preventDefault();
+    console.log("Register Form Submitted");
 
     // Validate reCAPTCHA first
     if (!validateRecaptcha('registerForm')) {
@@ -367,9 +368,14 @@ function showContactModal() {
     const fbLink = modal.querySelector('.contact-option.facebook');
     const teleLink = modal.querySelector('.contact-option.telegram');
 
-    if (zaloLink && settings.zalo) zaloLink.href = settings.zalo;
-    if (fbLink && settings.facebook) fbLink.href = settings.facebook;
     if (teleLink && settings.telegram) teleLink.href = settings.telegram;
+
+    // Reset content to default (Package Registration)
+    const title = modal.querySelector('h2');
+    const desc = modal.querySelector('.contact-desc') || modal.querySelector('p');
+
+    if (title) title.textContent = 'Liên hệ đăng ký gói';
+    if (desc) desc.textContent = 'Để đăng ký gói luyện đề này, vui lòng liên hệ admin qua một trong các kênh sau:';
 
     modal.classList.add('active');
 }
@@ -553,6 +559,19 @@ function showAnswerReview(historyIndex) {
     }).join('');
 
     showScreen('answerReviewScreen');
+
+    // Trigger KaTeX rendering
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(document.getElementById('reviewQuestions'), {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
+    }
 }
 
 // Render multiple choice review
@@ -567,7 +586,7 @@ function renderMultipleChoiceReview(question, index, userAnswer, examId) {
                 <span class="review-question-number">Câu ${question.id} <span style="font-size: 11px; color: #888; font-weight: normal;">(Mã: ${examId})</span></span>
                 <span class="review-status ${statusClass}">${statusIcon} ${isCorrect ? 'Đúng' : (userAnswer ? 'Sai' : 'Chưa trả lời')}</span>
             </div>
-            <div class="review-question-text">${question.question}</div>
+            <div class="review-question-text">${formatMathContent(question.question)}</div>
             <div class="review-options">
                 ${question.options.map((opt, i) => {
         const isUserChoice = userAnswer === opt;
@@ -578,7 +597,7 @@ function renderMultipleChoiceReview(question, index, userAnswer, examId) {
 
         return `<div class="review-option ${optClass}">
                         <span class="option-letter">${String.fromCharCode(65 + i)}.</span>
-                        ${opt}
+                        <span class="option-text">${formatMathContent(opt)}</span>
                         ${isCorrectAns ? '<span class="correct-mark">✓ Đáp án đúng</span>' : ''}
                         ${isUserChoice && !isCorrectAns ? '<span class="wrong-mark">✗ Bạn chọn</span>' : ''}
                     </div>`;
@@ -2019,9 +2038,16 @@ function showForgotPasswordContact() {
     // Show contact modal (same as package activation)
     const modal = document.getElementById('contactModal');
     if (modal) {
+        // Update content for support context
+        const title = modal.querySelector('h2');
+        const desc = modal.querySelector('.contact-desc') || modal.querySelector('p');
+
+        if (title) title.textContent = 'Liên hệ hỗ trợ';
+        if (desc) desc.textContent = 'Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ admin qua các kênh sau:';
+
         modal.classList.add('active');
     } else {
         // Fallback if modal doesn't exist
-        alert('Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ:\\n\\n📧 Email: phamducthang01112007@gmail.com\\n📱 Zalo: 0362...\\n\\nHoặc liên hệ Admin qua trang web.');
+        alert('Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ:\n\n📧 Email: phamducthang01112007@gmail.com\n📱 Zalo: 0362...\n\nHoặc liên hệ Admin qua trang web.');
     }
 }
