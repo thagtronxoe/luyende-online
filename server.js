@@ -339,11 +339,19 @@ app.post('/api/packages', adminAuth, async (req, res) => {
 // Update package
 app.put('/api/packages/:id', adminAuth, async (req, res) => {
     try {
-        const pkg = await Package.findOneAndUpdate(
-            { id: req.params.id },
+        // Try to find by MongoDB _id first, then by custom id field
+        let pkg = await Package.findByIdAndUpdate(
+            req.params.id,
             req.body,
             { new: true }
         );
+        if (!pkg) {
+            pkg = await Package.findOneAndUpdate(
+                { id: req.params.id },
+                req.body,
+                { new: true }
+            );
+        }
         res.json(pkg);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -353,7 +361,11 @@ app.put('/api/packages/:id', adminAuth, async (req, res) => {
 // Delete package
 app.delete('/api/packages/:id', adminAuth, async (req, res) => {
     try {
-        await Package.findOneAndDelete({ id: req.params.id });
+        // Try to delete by MongoDB _id first, then by custom id field
+        let result = await Package.findByIdAndDelete(req.params.id);
+        if (!result) {
+            result = await Package.findOneAndDelete({ id: req.params.id });
+        }
         res.json({ message: 'Đã xóa gói đề' });
     } catch (err) {
         res.status(500).json({ error: err.message });
