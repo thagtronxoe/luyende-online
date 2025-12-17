@@ -275,147 +275,149 @@
                                 <input type="text" id="examTitle" placeholder="VD: Đề số 1 - Giữa kì 2"
                                     class="form-input">
                             </div>
-                            <label>Mã môn (Tag)</label>
-                            <input type="text" id="examTag" placeholder="VD: THPT Toán" class="form-input">
+                            <div class="form-group">
+                                <label>Mã môn (Tag)</label>
+                                <input type="text" id="examTag" placeholder="VD: THPT Toán" class="form-input">
+                            </div>
+                            <!-- Removed closing div to include DisplayId in header -->
+                            <div class="form-group">
+                                <label>Mã hiển thị (VD: 1009)</label>
+                                <input type="text" id="examDisplayId" placeholder="VD: 1009" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Trạng thái</label>
+                                <select id="examStatus" class="form-select">
+                                    <option value="draft">Đang soạn (Ẩn)</option>
+                                    <option value="published">Đã xuất bản (Cho thi)</option>
+                                    <option value="view_only">Chỉ xem (Không cho thi)</option>
+                                    <option value="updating">Đang cập nhật</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Mã hiển thị (VD: 1009)</label>
-                            <input type="text" id="examDisplayId" placeholder="VD: 1009" class="form-input">
+
+                        <!-- Part I: Multiple Choice -->
+                        <div class="exam-section">
+                            <h3>Phần I: Trắc nghiệm (12 câu - 0.25đ/câu)</h3>
+                            <div id="mcQuestions">
+                                <!-- MC questions will be rendered here -->
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Trạng thái</label>
-                            <select id="examStatus" class="form-select">
-                                <option value="draft">Đang soạn (Ẩn)</option>
-                                <option value="published">Đã xuất bản (Cho thi)</option>
-                                <option value="view_only">Chỉ xem (Không cho thi)</option>
-                                <option value="updating">Đang cập nhật</option>
+
+                        <!-- Part II: True/False -->
+                        <div class="exam-section">
+                            <h3>Phần II: Đúng/Sai (4 câu - lũy tiến tối đa 1đ/câu)</h3>
+                            <div id="tfQuestions">
+                                <!-- TF questions will be rendered here -->
+                            </div>
+                        </div>
+
+                        <!-- Part III: Fill-in-blank -->
+                        <div class="exam-section">
+                            <h3>Phần III: Trả lời ngắn (6 câu - 0.5đ/câu)</h3>
+                            <div id="fillQuestions">
+                                <!-- Fill questions will be rendered here -->
+                            </div>
+                        </div>
+
+                        <div class="exam-creator-footer">
+                            <button class="btn btn-primary btn-large" onclick="saveExam()">💾 Lưu đề thi</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div class="admin-tab" id="historyTab">
+                    <div class="admin-header">
+                        <h1>Lịch sử làm bài</h1>
+                        <div class="search-box">
+                            <input type="text" id="historySearchInput" placeholder="Tìm theo tên hoặc username..."
+                                oninput="filterHistory()">
+                            <select id="historyPackageFilter" onchange="filterHistory()">
+                                <option value="">Tất cả gói đề</option>
                             </select>
+                            <button class="btn btn-secondary" onclick="clearHistorySearch()">Xóa</button>
                         </div>
                     </div>
-
-                    <!-- Part I: Multiple Choice -->
-                    <div class="exam-section">
-                        <h3>Phần I: Trắc nghiệm (12 câu - 0.25đ/câu)</h3>
-                        <div id="mcQuestions">
-                            <!-- MC questions will be rendered here -->
-                        </div>
-                    </div>
-
-                    <!-- Part II: True/False -->
-                    <div class="exam-section">
-                        <h3>Phần II: Đúng/Sai (4 câu - lũy tiến tối đa 1đ/câu)</h3>
-                        <div id="tfQuestions">
-                            <!-- TF questions will be rendered here -->
-                        </div>
-                    </div>
-
-                    <!-- Part III: Fill-in-blank -->
-                    <div class="exam-section">
-                        <h3>Phần III: Trả lời ngắn (6 câu - 0.5đ/câu)</h3>
-                        <div id="fillQuestions">
-                            <!-- Fill questions will be rendered here -->
-                        </div>
-                    </div>
-
-                    <div class="exam-creator-footer">
-                        <button class="btn btn-primary btn-large" onclick="saveExam()">💾 Lưu đề thi</button>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Học sinh</th>
+                                    <th>Gói đề</th>
+                                    <th>Tên đề</th>
+                                    <th>Điểm</th>
+                                    <th>Thời gian làm</th>
+                                    <th>Ngày làm</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- History will be rendered here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-        </div>
 
-        <!-- History Tab -->
-        <div class="admin-tab" id="historyTab">
-            <div class="admin-header">
-                <h1>Lịch sử làm bài</h1>
-                <div class="search-box">
-                    <input type="text" id="historySearchInput" placeholder="Tìm theo tên hoặc username..."
-                        oninput="filterHistory()">
-                    <select id="historyPackageFilter" onchange="filterHistory()">
-                        <option value="">Tất cả gói đề</option>
-                    </select>
-                    <button class="btn btn-secondary" onclick="clearHistorySearch()">Xóa</button>
+                <!-- Admins Tab -->
+                <div class="admin-tab" id="adminsTab">
+                    <div class="admin-header">
+                        <h1>Quản lý Admins</h1>
+                        <button class="btn btn-primary" onclick="showAdminModal()">+ Thêm Admin</button>
+                    </div>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên</th>
+                                    <th>Username</th>
+                                    <th>Vai trò</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminsTableBody">
+                                <!-- Admins will be rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div class="admin-table-container">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>Học sinh</th>
-                            <th>Gói đề</th>
-                            <th>Tên đề</th>
-                            <th>Điểm</th>
-                            <th>Thời gian làm</th>
-                            <th>Ngày làm</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTableBody">
-                        <!-- History will be rendered here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
-        <!-- Admins Tab -->
-        <div class="admin-tab" id="adminsTab">
-            <div class="admin-header">
-                <h1>Quản lý Admins</h1>
-                <button class="btn btn-primary" onclick="showAdminModal()">+ Thêm Admin</button>
-            </div>
-            <div class="admin-table-container">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Tên</th>
-                            <th>Username</th>
-                            <th>Vai trò</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminsTableBody">
-                        <!-- Admins will be rendered here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                <!-- Settings Tab -->
+                <div class="admin-tab" id="settingsTab">
+                    <div class="admin-header">
+                        <h1>⚙️ Cài đặt</h1>
+                    </div>
+                    <div class="settings-section">
+                        <h3>📞 Thông tin liên hệ</h3>
+                        <p class="settings-desc">Các link này sẽ hiển thị trong modal liên hệ khi học sinh muốn đăng ký
+                            gói.</p>
+                        <form id="contactSettingsForm" onsubmit="saveContactSettings(event)">
+                            <div class="form-group">
+                                <label>Link Zalo</label>
+                                <input type="text" id="contactZalo" placeholder="https://zalo.me/your_id">
+                            </div>
+                            <div class="form-group">
+                                <label>Link Facebook</label>
+                                <input type="text" id="contactFacebook" placeholder="https://m.me/your_page">
+                            </div>
+                            <div class="form-group">
+                                <label>Link Telegram</label>
+                                <input type="text" id="contactTelegram" placeholder="https://t.me/your_username">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Lưu cài đặt</button>
+                        </form>
+                    </div>
 
-        <!-- Settings Tab -->
-        <div class="admin-tab" id="settingsTab">
-            <div class="admin-header">
-                <h1>⚙️ Cài đặt</h1>
-            </div>
-            <div class="settings-section">
-                <h3>📞 Thông tin liên hệ</h3>
-                <p class="settings-desc">Các link này sẽ hiển thị trong modal liên hệ khi học sinh muốn đăng ký
-                    gói.</p>
-                <form id="contactSettingsForm" onsubmit="saveContactSettings(event)">
-                    <div class="form-group">
-                        <label>Link Zalo</label>
-                        <input type="text" id="contactZalo" placeholder="https://zalo.me/your_id">
+                    <div class="settings-section" style="margin-top: 24px;">
+                        <h3>🧪 Dữ liệu test</h3>
+                        <p class="settings-desc">Tạo tài khoản học sinh mẫu để kiểm tra giao diện.</p>
+                        <button type="button" class="btn btn-secondary" onclick="createTestUser()">Tạo học sinh
+                            test</button>
                     </div>
-                    <div class="form-group">
-                        <label>Link Facebook</label>
-                        <input type="text" id="contactFacebook" placeholder="https://m.me/your_page">
-                    </div>
-                    <div class="form-group">
-                        <label>Link Telegram</label>
-                        <input type="text" id="contactTelegram" placeholder="https://t.me/your_username">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Lưu cài đặt</button>
-                </form>
-            </div>
-
-            <div class="settings-section" style="margin-top: 24px;">
-                <h3>🧪 Dữ liệu test</h3>
-                <p class="settings-desc">Tạo tài khoản học sinh mẫu để kiểm tra giao diện.</p>
-                <button type="button" class="btn btn-secondary" onclick="createTestUser()">Tạo học sinh
-                    test</button>
-            </div>
+                </div>
+            </main>
         </div>
-        </main>
-    </div>
     </div>
 
     <!-- Package Modal -->

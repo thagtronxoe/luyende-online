@@ -979,6 +979,12 @@ function startExam() {
         sidebarExamId.textContent = /^\d+$/.test(idToShow) ? idToShow : '---';
     }
 
+    // Update sidebar Student Name
+    const sidebarStudentName = document.getElementById('sidebarStudentName');
+    if (sidebarStudentName && currentUser) {
+        sidebarStudentName.textContent = currentUser.name.toUpperCase();
+    }
+
     examStartTime = Date.now();
     generateQuestionGrid();
     displayQuestion(0);
