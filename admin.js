@@ -455,9 +455,29 @@ async function renderExams() {
         return;
     }
 
-    tbody.innerHTML = exams.map(exam => {
-        const pkg = packages.find(p => (p._id || p.id) === exam.packageId);
-        const pkgName = pkg ? pkg.name : 'Chưa gán';
+    // Apply search filter if provided
+    const searchInput = document.getElementById('examSearchInput');
+    const searchText = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    let filteredExams = exams;
+    if (searchText) {
+        filteredExams = exams.filter(exam => {
+            const examId = (exam._id || exam.id || '').toLowerCase();
+            const title = (exam.title || '').toLowerCase();
+            return examId.includes(searchText) || title.includes(searchText);
+        });
+    }
+
+    if (filteredExams.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Không tìm thấy đề thi nào</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = filteredExams.map(exam => {
+        // Convert both to strings for comparison
+        const examPkgId = String(exam.packageId || '');
+        const pkg = packages.find(p => String(p._id || p.id || '') === examPkgId);
+        const pkgName = pkg ? pkg.name : (examPkgId ? 'Gói không tồn tại' : 'Chưa gán');
         const date = exam.createdAt ? new Date(exam.createdAt).toLocaleDateString('vi-VN') : 'N/A';
         const examId = exam._id || exam.id || '';
 
@@ -483,6 +503,18 @@ async function showExamList() {
     document.getElementById('btnCreateExam').style.display = 'inline-block';
     document.getElementById('btnBackToExamList').style.display = 'none';
     document.getElementById('examTabTitle').textContent = 'Quản lý Đề thi';
+    await renderExams();
+}
+
+// Search exams by ID or title
+async function searchExams() {
+    await renderExams();
+}
+
+// Clear exam search
+async function clearExamSearch() {
+    const searchInput = document.getElementById('examSearchInput');
+    if (searchInput) searchInput.value = '';
     await renderExams();
 }
 

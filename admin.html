@@ -211,6 +211,14 @@
 
                     <!-- Exam List View -->
                     <div id="examListView">
+                        <!-- Search Bar -->
+                        <div class="search-bar" style="margin-bottom: 16px;">
+                            <input type="text" id="examSearchInput" placeholder="🔍 Tìm theo ID hoặc tên đề..."
+                                class="search-input" oninput="searchExams()"
+                                style="width: 300px; padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                            <button class="btn btn-secondary" onclick="clearExamSearch()"
+                                style="margin-left: 8px;">Xóa</button>
+                        </div>
                         <div class="admin-table-container">
                             <table class="admin-table">
                                 <thead>

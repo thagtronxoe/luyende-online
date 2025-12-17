@@ -409,11 +409,22 @@ app.post('/api/exams', adminAuth, async (req, res) => {
 // Update exam
 app.put('/api/exams/:id', adminAuth, async (req, res) => {
     try {
-        const exam = await Exam.findOneAndUpdate(
-            { id: req.params.id },
+        // Try to find by MongoDB _id first, then by custom id field
+        let exam = await Exam.findByIdAndUpdate(
+            req.params.id,
             req.body,
             { new: true }
         );
+        if (!exam) {
+            exam = await Exam.findOneAndUpdate(
+                { id: req.params.id },
+                req.body,
+                { new: true }
+            );
+        }
+        if (!exam) {
+            return res.status(404).json({ error: 'Không tìm thấy đề thi' });
+        }
         res.json(exam);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -423,7 +434,14 @@ app.put('/api/exams/:id', adminAuth, async (req, res) => {
 // Delete exam
 app.delete('/api/exams/:id', adminAuth, async (req, res) => {
     try {
-        await Exam.findOneAndDelete({ id: req.params.id });
+        // Try to delete by MongoDB _id first, then by custom id field
+        let result = await Exam.findByIdAndDelete(req.params.id);
+        if (!result) {
+            result = await Exam.findOneAndDelete({ id: req.params.id });
+        }
+        if (!result) {
+            return res.status(404).json({ error: 'Không tìm thấy đề thi' });
+        }
         res.json({ message: 'Đã xóa đề thi' });
     } catch (err) {
         res.status(500).json({ error: err.message });
