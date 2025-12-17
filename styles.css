@@ -3368,25 +3368,63 @@ body {
     }
 }
 
-/* ========== HIDE SCROLLBARS ON QUESTION CONTAINERS ========== */
-.question-text,
-.question-content,
-.question-scroll-wrapper,
-.question-header-row {
-    overflow: visible !important;
-    overflow-y: visible !important;
-    overflow-x: visible !important;
-    max-height: none !important;
+/* ========== EXAM SCREEN LAYOUT ========== */
+
+/* Main exam content area - flex column with fixed nav at bottom */
+.exam-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
-/* Hide scrollbar but allow scroll if needed */
-.question-scroll-wrapper::-webkit-scrollbar {
-    display: none;
-}
-
+/* Question scroll wrapper - takes remaining space, scrollable */
 .question-scroll-wrapper {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    padding-bottom: 10px;
+}
+
+/* Question content inside scroll wrapper */
+.question-content {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Navigation buttons fixed at bottom */
+.navigation-buttons {
+    position: sticky;
+    bottom: 0;
+    background: #f8fafc;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+/* Style scrollbar for question area */
+.question-scroll-wrapper::-webkit-scrollbar {
+    width: 8px;
+}
+
+.question-scroll-wrapper::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.question-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.question-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
    
