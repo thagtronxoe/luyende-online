@@ -694,10 +694,20 @@ function startExamFromList(examId) {
     document.getElementById('preStudentName').textContent = currentUser.name;
     document.getElementById('preExamTitle').textContent = examData.examTitle;
 
-    // Also update exam screen student name
+    // Also update exam screen student name and exam ID
     const sidebarStudentName = document.querySelector('.sidebar-info .info-value');
     if (sidebarStudentName) {
         sidebarStudentName.textContent = currentUser.name;
+    }
+
+    // Update exam ID in sidebar (use actual exam ID from admin panel)
+    const sidebarExamId = document.getElementById('sidebarExamId');
+    if (sidebarExamId && currentPackageId && examsData[currentPackageId]) {
+        const exam = examsData[currentPackageId].find(e => e.id === examId);
+        if (exam) {
+            const displayExamId = exam._id || exam.id || examId;
+            sidebarExamId.textContent = `#${displayExamId.toString().slice(-6)}`;
+        }
     }
 
     // Reset loading bar UI for retake
