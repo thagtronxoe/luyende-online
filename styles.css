@@ -1849,7 +1849,10 @@ body {
 
 .auth-switch a {
     position: relative;
-    z-index: 100;
+    z-index: 1000 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    display: inline-block;
 }
 
 .btn-full {
