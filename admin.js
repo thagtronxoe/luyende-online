@@ -1212,8 +1212,8 @@ function closePreviewModal() {
 // Render $...$ LaTeX syntax to proper display
 function renderLatex(text) {
     if (!text) return '';
-    // Replace $...$ with span for MathJax to process
-    return text.replace(/\$([^$]+)\$/g, '<span class="math-formula">\\($1\\)</span>');
+    // MathJax will auto-parse $...$ with the new config, just return the text
+    return text;
 }
 
 // Trigger MathJax to render math in preview
