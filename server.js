@@ -190,6 +190,17 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+// Get current user info
+app.get('/api/auth/me', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('-password');
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Admin Login
 app.post('/api/auth/admin-login', async (req, res) => {
     try {
@@ -487,6 +498,21 @@ app.post('/api/history', auth, async (req, res) => {
         });
         await history.save();
         res.status(201).json(history);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Save exam result
+app.post('/api/results', auth, async (req, res) => {
+    try {
+        const result = new History({
+            ...req.body,
+            userId: req.user._id, // Enforce user ID from token
+            date: new Date()
+        });
+        await result.save();
+        res.status(201).json(result);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

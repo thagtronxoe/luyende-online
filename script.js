@@ -832,6 +832,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (token && savedUser) {
         currentUser = JSON.parse(savedUser);
         showDashboard();
+        // Refresh user profile from server to get latest package activation status
+        refreshUserProfile();
     }
 
     // Network status detection
@@ -1593,6 +1595,31 @@ function submitExam() {
         questions: examData.questions, // Save questions for review
         date: new Date().toISOString()
     });
+
+    // Save to Server API (MongoDB)
+    try {
+        const resultData = {
+            odl: examData.displayId || examData.id, // Use display ID or real ID
+            examId: examData.id,
+            packageId: currentPackageId,
+            examTitle: examData.examTitle,
+            score: score,
+            correct: totalCorrect,
+            total: examData.questions.length,
+            actualTime: timeString,
+            answers: userAnswers,
+            date: new Date()
+        };
+        // Call API
+        apiSaveResult(resultData).then(res => {
+            console.log('Result saved to server:', res);
+        }).catch(err => {
+            console.error('Failed to save result to server:', err);
+            // We could queue this for retry later if offline
+        });
+    } catch (err) {
+        console.error('Error preparing result for server:', err);
+    }
 
     // Display results
     document.getElementById('correctAnswers').textContent = totalCorrect;

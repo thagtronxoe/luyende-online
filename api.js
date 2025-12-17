@@ -101,6 +101,10 @@ async function apiChangePassword(currentPassword, newPassword) {
     return await apiCall('/auth/change-password', 'PUT', { currentPassword, newPassword });
 }
 
+async function apiAuthMe() {
+    return await apiCall('/auth/me');
+}
+
 // ========== PACKAGE API ==========
 
 async function apiGetPackages() {
@@ -140,6 +144,12 @@ async function apiUpdateExam(examId, examData) {
 
 async function apiDeleteExam(examId) {
     return await apiCall(`/exams/${examId}`, 'DELETE');
+}
+
+// ========== RESULT API ==========
+
+async function apiSaveResult(resultData) {
+    return await apiCall('/results', 'POST', resultData);
 }
 
 // ========== HISTORY API ==========
