@@ -851,13 +851,12 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Back to Exam List Context
-// Handles returning to the specific package tab
 window.backToExamList = function () {
-    showDashboard();
-    // If we have a current package, try to switch to that tab/view if possible
-    // For now, showDashboard defaults to 'myPackages' or last state.
-    // If needed, we can force specific tab:
-    // switchTab('myPackages');
+    if (currentPackageId) {
+        showExamList(currentPackageId);
+    } else {
+        showDashboard();
+    }
 }
 
 // Update connection status indicator
@@ -1299,6 +1298,30 @@ function displayQuestion(index) {
 
     // Update grid
     updateQuestionGrid();
+
+    // Render KaTeX in the new question content
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(document.getElementById('questionText'), {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
+
+        // Also render options in case they contain math
+        renderMathInElement(document.getElementById('answersContainer'), {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
+    }
 
     // Update answered count
     updateAnsweredCount();

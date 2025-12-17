@@ -3212,3 +3212,12 @@ body {
 .answer-modal-body img { max-width: 100%; height: auto; display: block; margin: 8px auto; }
 .answer-item { overflow-x: hidden; }
 .katex-display { overflow-x: auto; overflow-y: hidden; }
+
+/* FIX: Table Overflow & Vector Display */
+#questionText { overflow-x: auto; }
+.katex-display { overflow-x: auto; }
+/* Ensure table inside question doesn't break layout */
+#questionText table { display: block; overflow-x: auto; width: 100%; border-collapse: collapse; }
+#questionText th, #questionText td { min-width: 40px; padding: 4px; box-sizing: border-box; }
+/* Extend vector symbol if possible - general math font fix */
+.katex { font-size: 1.1em; }
