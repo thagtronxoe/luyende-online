@@ -936,8 +936,15 @@ function init() {
     // Set student names
     document.getElementById('preStudentName').textContent = examData.studentName;
     document.getElementById('headerStudentName').textContent = examData.studentName;
-    document.getElementById('sidebarStudentName').textContent = examData.studentName;
-    document.getElementById('resultStudentName').textContent = examData.studentName;
+    document.getElementById('sidebarStudentName').textContent = currentUser.name || examData.studentName;
+    document.getElementById('resultStudentName').textContent = currentUser.name || examData.studentName;
+
+    // Set exam ID if available
+    const sidebarExamId = document.getElementById('sidebarExamId');
+    if (sidebarExamId && (examData.displayId || examData.id)) {
+        const displayId = examData.displayId || examData.id;
+        sidebarExamId.textContent = `#${displayId}`;
+    }
 }
 
 // Start Exam
@@ -1210,10 +1217,10 @@ function displayQuestion(index) {
     } else {
         question.options.forEach((option, i) => {
             const row = document.createElement('div');
-            row.className = 'answer-row mc-row';
+            row.className = 'mc-row'; // Removed answer-row to fix grid spacing
 
             const radioContainer = document.createElement('div');
-            radioContainer.className = 'answer-option mc-radio';
+            radioContainer.className = 'mc-radio'; // Removed answer-option to fix unwanted box styling
 
             const radio = document.createElement('input');
             radio.type = 'radio';

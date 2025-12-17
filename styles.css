@@ -397,12 +397,32 @@ body {
     align-items: center;
 }
 
+
 .mc-radio input[type="radio"] {
-    margin: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: 2px solid #d9d9d9;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    outline: none;
     cursor: pointer;
-    width: 18px;
-    height: 18px;
+    transition: all 0.2s;
+    background: white;
+    margin: 0;
 }
+
+.mc-radio input[type="radio"]:checked {
+    border-color: #1890ff;
+    background-color: #1890ff;
+    box-shadow: inset 0 0 0 4px white;
+}
+
+.mc-radio input[type="radio"]:hover {
+    border-color: #1890ff;
+}
+
 
 .mc-text {
     flex: 1;
