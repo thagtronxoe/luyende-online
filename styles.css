@@ -2923,14 +2923,9 @@ body {
 
 @media (max-width: 600px) {
 
-    /* Auth layout - full mobile */
+    /* Keep auth-hero hidden on mobile */
     .auth-hero {
-        min-height: 150px;
-        padding: 24px 16px;
-    }
-
-    .auth-hero-title {
-        font-size: 22px;
+        display: none !important;
     }
 
     .auth-form-side {
