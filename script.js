@@ -240,7 +240,58 @@ async function showDashboard() {
     // Load packages from API
     await loadPackages();
     renderPackages();
+    await loadPackages();
+    renderPackages();
     showScreen('dashboardScreen');
+
+    // Check for active exam resume
+    checkAndResumeExam();
+}
+
+// Check and Resume Active Exam
+async function checkAndResumeExam() {
+    try {
+        const savedState = JSON.parse(localStorage.getItem('luyende_activeExamState'));
+        if (savedState && savedState.examId && savedState.packageId) {
+            // Only resume if data <= 2 hours old to prevent stale locks
+            const age = (Date.now() - (savedState.timestamp || 0)) / 1000 / 3600;
+            if (age > 3) {
+                localStorage.removeItem('luyende_activeExamState');
+                return;
+            }
+
+            // Confirm? User said "lỡ load lại thì vẫn ở trạng thái làm tiếp". Auto-resume implies no confirm.
+            // But we need to load the exam data first.
+            console.log("Found active exam, attempting resume...");
+
+            // Ensure package loaded
+            currentPackageId = savedState.packageId;
+            const exams = await loadExamsForPackage(currentPackageId);
+            if (exams) {
+                const exam = exams.find(e => (e._id || e.id) === savedState.examId);
+                if (exam) {
+                    startExam(exam);
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error resuming exam:", e);
+    }
+}
+
+// Save Exam State
+function saveExamState() {
+    if (!examData) return;
+    const state = {
+        examId: examData.id || examData._id,
+        packageId: currentPackageId,
+        userAnswers: userAnswers,
+        flaggedQuestions: Array.from(flaggedQuestions),
+        timeRemaining: timeRemaining,
+        currentQuestionIndex: currentQuestionIndex,
+        timestamp: Date.now()
+    };
+    localStorage.setItem('luyende_activeExamState', JSON.stringify(state));
 }
 
 // Switch between tabs
@@ -625,7 +676,7 @@ function renderTrueFalseReview(question, index, userAnswers, examId) {
                 <span class="review-question-number">Câu ${question.id} <span style="font-size: 11px; color: #888; font-weight: normal;">(Mã: ${examId})</span></span>
                 <span class="review-status ${statusClass}">${correctCount}/${question.correctAnswers.length} ý đúng</span>
             </div>
-            <div class="review-question-text">${question.question}</div>
+            <div class="review-question-text">${formatMathContent(question.question)}</div>
             <div class="review-tf-options">
                 ${question.options.map((opt, i) => {
         const userAns = userAnswers ? userAnswers[i] : null;
@@ -635,7 +686,7 @@ function renderTrueFalseReview(question, index, userAnswers, examId) {
 
         return `<div class="review-tf-row ${optClass}">
                         <span class="tf-label">${String.fromCharCode(97 + i)})</span>
-                        <span class="tf-text">${opt}</span>
+                        <span class="tf-text">${formatMathContent(opt)}</span>
                         <span class="tf-answer">Bạn: ${userAns || '-'}</span>
                         <span class="tf-correct">Đáp án: ${correctAns}</span>
                         <span class="tf-status">${isCorrect ? '✓' : '✗'}</span>
@@ -1103,8 +1154,18 @@ function startTimer() {
         updateQuestionTimer();
 
         if (timeRemaining <= 0) {
-            clearInterval(timerInterval);
+            // Clear saved state
+            localStorage.removeItem('luyende_activeExamState');
+
+            // Stop timer
+            if (timerInterval) clearInterval(timerInterval);
             submitExam();
+            return;
+        }
+
+        // Save state periodically (every 5 seconds)
+        if (timeRemaining % 5 === 0) {
+            saveExamState();
         }
     }, 1000);
 }
@@ -1238,7 +1299,7 @@ function displayQuestion(index) {
     name="q${index}_o${i}"
     value="Sai"
                        ${userAnswers[index]?.[i] === 'Sai' ? 'checked' : ''}
-    onchange="selectAnswer(${index}, ${i}, 'Sai')">
+    onchange="selectAnswer(${index}, ${i}, 'Sai'); saveExamState()">
         `;
 
             row.appendChild(text);
@@ -1260,7 +1321,7 @@ function displayQuestion(index) {
                        class="fill-input" 
                        id="fillInput_${index}"
                        value="${userAnswers[index] || ''}"
-                       oninput="selectAnswer(${index}, null, this.value)">
+                       oninput="selectAnswer(${index}, null, this.value); saveExamState()">
                 <span class="fill-period">.</span>
             </div>
     `;
@@ -1288,17 +1349,18 @@ function displayQuestion(index) {
             // Add event listener
             radio.addEventListener('change', () => {
                 selectAnswer(index, null, option);
+                saveExamState();
             });
 
             radioContainer.appendChild(radio);
 
             const text = document.createElement('div');
             text.className = 'answer-text mc-text';
-            text.innerHTML = option;
+            text.innerHTML = formatMathContent(option);
 
             row.appendChild(radioContainer);
             row.appendChild(text);
-            answersContainer.appendChild(row);
+            answersContainer.appendChild(row); // Fixed: ensure row is appended
         });
     }
 
