@@ -401,11 +401,13 @@ let cachedExams = [];
 
 async function getAllExams() {
     try {
-        cachedExams = await apiGetExams();
+        const result = await apiGetExams();
+        // Ensure we always return an array
+        cachedExams = Array.isArray(result) ? result : [];
         return cachedExams;
     } catch (err) {
         console.error('Error loading exams:', err);
-        return cachedExams;
+        return cachedExams || [];
     }
 }
 
@@ -438,25 +440,31 @@ function getExamHistory() {
 }
 
 async function renderExams() {
-    const exams = await getAllExams();
+    let exams = await getAllExams();
     const packages = await getPackages();
     const tbody = document.getElementById('examsTableBody');
 
-    if (!exams || exams.length === 0) {
+    // Defensive check - ensure exams is an array
+    if (!Array.isArray(exams)) {
+        console.error('Exams is not an array:', exams);
+        exams = [];
+    }
+
+    if (exams.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Chưa có đề thi nào</td></tr>';
         return;
     }
 
     tbody.innerHTML = exams.map(exam => {
         const pkg = packages.find(p => (p._id || p.id) === exam.packageId);
-        const pkgName = pkg ? pkg.name : 'Unknown';
-        const date = new Date(exam.createdAt).toLocaleDateString('vi-VN');
-        const examId = exam._id || exam.id;
+        const pkgName = pkg ? pkg.name : 'Chưa gán';
+        const date = exam.createdAt ? new Date(exam.createdAt).toLocaleDateString('vi-VN') : 'N/A';
+        const examId = exam._id || exam.id || '';
 
         return `
             <tr>
-                <td>#${examId.slice(-6)}</td>
-                <td title="${exam.title}"><strong>${exam.title}</strong></td>
+                <td>#${examId ? examId.slice(-6) : 'N/A'}</td>
+                <td title="${exam.title || ''}"><strong>${exam.title || 'Không có tên'}</strong></td>
                 <td>${pkgName}</td>
                 <td>${date}</td>
                 <td>${exam.createdBy || 'Admin'}</td>
