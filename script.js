@@ -802,9 +802,17 @@ function viewAnswers(examId) {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
     // Trigger MathJax rendering if available
-    if (window.MathJax && window.MathJax.typesetPromise) {
-        window.MathJax.typesetPromise([document.getElementById('answerModalBody')])
-            .catch(err => console.error('MathJax error:', err));
+    // Trigger KaTeX rendering if available
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(document.getElementById('answerModalBody'), {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
     }
 }
 
@@ -841,6 +849,16 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('online', updateConnectionStatus);
     window.addEventListener('offline', updateConnectionStatus);
 });
+
+// Back to Exam List Context
+// Handles returning to the specific package tab
+window.backToExamList = function () {
+    showDashboard();
+    // If we have a current package, try to switch to that tab/view if possible
+    // For now, showDashboard defaults to 'myPackages' or last state.
+    // If needed, we can force specific tab:
+    // switchTab('myPackages');
+}
 
 // Update connection status indicator
 function updateConnectionStatus() {

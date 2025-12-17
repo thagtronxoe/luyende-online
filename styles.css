@@ -3199,3 +3199,16 @@ body {
 
 /* Mobile Spacing */
 @media (max-width: 768px) { .question-card { padding: 16px; margin-bottom: 16px; } .exam-main { padding: 12px; } }
+
+/* FIX: Mobile Result Card & Review Math */
+@media (max-width: 480px) {
+    .result-card { padding: 16px; width: 95%; margin: 10px auto; }
+    .info-row { flex-direction: column; align-items: flex-start; margin-bottom: 12px; }
+    .info-label { font-size: 13px; color: #666; margin-bottom: 4px; }
+    .info-value { font-size: 16px; width: 100%; word-break: break-all; }
+}
+
+/* Review Modal Math & Images */
+.answer-modal-body img { max-width: 100%; height: auto; display: block; margin: 8px auto; }
+.answer-item { overflow-x: hidden; }
+.katex-display { overflow-x: auto; overflow-y: hidden; }
