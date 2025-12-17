@@ -350,7 +350,7 @@ async function savePackage(event) {
     const editId = document.getElementById('packageForm').dataset.editId;
 
     const packageData = {
-        id: editId || 'pkg-' + Date.now(),
+        id: editId || 'pkg-' + Date.now(), // Fixed: pkg- prefix
         name: document.getElementById('packageName').value,
         description: document.getElementById('packageDesc').value,
         icon: document.getElementById('packageIcon').value || '📝',
@@ -490,7 +490,7 @@ async function renderExams() {
 
         return `
             <tr>
-                <td>#${examId ? examId.slice(-6) : 'N/A'}</td>
+                <td>${exam.displayId ? '#' + exam.displayId : '#' + (examId ? examId.slice(-6) : 'N/A')}</td>
                 <td title="${exam.title || ''}"><strong>${exam.title || 'Không có tên'}</strong></td>
                 <td>${pkgName}</td>
                 <td>${date}</td>
@@ -535,7 +535,9 @@ function showExamCreator() {
     // Reset form
     document.getElementById('editingExamId').value = '';
     document.getElementById('examTitle').value = '';
+    document.getElementById('examTitle').value = '';
     document.getElementById('examTag').value = '';
+    document.getElementById('examDisplayId').value = '';
     document.getElementById('examStatus').value = 'published';
     document.getElementById('examPackageSelect').value = '';
     initExamCreator();
@@ -559,7 +561,9 @@ async function editExam(examId) {
     // Populate form
     document.getElementById('editingExamId').value = exam.id;
     document.getElementById('examTitle').value = exam.title;
+    document.getElementById('examTitle').value = exam.title;
     document.getElementById('examTag').value = exam.tag || 'THPT Toán';
+    document.getElementById('examDisplayId').value = exam.displayId || '';
     document.getElementById('examStatus').value = exam.status || 'published';
     document.getElementById('examPackageSelect').value = exam.packageId;
 
@@ -879,10 +883,11 @@ async function saveExam() {
 
     // Create or update exam object
     const uniqueId = editingId || generateExamId();
+    const displayIdInput = document.getElementById('examDisplayId').value.trim();
 
     const newExam = {
         id: uniqueId,
-        displayId: uniqueId,
+        displayId: displayIdInput || uniqueId,
         packageId: packageId || null,
         title: examTitle,
         tag: examTag,

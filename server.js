@@ -45,6 +45,7 @@ const packageSchema = new mongoose.Schema({
 // Exam Schema
 const examSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
+    displayId: String, // Custom short ID like 1009
     packageId: String,
     title: { type: String, required: true },
     tag: String,

@@ -70,6 +70,16 @@ body {
     text-align: center;
 }
 
+.exam-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    user-select: none;
+    /* Disable text selection */
+    -webkit-user-select: none;
+}
+
 .logo-container {
     display: flex;
     flex-direction: column;
