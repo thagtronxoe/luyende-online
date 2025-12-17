@@ -273,6 +273,46 @@ app.delete('/api/users/:id', adminAuth, async (req, res) => {
     }
 });
 
+// Admin reset user password
+app.put('/api/users/:id/reset-password', adminAuth, async (req, res) => {
+    try {
+        const { newPassword } = req.body;
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await User.findByIdAndUpdate(req.params.id, { password: hashedPassword });
+        res.json({ message: 'Đã đặt lại mật khẩu' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// User change own password
+app.put('/api/auth/change-password', auth, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+        }
+
+        // Verify current password
+        const isMatch = await bcrypt.compare(currentPassword, req.user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Mật khẩu hiện tại không đúng' });
+        }
+
+        // Update password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await User.findByIdAndUpdate(req.user._id, { password: hashedPassword });
+        res.json({ message: 'Đã đổi mật khẩu thành công' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ========== PACKAGE ROUTES ==========
 
 // Get all packages

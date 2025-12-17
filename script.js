@@ -2,30 +2,9 @@
 let currentUser = null;
 
 // ========== GOOGLE reCAPTCHA SYSTEM ==========
-// IMPORTANT: Replace 'YOUR_RECAPTCHA_SITE_KEY' in index.html with your actual site key from Google reCAPTCHA admin console
-// Get your keys at: https://www.google.com/recaptcha/admin
+// reCAPTCHA is configured in index.html inline script (must load before Google script)
+// recaptchaWidgets and onRecaptchaLoad are defined there
 
-let recaptchaWidgets = {};
-const RECAPTCHA_SITE_KEY = '6LcEjC0sAAAAACjs0nweyzv5PruiaaaFqHLLV7LL';
-
-// Callback when reCAPTCHA API loads
-function onRecaptchaLoad() {
-    // Render login reCAPTCHA
-    const loginContainer = document.getElementById('loginRecaptcha');
-    if (loginContainer && !recaptchaWidgets['loginForm']) {
-        recaptchaWidgets['loginForm'] = grecaptcha.render('loginRecaptcha', {
-            'sitekey': RECAPTCHA_SITE_KEY
-        });
-    }
-
-    // Render register reCAPTCHA
-    const registerContainer = document.getElementById('registerRecaptcha');
-    if (registerContainer && !recaptchaWidgets['registerForm']) {
-        recaptchaWidgets['registerForm'] = grecaptcha.render('registerRecaptcha', {
-            'sitekey': RECAPTCHA_SITE_KEY
-        });
-    }
-}
 
 function validateRecaptcha(formId) {
     // Skip reCAPTCHA validation on localhost for testing
@@ -113,10 +92,27 @@ async function loadExamsForPackage(packageId) {
     }
 }
 
-// ========== SCREEN NAVIGATION ==========
-function showScreen(screenId) {
+// ========== SCREEN NAVIGATION WITH URL ROUTING ==========
+// Map screen IDs to URL hashes
+const screenRoutes = {
+    'loginScreen': '#login',
+    'registerScreen': '#register',
+    'dashboardScreen': '#dashboard',
+    'examListScreen': '#exams',
+    'preExamScreen': '#pre-exam',
+    'examScreen': '#exam',
+    'resultScreen': '#result',
+    'answerReviewScreen': '#review'
+};
+
+function showScreen(screenId, updateHash = true) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
+
+    // Update URL hash (only for certain screens)
+    if (updateHash && screenRoutes[screenId]) {
+        history.pushState(null, '', screenRoutes[screenId]);
+    }
 }
 
 // ========== AUTH HANDLERS ==========
@@ -274,15 +270,16 @@ function renderPackages() {
         if (pkg.accessType === 'updating') {
             return '<div class="package-status updating">🔄 Đang cập nhật</div>';
         }
+        // If open, show as activated for all
+        if (pkg.accessType === 'open') {
+            return '<div class="package-status open">✓ Đã kích hoạt</div>';
+        }
         // Check if user has this package activated
         const pkgId = pkg._id || pkg.id;
         if (userActivatedPackages.includes(pkgId)) {
-            return '<div class="package-status open">✓ Đã đăng kí</div>';
+            return '<div class="package-status open">✓ Đã kích hoạt</div>';
         }
-        if (pkg.accessType === 'open') {
-            return '<div class="package-status open">✓ Mở thoải mái</div>';
-        }
-        return '<div class="package-status register">🔒 Cần đăng kí</div>';
+        return '<div class="package-status register">🔒 Cần kích hoạt</div>';
     }
 
     // Helper to get user's effective access type
@@ -1755,4 +1752,77 @@ function initTooltips() {
             hideTooltip();
         }
     });
+}
+
+// ========== URL ROUTING HANDLER ==========
+function handleURLHash() {
+    const hash = window.location.hash;
+
+    // Reverse lookup: hash -> screenId
+    const hashToScreen = {};
+    for (const [screenId, hashValue] of Object.entries(screenRoutes)) {
+        hashToScreen[hashValue] = screenId;
+    }
+
+    // Check if user is logged in
+    const token = getToken();
+    const isLoggedIn = token && currentUser;
+
+    if (hash && hashToScreen[hash]) {
+        const screenId = hashToScreen[hash];
+
+        // Protected screens require login
+        const protectedScreens = ['dashboardScreen', 'examListScreen', 'preExamScreen', 'examScreen', 'resultScreen', 'answerReviewScreen'];
+
+        if (protectedScreens.includes(screenId) && !isLoggedIn) {
+            showScreen('loginScreen', false);
+        } else {
+            showScreen(screenId, false);
+        }
+    } else if (isLoggedIn) {
+        showScreen('dashboardScreen', false);
+    } else {
+        showScreen('loginScreen', false);
+    }
+}
+
+// Handle browser back/forward
+window.addEventListener('popstate', handleURLHash);
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', async function () {
+    // Check for existing session
+    const token = getToken();
+    const userData = localStorage.getItem('luyende_user');
+
+    if (token && userData) {
+        try {
+            // Verify token is still valid
+            const user = await apiGetCurrentUser();
+            if (user && user.role === 'student') {
+                currentUser = user;
+                await showDashboard();
+                handleURLHash(); // Route to correct page
+                return;
+            }
+        } catch (err) {
+            // Token invalid, clear it
+            apiLogout();
+        }
+    }
+
+    // Handle URL hash for non-logged-in users
+    handleURLHash();
+});
+
+// ========== FORGOT PASSWORD HANDLER ==========
+function showForgotPasswordContact() {
+    // Show contact modal (same as package activation)
+    const modal = document.getElementById('contactModal');
+    if (modal) {
+        modal.classList.add('active');
+    } else {
+        // Fallback if modal doesn't exist
+        alert('Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ:\\n\\n📧 Email: phamducthang01112007@gmail.com\\n📱 Zalo: 0362...\\n\\nHoặc liên hệ Admin qua trang web.');
+    }
 }

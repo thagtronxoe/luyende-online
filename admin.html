@@ -422,8 +422,8 @@
                 <div class="form-group">
                     <label>Trạng thái truy cập</label>
                     <select id="packageAccessType" class="form-select">
-                        <option value="open">✓ Đã đăng kí</option>
-                        <option value="register">🔒 Cần đăng kí</option>
+                        <option value="open">✓ Đã kích hoạt (Tất cả user)</option>
+                        <option value="register">🔒 Cần kích hoạt riêng</option>
                         <option value="updating">🔄 Đang cập nhật</option>
                     </select>
                 </div>
@@ -529,6 +529,8 @@
             </div>
             <button type="button" class="btn btn-primary btn-full" style="margin-top: 16px;"
                 onclick="saveUserPackages()">Lưu thay đổi</button>
+            <button type="button" class="btn btn-secondary btn-full" style="margin-top: 8px;"
+                onclick="resetUserPassword()">🔑 Đặt lại mật khẩu</button>
         </div>
     </div>
 

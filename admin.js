@@ -211,6 +211,27 @@ async function saveUserPackages() {
     }
 }
 
+async function resetUserPassword() {
+    const userId = document.getElementById('detailUserId').value;
+    const newPassword = prompt('Nhập mật khẩu mới cho người dùng (ít nhất 6 ký tự):');
+
+    if (!newPassword) return;
+    if (newPassword.length < 6) {
+        alert('Mật khẩu phải có ít nhất 6 ký tự!');
+        return;
+    }
+
+    if (!confirm(`Bạn có chắc muốn đặt lại mật khẩu thành "${newPassword}"?`)) return;
+
+    try {
+        await apiResetUserPassword(userId, newPassword);
+        alert('Đã đặt lại mật khẩu thành công!');
+    } catch (err) {
+        alert('Lỗi: ' + err.message);
+    }
+}
+
+
 async function deleteUser(userId) {
     if (!confirm('Bạn có chắc muốn xóa người dùng này?')) return;
 
@@ -265,28 +286,32 @@ async function renderPackages() {
     // Pre-load exam counts
     const examCounts = {};
     for (const pkg of packages) {
-        examCounts[pkg.id] = await countExamsInPackage(pkg.id);
+        const pkgId = pkg._id || pkg.id;
+        examCounts[pkgId] = await countExamsInPackage(pkgId);
     }
 
-    grid.innerHTML = packages.map(pkg => `
+    grid.innerHTML = packages.map(pkg => {
+        const pkgId = pkg._id || pkg.id;
+        return `
         <div class="admin-package-card">
             <div class="package-icon">${pkg.icon}</div>
             <div class="package-name">${pkg.name}</div>
             <div class="package-description">${pkg.description}</div>
             <div class="package-meta">
                 <span>⏱️ ${pkg.duration} phút</span>
-                <span>📝 ${examCounts[pkg.id] || 0} đề</span>
+                <span>📝 ${examCounts[pkgId] || 0} đề</span>
             </div>
             <div class="package-actions">
-                <button class="btn-action btn-edit" onclick="editPackage('${pkg.id}')">✏️ Sửa</button>
-                <button class="btn-action btn-delete" onclick="deletePackage('${pkg.id}')">🗑️ Xóa</button>
+                <button class="btn-action btn-edit" onclick="editPackage('${pkgId}')">✏️ Sửa</button>
+                <button class="btn-action btn-delete" onclick="deletePackage('${pkgId}')">🗑️ Xóa</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 
     // Update package select in exam creator
     await updatePackageSelect();
 }
+
 
 async function countExamsInPackage(packageId) {
     try {

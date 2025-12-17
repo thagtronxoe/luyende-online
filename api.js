@@ -93,6 +93,14 @@ async function apiDeleteUser(userId) {
     return await apiCall(`/users/${userId}`, 'DELETE');
 }
 
+async function apiResetUserPassword(userId, newPassword) {
+    return await apiCall(`/users/${userId}/reset-password`, 'PUT', { newPassword });
+}
+
+async function apiChangePassword(currentPassword, newPassword) {
+    return await apiCall('/auth/change-password', 'PUT', { currentPassword, newPassword });
+}
+
 // ========== PACKAGE API ==========
 
 async function apiGetPackages() {

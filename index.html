@@ -16,6 +16,29 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <!-- Google reCAPTCHA -->
+    <script>
+        // reCAPTCHA config - must be defined before Google script loads
+        var recaptchaWidgets = {};
+        var RECAPTCHA_SITE_KEY = '6LcEjC0sAAAAACjs0nweyzv5PruiaaaFqHLLV7LL';
+
+        function onRecaptchaLoad() {
+            // Render login reCAPTCHA
+            var loginContainer = document.getElementById('loginRecaptcha');
+            if (loginContainer && recaptchaWidgets['loginForm'] === undefined) {
+                recaptchaWidgets['loginForm'] = grecaptcha.render('loginRecaptcha', {
+                    'sitekey': RECAPTCHA_SITE_KEY
+                });
+            }
+
+            // Render register reCAPTCHA  
+            var registerContainer = document.getElementById('registerRecaptcha');
+            if (registerContainer && recaptchaWidgets['registerForm'] === undefined) {
+                recaptchaWidgets['registerForm'] = grecaptcha.render('registerRecaptcha', {
+                    'sitekey': RECAPTCHA_SITE_KEY
+                });
+            }
+        }
+    </script>
     <script src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit" async defer></script>
 </head>
 
@@ -93,7 +116,8 @@
                             <label class="checkbox-label">
                                 <input type="checkbox"> Ghi nhớ đăng nhập
                             </label>
-                            <a href="#" class="forgot-link">Quên mật khẩu?</a>
+                            <a href="#" class="forgot-link" onclick="showForgotPasswordContact(); return false;">Quên
+                                mật khẩu?</a>
                         </div>
                         <div class="form-group captcha-group">
                             <div class="g-recaptcha" data-sitekey="6LcEjC0sAAAAACjs0nweyzv5PruiaaaFqHLLV7LL"
