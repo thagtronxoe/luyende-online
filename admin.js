@@ -469,13 +469,13 @@ async function renderExams() {
     }).join('');
 }
 
-function showExamList() {
+async function showExamList() {
     document.getElementById('examListView').style.display = 'block';
     document.getElementById('examCreatorView').style.display = 'none';
     document.getElementById('btnCreateExam').style.display = 'inline-block';
     document.getElementById('btnBackToExamList').style.display = 'none';
     document.getElementById('examTabTitle').textContent = 'Quản lý Đề thi';
-    renderExams();
+    await renderExams();
 }
 
 function showExamCreator() {
@@ -847,7 +847,7 @@ async function saveExam() {
             await createExam(newExam);
         }
         alert('Đã lưu đề thi thành công!');
-        showExamList();
+        await showExamList();
         await updateDashboardStats();
     } catch (err) {
         alert('Lỗi lưu đề: ' + err.message);
@@ -1254,7 +1254,7 @@ function previewSingleQuestion(type, index) {
         optionsHtml = ['A', 'B', 'C', 'D'].map((letter, i) => `
             <div class="exam-preview-option ${i === correctIdx ? 'correct' : ''}">
                 <span class="exam-preview-option-label">${letter}</span>
-                <span class="exam-preview-option-text">${options[i] || ''}</span>
+                <span class="exam-preview-option-text">${renderLatex(options[i] || '')}</span>
             </div>
         `).join('');
     }
@@ -1271,7 +1271,7 @@ function previewSingleQuestion(type, index) {
         optionsHtml = statements.map((s, i) => `
             <div class="exam-preview-option">
                 <span class="exam-preview-option-label">${String.fromCharCode(97 + i)})</span>
-                <span class="exam-preview-option-text">${s.text}</span>
+                <span class="exam-preview-option-text">${renderLatex(s.text)}</span>
                 <span style="margin-left: auto; font-weight: 600; color: ${s.isCorrect ? '#22c55e' : '#ef4444'};">
                     ${s.isCorrect ? '✓ Đúng' : '✗ Sai'}
                 </span>
@@ -1286,7 +1286,7 @@ function previewSingleQuestion(type, index) {
         optionsHtml = `
             <div class="exam-preview-option correct">
                 <span class="exam-preview-option-label">→</span>
-                <span class="exam-preview-option-text">Đáp án: <strong>${answer}</strong></span>
+                <span class="exam-preview-option-text">Đáp án: <strong>${renderLatex(answer)}</strong></span>
             </div>
         `;
     }
