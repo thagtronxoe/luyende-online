@@ -1044,34 +1044,28 @@ function createTestUser() {
 }
 
 // ========== HISTORY MANAGEMENT ==========
-function getAllHistory() {
-    // Get all history from all users
-    const users = getUsers();
-    const packages = getPackages();
-    let allHistory = [];
-
-    users.forEach(user => {
-        const userHistory = JSON.parse(localStorage.getItem(`luyende_history_${user.id}`) || '[]');
-        userHistory.forEach(h => {
-            allHistory.push({
-                ...h,
-                userId: user.id,
-                userName: user.name,
-                userUsername: user.username
-            });
-        });
-    });
-
-    // Sort by date descending (most recent first)
-    allHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
-    return allHistory;
+async function getAllHistory() {
+    try {
+        const history = await apiGetAllHistory();
+        // Map server response to format expected by render functions
+        return history.map(h => ({
+            ...h,
+            odl: h.odl || h.examId,
+            userId: h.userId?._id || h.userId,
+            userName: h.userId?.name || 'N/A',
+            userUsername: h.userId?.username || 'N/A'
+        }));
+    } catch (err) {
+        console.error('Error fetching history from server:', err);
+        return [];
+    }
 }
 
-function renderAllHistory(filterText = '', packageFilter = '') {
+async function renderAllHistory(filterText = '', packageFilter = '') {
     const tbody = document.getElementById('historyTableBody');
     if (!tbody) return;
 
-    const history = getAllHistory();
+    const history = await getAllHistory();
     const packages = getPackages();
 
     // Populate package filter dropdown
@@ -1128,23 +1122,23 @@ function renderAllHistory(filterText = '', packageFilter = '') {
     }).join('');
 }
 
-function filterHistory() {
+async function filterHistory() {
     const filterText = document.getElementById('historySearchInput')?.value || '';
     const packageFilter = document.getElementById('historyPackageFilter')?.value || '';
-    renderAllHistory(filterText, packageFilter);
+    await renderAllHistory(filterText, packageFilter);
 }
 
-function clearHistorySearch() {
+async function clearHistorySearch() {
     const searchInput = document.getElementById('historySearchInput');
     const packageFilter = document.getElementById('historyPackageFilter');
     if (searchInput) searchInput.value = '';
     if (packageFilter) packageFilter.value = '';
-    renderAllHistory();
+    await renderAllHistory();
 }
 
-function viewHistoryDetail(odl) {
+async function viewHistoryDetail(odl) {
     // Find the history entry
-    const history = getAllHistory();
+    const history = await getAllHistory();
     const entry = history.find(h => h.odl === odl);
     if (!entry) {
         alert('Không tìm thấy thông tin bài làm!');
