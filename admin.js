@@ -502,10 +502,13 @@ function showExamCreator() {
     initExamCreator();
 }
 
-function editExam(examId) {
-    const exams = getAllExams();
-    const exam = exams.find(e => e.id === examId);
-    if (!exam) return;
+async function editExam(examId) {
+    const exams = await getAllExams();
+    const exam = exams.find(e => (e._id || e.id) === examId);
+    if (!exam) {
+        alert('Đề thi không tồn tại!');
+        return;
+    }
 
     // Switch view
     document.getElementById('examListView').style.display = 'none';
@@ -539,14 +542,17 @@ function editExam(examId) {
     });
 }
 
-function deleteExam(examId) {
+async function deleteExam(examId) {
     if (!confirm('Bạn có chắc muốn xóa đề thi này? Hành động này không thể hoàn tác!')) return;
 
-    let exams = getAllExams();
-    exams = exams.filter(e => e.id !== examId);
-    saveAllExams(exams);
-    renderExams();
-    updateDashboardStats();
+    try {
+        await apiDeleteExam(examId);
+        alert('Đã xóa đề thi thành công!');
+        await renderExams();
+        await updateDashboardStats();
+    } catch (err) {
+        alert('Lỗi xóa đề: ' + err.message);
+    }
 }
 
 
