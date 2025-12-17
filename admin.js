@@ -726,7 +726,7 @@ function addFillQuestion(data = null) {
     setupPasteHandler(newCard);
 }
 
-function saveExam() {
+async function saveExam() {
     const packageId = document.getElementById('examPackageSelect').value;
     const examTitle = document.getElementById('examTitle').value;
     const examTag = document.getElementById('examTag').value || 'THPT Toán';
@@ -803,32 +803,29 @@ function saveExam() {
 
     const newExam = {
         id: uniqueId,
-        displayId: uniqueId, // For UI display
-        packageId: packageId,
+        displayId: uniqueId,
+        packageId: packageId || null,
         title: examTitle,
         tag: examTag,
         status: examStatus,
         duration: 90,
         questions: [...mcQuestions, ...tfQuestions, ...fillQuestions],
-        createdAt: editingId ? (getAllExams().find(e => e.id === editingId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
-        createdBy: currentAdmin.username
+        createdBy: currentAdmin?.username || 'admin'
     };
 
-    // Save exam
-    let exams = getAllExams();
-    if (editingId) {
-        const index = exams.findIndex(e => e.id === editingId);
-        if (index !== -1) exams[index] = newExam;
-    } else {
-        exams.push(newExam);
+    // Save exam via API
+    try {
+        if (editingId) {
+            await updateExamAPI(editingId, newExam);
+        } else {
+            await createExam(newExam);
+        }
+        alert('Đã lưu đề thi thành công!');
+        showExamList();
+        await updateDashboardStats();
+    } catch (err) {
+        alert('Lỗi lưu đề: ' + err.message);
     }
-    saveAllExams(exams);
-
-    alert('Đã lưu đề thi thành công!');
-
-    // Return to list
-    showExamList();
-    updateDashboardStats();
 }
 
 // ========== ADMIN MANAGEMENT ==========
