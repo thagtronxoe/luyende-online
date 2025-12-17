@@ -380,18 +380,27 @@ function closeContactModal() {
 }
 
 // ========== EXAM LIST ==========
-function showExamList(packageId) {
+async function showExamList(packageId) {
     currentPackageId = packageId;
     const pkg = examPackages.find(p => (p._id || p.id) === packageId);
     if (!pkg) {
         console.error('Package not found:', packageId);
         return;
     }
-    const exams = examsData[packageId] || [];
+
+    // Load exams for this package first
+    const exams = await loadExamsForPackage(packageId);
 
     document.getElementById('examListTitle').textContent = pkg.name;
 
     const grid = document.getElementById('examGrid');
+
+    if (!exams || exams.length === 0) {
+        grid.innerHTML = '<div class="no-exams">Chưa có đề thi nào trong gói này</div>';
+        switchScreen('examListScreen');
+        return;
+    }
+
     grid.innerHTML = exams.map(exam => {
         // Status Handling
         if (exam.status === 'draft') return ''; // Don't show drafts
