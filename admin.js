@@ -5,16 +5,14 @@ const DEFAULT_ADMINS = [
 
 let currentAdmin = null;
 
-function getAdmins() {
-    const stored = localStorage.getItem('luyende_admins');
-    if (stored) return JSON.parse(stored);
-    // Initialize with default admin
-    localStorage.setItem('luyende_admins', JSON.stringify(DEFAULT_ADMINS));
-    return DEFAULT_ADMINS;
-}
-
-function saveAdmins(admins) {
-    localStorage.setItem('luyende_admins', JSON.stringify(admins));
+async function getAdmins() {
+    try {
+        const admins = await apiGetAdmins();
+        return Array.isArray(admins) ? admins : [];
+    } catch (err) {
+        console.error('Error fetching admins:', err);
+        return [];
+    }
 }
 
 async function handleAdminLogin(event) {
@@ -941,19 +939,25 @@ async function saveExam() {
 }
 
 // ========== ADMIN MANAGEMENT ==========
-function renderAdmins() {
-    const admins = getAdmins();
+async function renderAdmins() {
+    const admins = await getAdmins();
     const tbody = document.getElementById('adminsTableBody');
+    if (!tbody) return;
 
-    tbody.innerHTML = admins.map(admin => `
+    if (admins.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#666;">Chưa có admin nào</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = admins.map((admin, index) => `
         <tr>
-            <td>${admin.id}</td>
+            <td>${index + 1}</td>
             <td>${admin.name}</td>
             <td>${admin.username}</td>
             <td>${getRoleName(admin.role)}</td>
             <td>
                 ${admin.username !== 'admin' ?
-            `<button class="btn-action btn-delete" onclick="deleteAdmin(${admin.id})">🗑️ Xóa</button>` :
+            `<button class="btn-action btn-delete" onclick="deleteAdmin('${admin._id}')">🗑️ Xóa</button>` :
             '<span class="text-muted">Không thể xóa</span>'
         }
             </td>
@@ -993,13 +997,16 @@ async function saveNewAdmin(event) {
     }
 }
 
-function deleteAdmin(adminId) {
+async function deleteAdmin(adminId) {
     if (!confirm('Bạn có chắc muốn xóa admin này?')) return;
 
-    let admins = getAdmins();
-    admins = admins.filter(a => a.id !== adminId);
-    saveAdmins(admins);
-    renderAdmins();
+    try {
+        await apiDeleteAdmin(adminId);
+        await renderAdmins();
+        alert('Đã xóa admin!');
+    } catch (err) {
+        alert('Lỗi: ' + (err.message || 'Không thể xóa admin'));
+    }
 }
 
 // ========== INIT ==========
