@@ -6,6 +6,26 @@ let currentUser = null;
 // Get your keys at: https://www.google.com/recaptcha/admin
 
 let recaptchaWidgets = {};
+const RECAPTCHA_SITE_KEY = '6LcEjC0sAAAAACjs0nweyzv5PruiaaaFqHLLV7LL';
+
+// Callback when reCAPTCHA API loads
+function onRecaptchaLoad() {
+    // Render login reCAPTCHA
+    const loginContainer = document.getElementById('loginRecaptcha');
+    if (loginContainer && !recaptchaWidgets['loginForm']) {
+        recaptchaWidgets['loginForm'] = grecaptcha.render('loginRecaptcha', {
+            'sitekey': RECAPTCHA_SITE_KEY
+        });
+    }
+
+    // Render register reCAPTCHA
+    const registerContainer = document.getElementById('registerRecaptcha');
+    if (registerContainer && !recaptchaWidgets['registerForm']) {
+        recaptchaWidgets['registerForm'] = grecaptcha.render('registerRecaptcha', {
+            'sitekey': RECAPTCHA_SITE_KEY
+        });
+    }
+}
 
 function validateRecaptcha(formId) {
     // Skip reCAPTCHA validation on localhost for testing
