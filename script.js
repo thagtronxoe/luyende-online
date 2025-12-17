@@ -120,7 +120,7 @@ async function handleLogin(event) {
     event.preventDefault();
 
     // Validate reCAPTCHA first
-    if (!validateRecaptcha('login')) {
+    if (!validateRecaptcha('loginForm')) {
         return;
     }
 
@@ -141,7 +141,7 @@ async function handleRegister(event) {
     event.preventDefault();
 
     // Validate reCAPTCHA first
-    if (!validateRecaptcha('register')) {
+    if (!validateRecaptcha('registerForm')) {
         return;
     }
 

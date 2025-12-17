@@ -2896,32 +2896,15 @@ body {
         flex-direction: column;
     }
 
+    /* Hide hero section completely on mobile */
     .auth-hero {
-        min-height: 200px;
-        padding: 32px 24px;
-    }
-
-    .auth-hero-content {
-        max-width: 100%;
-    }
-
-    .auth-hero-title {
-        font-size: 28px;
-        margin-bottom: 12px;
-    }
-
-    .auth-hero-desc {
-        font-size: 14px;
-        margin-bottom: 24px;
-    }
-
-    .auth-features {
         display: none;
-        /* Hide on mobile to save space */
     }
 
     .auth-form-side {
-        padding: 24px 20px;
+        flex: 1;
+        min-height: 100vh;
+        padding: 40px 24px;
     }
 
     .auth-form-container {
@@ -2930,6 +2913,11 @@ body {
 
     .auth-title {
         font-size: 24px;
+        text-align: center;
+    }
+
+    .auth-subtitle {
+        text-align: center;
     }
 }
 
