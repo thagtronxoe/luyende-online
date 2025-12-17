@@ -332,7 +332,7 @@ function renderPackages() {
 
 // Handle package click based on user's access
 function handlePackageClick(packageId) {
-    const pkg = examPackages.find(p => p.id === packageId);
+    const pkg = examPackages.find(p => (p._id || p.id) === packageId);
     if (!pkg) return;
 
     // Check if updating
@@ -346,13 +346,14 @@ function handlePackageClick(packageId) {
     const currentUserData = users.find(u => u.id === currentUser?.id);
     const userActivatedPackages = currentUserData?.activatedPackages || [];
 
-    if (!userActivatedPackages.includes(packageId)) {
+    const pkgId = pkg._id || pkg.id;
+    if (!userActivatedPackages.includes(pkgId) && pkg.accessType !== 'open') {
         showContactModal();
         return;
     }
 
     // User has access - go to exam list
-    showExamList(packageId);
+    showExamList(pkgId);
 }
 
 // Show contact modal for registration
