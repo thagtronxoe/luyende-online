@@ -1609,9 +1609,12 @@ function updateAnsweredCount() {
     const unansweredCount = totalQuestions - answeredCount;
     const flaggedCount = flaggedQuestions.size;
 
-    // Update answered count display
-    document.getElementById('answeredCount').textContent = answeredCount;
-    document.getElementById('modalAnsweredCount').textContent = answeredCount;
+    // Update answered count display - with null checks
+    const answeredCountEl = document.getElementById('answeredCount');
+    const modalAnsweredCountEl = document.getElementById('modalAnsweredCount');
+
+    if (answeredCountEl) answeredCountEl.textContent = answeredCount;
+    if (modalAnsweredCountEl) modalAnsweredCountEl.textContent = answeredCount;
 
     // Update color indicator badges
     const unansweredBadge = document.getElementById('unansweredCount');
@@ -1622,10 +1625,13 @@ function updateAnsweredCount() {
     if (answeredBadge) answeredBadge.textContent = answeredCount;
     if (flaggedBadge) flaggedBadge.textContent = flaggedCount;
 
-    // Update progress bar
+    // Update progress bar - with null checks
     const percentage = Math.round((answeredCount / totalQuestions) * 100);
-    document.getElementById('progressFill').style.width = percentage + '%';
-    document.getElementById('progressPercentage').textContent = percentage + '%';
+    const progressFill = document.getElementById('progressFill');
+    const progressPercentage = document.getElementById('progressPercentage');
+
+    if (progressFill) progressFill.style.width = percentage + '%';
+    if (progressPercentage) progressPercentage.textContent = percentage + '%';
 }
 
 // Confirm Submit
