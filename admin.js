@@ -175,14 +175,21 @@ async function showUserDetail(userId) {
         : 'N/A';
 
     // Render package checkboxes
+    // Render package checkboxes (only packages that require restriction)
     const activatedPkgs = user.activatedPackages || [];
-    document.getElementById('userPackagesList').innerHTML = packages.map(pkg => `
-        <label class="package-checkbox">
-            <input type="checkbox" value="${pkg.id}" ${activatedPkgs.includes(pkg.id) ? 'checked' : ''}>
-            <span class="package-checkbox-icon">${pkg.icon}</span>
-            <span class="package-checkbox-name">${pkg.name}</span>
-        </label>
-    `).join('');
+    const restrictedPackages = packages.filter(p => p.accessType === 'register');
+
+    if (restrictedPackages.length === 0) {
+        document.getElementById('userPackagesList').innerHTML = '<p class="text-muted">Không có gói nào cần kích hoạt riêng.</p>';
+    } else {
+        document.getElementById('userPackagesList').innerHTML = restrictedPackages.map(pkg => `
+            <label class="package-checkbox">
+                <input type="checkbox" value="${pkg.id}" ${activatedPkgs.includes(pkg.id) ? 'checked' : ''}>
+                <span class="package-checkbox-icon">${pkg.icon}</span>
+                <span class="package-checkbox-name">${pkg.name}</span>
+            </label>
+        `).join('');
+    }
 
     document.getElementById('userDetailModal').classList.add('active');
 }
