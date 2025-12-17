@@ -1691,9 +1691,12 @@ function confirmSubmit() {
     }).length;
     const totalQuestions = examData.questions.length;
 
-    // Update modal progress
-    document.getElementById('modalProgressText').textContent = answeredCount + '/' + totalQuestions;
-    document.getElementById('modalAnsweredCount').textContent = answeredCount;
+    // Update modal progress - with null checks
+    const modalProgressText = document.getElementById('modalProgressText');
+    const modalAnsweredCount = document.getElementById('modalAnsweredCount');
+
+    if (modalProgressText) modalProgressText.textContent = answeredCount + '/' + totalQuestions;
+    if (modalAnsweredCount) modalAnsweredCount.textContent = answeredCount;
 
     // Update question count in modal text
     const modalMessage = document.querySelector('.modal-message');
@@ -1701,12 +1704,14 @@ function confirmSubmit() {
         modalMessage.innerHTML = `Đã trả lời <span id="modalAnsweredCount">${answeredCount}</span>/${totalQuestions} câu. Bạn vẫn còn thời gian làm bài, bạn có chắc chắn muốn kết thúc bài thi.`;
     }
 
-    document.getElementById('confirmModal').classList.add('active');
+    const confirmModal = document.getElementById('confirmModal');
+    if (confirmModal) confirmModal.classList.add('active');
 }
 
 // Close Modal
 function closeModal() {
-    document.getElementById('confirmModal').classList.remove('active');
+    const confirmModal = document.getElementById('confirmModal');
+    if (confirmModal) confirmModal.classList.remove('active');
 }
 
 // Submit Exam
@@ -1818,13 +1823,18 @@ function submitExam() {
         console.error('Error preparing result for server:', err);
     }
 
-    // Display results
-    document.getElementById('correctAnswers').textContent = totalCorrect;
-    document.getElementById('finalScore').textContent = `${score}/10`;
-    document.getElementById('actualTime').textContent = timeString;
+    // Display results - with null checks
+    const correctAnswersEl = document.getElementById('correctAnswers');
+    const finalScoreEl = document.getElementById('finalScore');
+    const actualTimeEl = document.getElementById('actualTime');
 
-    // Update total questions count in result
-    const resultTotalQuestions = document.querySelector('.info-value span#correctAnswers').parentNode;
+    if (correctAnswersEl) correctAnswersEl.textContent = totalCorrect;
+    if (finalScoreEl) finalScoreEl.textContent = `${score}/10`;
+    if (actualTimeEl) actualTimeEl.textContent = timeString;
+
+    // Update total questions count in result - with null check
+    const correctAnswersSpan = document.querySelector('.info-value span#correctAnswers');
+    const resultTotalQuestions = correctAnswersSpan ? correctAnswersSpan.parentNode : null;
     if (resultTotalQuestions) {
         resultTotalQuestions.innerHTML = `<span id="correctAnswers">${totalCorrect}</span>/${examData.questions.length}`;
     }
