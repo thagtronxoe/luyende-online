@@ -382,7 +382,11 @@ function closeContactModal() {
 // ========== EXAM LIST ==========
 function showExamList(packageId) {
     currentPackageId = packageId;
-    const pkg = examPackages.find(p => p.id === packageId);
+    const pkg = examPackages.find(p => (p._id || p.id) === packageId);
+    if (!pkg) {
+        console.error('Package not found:', packageId);
+        return;
+    }
     const exams = examsData[packageId] || [];
 
     document.getElementById('examListTitle').textContent = pkg.name;
