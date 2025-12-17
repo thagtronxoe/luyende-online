@@ -106,6 +106,9 @@ const screenRoutes = {
 };
 
 function showScreen(screenId, updateHash = true) {
+    // Close any open modals first to prevent backdrop overlay
+    document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
 
