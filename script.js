@@ -461,21 +461,29 @@ async function showContactModal() {
     // Fetch contact settings from API
     let settings = { ...defaultSettings };
     try {
+        console.log('📞 Fetching contact settings from API...');
         const response = await fetch('/api/settings/contact');
+        console.log('📞 API response status:', response.status);
         if (response.ok) {
             const apiSettings = await response.json();
+            console.log('📞 API returned:', apiSettings);
             if (apiSettings && Object.keys(apiSettings).length > 0) {
                 settings = { ...defaultSettings, ...apiSettings };
+                console.log('📞 Using API settings merged:', settings);
+            } else {
+                console.log('📞 API returned empty, using defaults');
             }
         }
     } catch (err) {
-        console.log('Using default contact settings');
+        console.log('📞 API error, using default contact settings:', err);
         // Fallback to localStorage
         const localSettings = JSON.parse(localStorage.getItem('luyende_contactSettings') || '{}');
         if (Object.keys(localSettings).length > 0) {
             settings = { ...defaultSettings, ...localSettings };
         }
     }
+
+    console.log('📞 Final contact settings:', settings);
 
     // Update links
     const zaloLink = modal.querySelector('.contact-option.zalo');
