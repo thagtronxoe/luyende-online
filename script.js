@@ -451,25 +451,40 @@ function handlePackageClick(packageId) {
 async function showContactModal() {
     const modal = document.getElementById('contactModal');
 
+    // Default contact URLs (fallback)
+    const defaultSettings = {
+        zalo: 'https://zalo.me/0362057031',
+        facebook: 'https://www.facebook.com/thang01112007',
+        telegram: 'https://t.me/pducthang'
+    };
+
     // Fetch contact settings from API
-    let settings = {};
+    let settings = { ...defaultSettings };
     try {
         const response = await fetch('/api/settings/contact');
-        settings = await response.json() || {};
+        if (response.ok) {
+            const apiSettings = await response.json();
+            if (apiSettings && Object.keys(apiSettings).length > 0) {
+                settings = { ...defaultSettings, ...apiSettings };
+            }
+        }
     } catch (err) {
-        console.error('Failed to load contact settings from API:', err);
+        console.log('Using default contact settings');
         // Fallback to localStorage
-        settings = JSON.parse(localStorage.getItem('luyende_contactSettings') || '{}');
+        const localSettings = JSON.parse(localStorage.getItem('luyende_contactSettings') || '{}');
+        if (Object.keys(localSettings).length > 0) {
+            settings = { ...defaultSettings, ...localSettings };
+        }
     }
 
-    // Update links if they exist
+    // Update links
     const zaloLink = modal.querySelector('.contact-option.zalo');
     const fbLink = modal.querySelector('.contact-option.facebook');
     const teleLink = modal.querySelector('.contact-option.telegram');
 
-    if (zaloLink && settings.zalo) zaloLink.href = settings.zalo;
-    if (fbLink && settings.facebook) fbLink.href = settings.facebook;
-    if (teleLink && settings.telegram) teleLink.href = settings.telegram;
+    if (zaloLink) zaloLink.href = settings.zalo;
+    if (fbLink) fbLink.href = settings.facebook;
+    if (teleLink) teleLink.href = settings.telegram;
 
     // Reset content to default (Package Registration)
     const header = modal.querySelector('.modal-header h3');
