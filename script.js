@@ -806,6 +806,7 @@ function startExamFromList(examId) {
     if (currentPackageId && examsData[currentPackageId]) {
         const exam = examsData[currentPackageId].find(e => e.id === examId);
         if (exam) {
+            console.log('📋 Exam data from API:', { title: exam.title, duration: exam.duration, template: exam.template });
             examData.examTitle = exam.title;
             examData.id = exam.id;
             examData.duration = exam.duration || 90; // Set exam-specific duration
@@ -1154,6 +1155,11 @@ function startExam() {
     examStartTime = Date.now();
     generateQuestionGrid();
     displayQuestion(0);
+
+    // CRITICAL FIX: Reset timeRemaining to actual exam duration before starting timer
+    timeRemaining = examData.duration * 60;
+    console.log('📌 Starting exam with duration:', examData.duration, 'minutes, timeRemaining:', timeRemaining, 'seconds');
+
     startTimer();
 }
 
