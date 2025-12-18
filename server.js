@@ -674,6 +674,41 @@ app.get('/api/stats', adminAuth, async (req, res) => {
     }
 });
 
+// ========== SETTINGS ROUTES ==========
+
+// Get settings by key (public - for contact info etc)
+app.get('/api/settings/:key', async (req, res) => {
+    try {
+        const setting = await Settings.findOne({ key: req.params.key });
+        if (!setting) {
+            return res.json({}); // Return empty object if not found
+        }
+        res.json(setting.value);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Save settings (admin only)
+app.post('/api/settings', adminAuth, async (req, res) => {
+    try {
+        const { key, value } = req.body;
+        if (!key) {
+            return res.status(400).json({ error: 'Key is required' });
+        }
+
+        // Upsert - update if exists, create if not
+        const setting = await Settings.findOneAndUpdate(
+            { key },
+            { key, value },
+            { upsert: true, new: true }
+        );
+        res.json(setting);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ========== INIT DEFAULT ADMIN ==========
 async function initDefaultAdmin() {
     try {
