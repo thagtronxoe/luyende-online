@@ -533,6 +533,7 @@ async function renderExams() {
                 <td>${exam.createdBy || 'Admin'}</td>
                 <td>
                     <button class="btn-action btn-edit" onclick="editExam('${examId}')">✏️ Sửa</button>
+                    <button class="btn-action btn-copy" onclick="showCopyExamModal('${examId}')">📋 Copy</button>
                     <button class="btn-action btn-delete" onclick="deleteExam('${examId}')">🗑️ Xóa</button>
                 </td>
             </tr>
@@ -648,6 +649,81 @@ async function deleteExam(examId) {
     }
 }
 
+// ========== COPY EXAM FUNCTIONS ==========
+async function showCopyExamModal(examId) {
+    const exams = await getAllExams();
+    const exam = exams.find(e => (e._id || e.id) === examId);
+    if (!exam) {
+        alert('Không tìm thấy đề thi!');
+        return;
+    }
+
+    // Populate source exam info
+    document.getElementById('copyExamSourceId').value = examId;
+    document.getElementById('copyExamSourceTitle').value = exam.title;
+    document.getElementById('copyExamNewTitle').value = exam.title + ' (Copy)';
+
+    // Populate package dropdown
+    const packages = await getPackages();
+    const packageSelect = document.getElementById('copyExamTargetPackage');
+    packageSelect.innerHTML = packages.map(pkg =>
+        `<option value="${pkg._id || pkg.id}">${pkg.name}</option>`
+    ).join('');
+
+    // Show modal
+    document.getElementById('copyExamModal').classList.add('active');
+}
+
+function closeCopyExamModal() {
+    document.getElementById('copyExamModal').classList.remove('active');
+}
+
+async function copyExam() {
+    const sourceId = document.getElementById('copyExamSourceId').value;
+    const newTitle = document.getElementById('copyExamNewTitle').value.trim();
+    const targetPackageId = document.getElementById('copyExamTargetPackage').value;
+
+    if (!newTitle) {
+        alert('Vui lòng nhập tên đề mới!');
+        return;
+    }
+    if (!targetPackageId) {
+        alert('Vui lòng chọn gói đích!');
+        return;
+    }
+
+    try {
+        // Get source exam data
+        const exams = await getAllExams();
+        const sourceExam = exams.find(e => (e._id || e.id) === sourceId);
+        if (!sourceExam) {
+            alert('Không tìm thấy đề nguồn!');
+            return;
+        }
+
+        // Create new exam with copied data
+        const newExam = {
+            id: generateExamId(), // New unique ID
+            displayId: '', // Will be auto-generated
+            packageId: targetPackageId,
+            title: newTitle,
+            description: sourceExam.description || '',
+            tag: sourceExam.tag || '',
+            template: sourceExam.template || 'thpt_toan',
+            status: 'draft', // Start as draft
+            duration: sourceExam.duration || 90,
+            questions: sourceExam.questions || [],
+            createdBy: currentAdmin?.username || 'admin'
+        };
+
+        await createExam(newExam);
+        alert(`Đã sao chép đề "${sourceExam.title}" thành "${newTitle}" thành công!`);
+        closeCopyExamModal();
+        await renderExams();
+    } catch (err) {
+        alert('Lỗi sao chép đề: ' + err.message);
+    }
+}
 
 // Exam creator state - template configurations
 const EXAM_TEMPLATES = {

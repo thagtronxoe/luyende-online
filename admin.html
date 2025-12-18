@@ -577,6 +577,30 @@
         </div>
     </div>
 
+    <!-- Copy Exam Modal -->
+    <div id="copyExamModal" class="modal">
+        <div class="modal-content modal-form" style="max-width: 450px;">
+            <button class="modal-close" onclick="closeCopyExamModal()">&times;</button>
+            <h2>📋 Sao chép đề thi</h2>
+            <input type="hidden" id="copyExamSourceId">
+            <div class="form-group">
+                <label>Đề nguồn</label>
+                <input type="text" id="copyExamSourceTitle" class="form-input" disabled>
+            </div>
+            <div class="form-group">
+                <label>Tên đề mới *</label>
+                <input type="text" id="copyExamNewTitle" class="form-input" placeholder="VD: Đề số 1 - Sinh học">
+            </div>
+            <div class="form-group">
+                <label>Gói đích *</label>
+                <select id="copyExamTargetPackage" class="form-select">
+                    <!-- Packages will be populated here -->
+                </select>
+            </div>
+            <button type="button" class="btn btn-primary btn-full" onclick="copyExam()">📋 Sao chép đề</button>
+        </div>
+    </div>
+
     <script src="api.js"></script>
     <script src="admin.js"></script>
 </body>
