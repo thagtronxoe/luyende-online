@@ -727,7 +727,7 @@ function addMCQuestion(data = null) {
     const index = container.children.length + 1;
 
     // Safety check
-    if (index > MC_COUNT && !data) return;
+    if (index > getTemplateConfig().mcCount && !data) return;
 
     const html = `
         <div class="question-card" id="mc-${index}">
@@ -802,10 +802,10 @@ function addMCQuestion(data = null) {
 function addTFQuestion(data = null) {
     const container = document.getElementById('tfQuestions');
     const index = container.children.length + 1;
-    const globalIndex = MC_COUNT + index;
+    const globalIndex = getTemplateConfig().mcCount + index;
 
     // Safety check
-    if (index > TF_COUNT && !data) return;
+    if (index > getTemplateConfig().tfCount && !data) return;
 
     const html = `
         <div class="question-card" id="tf-${index}">
@@ -863,10 +863,11 @@ function addTFQuestion(data = null) {
 function addFillQuestion(data = null) {
     const container = document.getElementById('fillQuestions');
     const index = container.children.length + 1;
-    const globalIndex = MC_COUNT + TF_COUNT + index;
+    const config = getTemplateConfig();
+    const globalIndex = config.mcCount + config.tfCount + index;
 
     // Safety check
-    if (index > FILL_COUNT && !data) return;
+    if (index > config.fillCount && !data) return;
 
     const html = `
         <div class="question-card" id="fill-${index}">
@@ -1322,7 +1323,7 @@ function previewExam() {
         html += `
             <div class="preview-question">
                 <div class="preview-question-header">
-                    <span class="preview-question-number">Câu ${MC_COUNT + idx + 1}</span>
+                    <span class="preview-question-number">Câu ${getTemplateConfig().mcCount + idx + 1}</span>
                     <span class="preview-question-type">Đúng/Sai</span>
                 </div>
                 <div class="preview-question-content">${questionText}</div>
@@ -1350,7 +1351,7 @@ function previewExam() {
         html += `
             <div class="preview-question">
                 <div class="preview-question-header">
-                    <span class="preview-question-number">Câu ${MC_COUNT + TF_COUNT + idx + 1}</span>
+                    <span class="preview-question-number">Câu ${getTemplateConfig().mcCount + getTemplateConfig().tfCount + idx + 1}</span>
                     <span class="preview-question-type">Trả lời ngắn</span>
                 </div>
                 <div class="preview-question-content">${questionText}</div>
@@ -1425,7 +1426,7 @@ function previewSingleQuestion(type, index) {
         `).join('');
     }
     else if (type === 'tf') {
-        questionNumber = MC_COUNT + index;
+        questionNumber = getTemplateConfig().mcCount + index;
         questionText = card.querySelector('.tf-question-text')?.innerHTML || '';
         const statements = [];
         card.querySelectorAll('.tf-option-row').forEach((row, sIdx) => {
@@ -1445,7 +1446,7 @@ function previewSingleQuestion(type, index) {
         `).join('');
     }
     else if (type === 'fill') {
-        questionNumber = MC_COUNT + TF_COUNT + index;
+        questionNumber = getTemplateConfig().mcCount + getTemplateConfig().tfCount + index;
         questionText = card.querySelector('.fill-question-text')?.innerHTML || '';
         const answer = card.querySelector('.fill-correct')?.innerHTML || '';
 
