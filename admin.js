@@ -577,6 +577,11 @@ function showExamCreator() {
     document.getElementById('examDuration').value = '90';
     document.getElementById('examStatus').value = 'published';
     document.getElementById('examPackageSelect').value = '';
+
+    // Reset template to default
+    currentTemplate = 'thpt_toan';
+    document.getElementById('examTemplate').value = currentTemplate;
+
     initExamCreator();
 }
 
@@ -594,6 +599,10 @@ async function editExam(examId) {
     document.getElementById('btnCreateExam').style.display = 'none';
     document.getElementById('btnBackToExamList').style.display = 'inline-block';
     document.getElementById('examTabTitle').textContent = 'Chỉnh sửa Đề thi';
+
+    // Set template first (before populating questions)
+    currentTemplate = exam.template || 'thpt_toan';
+    document.getElementById('examTemplate').value = currentTemplate;
 
     // Populate form
     document.getElementById('editingExamId').value = exam.id;
@@ -615,12 +624,15 @@ async function editExam(examId) {
     tfQuestionCount = 0;
     fillQuestionCount = 0;
 
-    // Populate questions
+    // Populate existing questions (instead of creating empty ones)
     exam.questions.forEach(q => {
         if (q.type === 'multiple-choice') addMCQuestion(q);
         else if (q.type === 'true-false') addTFQuestion(q);
         else if (q.type === 'fill-in-blank') addFillQuestion(q);
     });
+
+    // Update headers to match template
+    updateSectionHeaders();
 }
 
 async function deleteExam(examId) {
@@ -637,21 +649,77 @@ async function deleteExam(examId) {
 }
 
 
-// Exam creator state - fixed counts for THPT
-const MC_COUNT = 12;
-const TF_COUNT = 4;
-const FILL_COUNT = 6;
+// Exam creator state - template configurations
+const EXAM_TEMPLATES = {
+    thpt_toan: {
+        name: 'THPT Toán',
+        mcCount: 12,
+        tfCount: 4,
+        fillCount: 6,
+        mcScore: 0.25,
+        tfScore: 1,       // Max per question (lũy tiến)
+        fillScore: 0.5
+    },
+    khtn_khxh: {
+        name: 'KHTN/KHXH',
+        mcCount: 18,
+        tfCount: 4,
+        fillCount: 6,
+        mcScore: 0.25,
+        tfScore: 1,       // Max per question (lũy tiến)
+        fillScore: 0.25
+    }
+};
+
+let currentTemplate = 'thpt_toan';
+
+// Get current template config
+function getTemplateConfig() {
+    return EXAM_TEMPLATES[currentTemplate] || EXAM_TEMPLATES.thpt_toan;
+}
+
+// Handle template change
+function onTemplateChange() {
+    const templateSelect = document.getElementById('examTemplate');
+    if (templateSelect) {
+        currentTemplate = templateSelect.value;
+        updateSectionHeaders();
+        initExamCreator();
+    }
+}
+
+// Update section headers based on template
+function updateSectionHeaders() {
+    const config = getTemplateConfig();
+
+    // Update MC header
+    const mcHeader = document.querySelector('#mcQuestions').previousElementSibling;
+    if (mcHeader && mcHeader.tagName === 'H3') {
+        mcHeader.textContent = `Phần I: Trắc nghiệm (${config.mcCount} câu - ${config.mcScore}đ/câu)`;
+    }
+
+    // Update Fill header
+    const fillHeader = document.querySelector('#fillQuestions').previousElementSibling;
+    if (fillHeader && fillHeader.tagName === 'H3') {
+        fillHeader.textContent = `Phần III: Trả lời ngắn (${config.fillCount} câu - ${config.fillScore}đ/câu)`;
+    }
+}
 
 function initExamCreator() {
+    const config = getTemplateConfig();
+
     // Clear question containers
     document.getElementById('mcQuestions').innerHTML = '';
     document.getElementById('tfQuestions').innerHTML = '';
     document.getElementById('fillQuestions').innerHTML = '';
 
-    // Add fixed number of questions
-    for (let i = 0; i < MC_COUNT; i++) addMCQuestion();
-    for (let i = 0; i < TF_COUNT; i++) addTFQuestion();
-    for (let i = 0; i < FILL_COUNT; i++) addFillQuestion();
+    // Add questions based on template
+    for (let i = 0; i < config.mcCount; i++) addMCQuestion();
+    for (let i = 0; i < config.tfCount; i++) addTFQuestion();
+    for (let i = 0; i < config.fillCount; i++) addFillQuestion();
+
+    // Update headers
+    updateSectionHeaders();
 }
 
 function addMCQuestion(data = null) {
@@ -930,6 +998,7 @@ async function saveExam() {
         title: examTitle,
         description: document.getElementById('examDescription').value.trim() || '',
         tag: examTag,
+        template: currentTemplate || 'thpt_toan', // Store template type for scoring
         status: examStatus,
         duration: parseInt(document.getElementById('examDuration').value) || 90,
         questions: [...mcQuestions, ...tfQuestions, ...fillQuestions],

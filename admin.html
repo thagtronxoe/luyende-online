@@ -265,6 +265,13 @@
                         <!-- Exam Info Header -->
                         <div class="exam-creator-header">
                             <div class="form-group">
+                                <label>Cấu trúc đề</label>
+                                <select id="examTemplate" class="form-select" onchange="onTemplateChange()">
+                                    <option value="thpt_toan">THPT Toán (12 TN + 4 ĐS + 6 Điền)</option>
+                                    <option value="khtn_khxh">KHTN/KHXH (18 TN + 4 ĐS + 6 Điền)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label>Chọn gói đề</label>
                                 <select id="examPackageSelect" class="form-select">
                                     <!-- Packages will be populated here -->

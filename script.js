@@ -757,6 +757,7 @@ function startExamFromList(examId) {
             examData.examTitle = exam.title;
             examData.id = exam.id;
             examData.duration = exam.duration || 90; // Set exam-specific duration
+            examData.template = exam.template || 'thpt_toan'; // Set exam template for scoring
 
             // Auto-generate numeric displayId if not exists or is text-based
             // Use exam.displayId coming from server (populated from DB) or fallback to ID
@@ -1731,28 +1732,27 @@ function submitExam() {
     clearInterval(timerInterval);
     closeModal();
 
-    // Calculate THPT Math score
-    // Part I (1-12): 0.25 points each, max 3.0 points
-    // Part II (13-16): Progressive scoring (1/4 correct: 0.1, 2/4: 0.25, 3/4: 0.5, 4/4: 1.0 points), max 4.0 points
-    // Part III (17-22): 0.5 points each, max 3.0 points
-    // Total: 10.0 points
+    // Calculate score based on exam template
+    // THPT Toán: 12 MC (0.25đ) + 4 TF (lũy tiến) + 6 Fill (0.5đ) = 10đ
+    // KHTN/KHXH: 18 MC (0.25đ) + 4 TF (lũy tiến) + 6 Fill (0.25đ) = 10đ
+
+    const template = examData.template || 'thpt_toan';
+    const fillScore = template === 'khtn_khxh' ? 0.25 : 0.5; // 0.25đ for KHTN, 0.5đ for THPT
 
     let totalScore = 0;
-    let correctCountPartI = 0;  // For display
-    let correctCountPartII = 0; // Number of questions with any correct
-    let correctCountPartIII = 0;
+    let correctCountMC = 0;
+    let correctCountTF = 0;
+    let correctCountFill = 0;
 
     examData.questions.forEach((question, index) => {
-        const questionId = question.id;
-
-        if (questionId >= 1 && questionId <= 12) {
-            // Part I: Multiple choice - 0.25 points each
+        if (question.type === 'multiple-choice') {
+            // Multiple choice - 0.25 points each (both templates)
             if (userAnswers[index] === question.correctAnswer) {
                 totalScore += 0.25;
-                correctCountPartI++;
+                correctCountMC++;
             }
-        } else if (questionId >= 13 && questionId <= 16) {
-            // Part II: True/False - Progressive scoring
+        } else if (question.type === 'true-false') {
+            // True/False - Progressive scoring (same for both templates)
             if (userAnswers[index] && Array.isArray(userAnswers[index])) {
                 let correctInQuestion = 0;
                 question.correctAnswers.forEach((correct, i) => {
@@ -1772,20 +1772,20 @@ function submitExam() {
                     totalScore += 1.0;
                 }
 
-                if (correctInQuestion > 0) correctCountPartII++;
+                if (correctInQuestion > 0) correctCountTF++;
             }
-        } else if (questionId >= 17 && questionId <= 22) {
-            // Part III: Fill-in-blank - 0.5 points each
+        } else if (question.type === 'fill-in-blank') {
+            // Fill-in-blank - score varies by template
             if (userAnswers[index] && userAnswers[index].toString().trim() === question.correctAnswer.toString().trim()) {
-                totalScore += 0.5;
-                correctCountPartIII++;
+                totalScore += fillScore;
+                correctCountFill++;
             }
         }
     });
 
     // Round to 2 decimal places
     const score = totalScore.toFixed(2);
-    const totalCorrect = correctCountPartI + correctCountPartII + correctCountPartIII;
+    const totalCorrect = correctCountMC + correctCountTF + correctCountFill;
 
     // Calculate actual time spent
     const timeSpent = Math.floor((Date.now() - examStartTime) / 1000);
