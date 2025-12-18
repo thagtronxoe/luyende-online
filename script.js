@@ -118,6 +118,43 @@ function showScreen(screenId, updateHash = true) {
     }
 }
 
+// Handle URL hash for routing
+function handleURLHash() {
+    const hash = window.location.hash;
+
+    // Find screen ID from hash
+    const routeToScreen = Object.entries(screenRoutes).find(([screenId, route]) => route === hash);
+
+    if (routeToScreen) {
+        const [screenId] = routeToScreen;
+
+        // Only navigate to protected screens if logged in
+        const protectedScreens = ['dashboardScreen', 'examListScreen', 'preExamScreen', 'examScreen', 'resultScreen', 'answerReviewScreen'];
+
+        if (protectedScreens.includes(screenId)) {
+            if (currentUser) {
+                showScreen(screenId, false); // Don't update hash, we're already at it
+            } else {
+                showScreen('loginScreen', false);
+            }
+        } else {
+            showScreen(screenId, false);
+        }
+    } else if (!hash || hash === '' || hash === '#') {
+        // Default: show dashboard if logged in, login otherwise
+        if (currentUser) {
+            showScreen('dashboardScreen', false);
+        } else {
+            showScreen('loginScreen', false);
+        }
+    }
+}
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', function (event) {
+    handleURLHash();
+});
+
 // ========== AUTH HANDLERS ==========
 async function handleLogin(event) {
     console.log("Login initiated");
