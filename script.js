@@ -362,7 +362,6 @@ function renderPackages() {
                 <div class="package-description">${pkg.description || ''}</div>
                 <div class="package-stats">
                     <span class="package-stat">📝 ${pkg.examCount || 0} đề</span>
-                    <span class="package-stat">⏱️ ${pkg.duration || 90} phút</span>
                 </div>
                 ${getStatusBadge(pkg)}
             </div>
@@ -379,7 +378,6 @@ function renderPackages() {
             <div class="package-description">${pkg.description || ''}</div>
             <div class="package-stats">
                 <span class="package-stat">📝 ${pkg.examCount || 0} đề</span>
-                <span class="package-stat">⏱️ ${pkg.duration || 90} phút</span>
             </div>
             ${getStatusBadge(pkg)}
         </div>
@@ -413,16 +411,27 @@ function handlePackageClick(packageId) {
 }
 
 // Show contact modal for registration
-function showContactModal() {
-    // Load saved contact settings
-    const settings = JSON.parse(localStorage.getItem('luyende_contactSettings') || '{}');
+async function showContactModal() {
     const modal = document.getElementById('contactModal');
+
+    // Fetch contact settings from API
+    let settings = {};
+    try {
+        const response = await fetch('/api/settings/contact');
+        settings = await response.json() || {};
+    } catch (err) {
+        console.error('Failed to load contact settings from API:', err);
+        // Fallback to localStorage
+        settings = JSON.parse(localStorage.getItem('luyende_contactSettings') || '{}');
+    }
 
     // Update links if they exist
     const zaloLink = modal.querySelector('.contact-option.zalo');
     const fbLink = modal.querySelector('.contact-option.facebook');
     const teleLink = modal.querySelector('.contact-option.telegram');
 
+    if (zaloLink && settings.zalo) zaloLink.href = settings.zalo;
+    if (fbLink && settings.facebook) fbLink.href = settings.facebook;
     if (teleLink && settings.telegram) teleLink.href = settings.telegram;
 
     // Reset content to default (Package Registration)
@@ -467,7 +476,9 @@ async function showExamList(packageId) {
         if (exam.status === 'draft') return ''; // Don't show drafts
 
         const isCompleted = currentUser.completedExams && currentUser.completedExams.includes(exam.id);
-        const description = `Đề thi theo cấu trúc THPT mới - 22 câu, 90 phút`;
+        const questionCount = exam.questions && exam.questions.length ? exam.questions.length : 22;
+        const examDuration = exam.duration || 90;
+        const description = exam.description || `Đề thi theo cấu trúc THPT mới - ${questionCount} câu, ${examDuration} phút`;
         const examTag = exam.tag || 'THPT Toán';
         const displayId = exam.displayId || `#${exam.id.slice(-6)}`;
 
@@ -745,6 +756,7 @@ function startExamFromList(examId) {
         if (exam) {
             examData.examTitle = exam.title;
             examData.id = exam.id;
+            examData.duration = exam.duration || 90; // Set exam-specific duration
 
             // Auto-generate numeric displayId if not exists or is text-based
             // Use exam.displayId coming from server (populated from DB) or fallback to ID

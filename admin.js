@@ -571,9 +571,10 @@ function showExamCreator() {
     // Reset form
     document.getElementById('editingExamId').value = '';
     document.getElementById('examTitle').value = '';
-    document.getElementById('examTitle').value = '';
+    document.getElementById('examDescription').value = '';
     document.getElementById('examTag').value = '';
     document.getElementById('examDisplayId').value = '';
+    document.getElementById('examDuration').value = '90';
     document.getElementById('examStatus').value = 'published';
     document.getElementById('examPackageSelect').value = '';
     initExamCreator();
@@ -597,9 +598,10 @@ async function editExam(examId) {
     // Populate form
     document.getElementById('editingExamId').value = exam.id;
     document.getElementById('examTitle').value = exam.title;
-    document.getElementById('examTitle').value = exam.title;
+    document.getElementById('examDescription').value = exam.description || '';
     document.getElementById('examTag').value = exam.tag || 'THPT Toán';
     document.getElementById('examDisplayId').value = exam.displayId || '';
+    document.getElementById('examDuration').value = exam.duration || 90;
     document.getElementById('examStatus').value = exam.status || 'published';
     document.getElementById('examPackageSelect').value = exam.packageId;
 
@@ -926,9 +928,10 @@ async function saveExam() {
         displayId: displayIdInput || uniqueId,
         packageId: packageId || null,
         title: examTitle,
+        description: document.getElementById('examDescription').value.trim() || '',
         tag: examTag,
         status: examStatus,
-        duration: 90,
+        duration: parseInt(document.getElementById('examDuration').value) || 90,
         questions: [...mcQuestions, ...tfQuestions, ...fillQuestions],
         createdBy: currentAdmin?.username || 'admin'
     };

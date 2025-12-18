@@ -48,7 +48,9 @@ const examSchema = new mongoose.Schema({
     displayId: String, // Custom short ID like 1009
     packageId: String,
     title: { type: String, required: true },
+    description: String, // Mô tả ngắn hiển thị dưới tiêu đề
     tag: String,
+    duration: { type: Number, default: 90, min: 10, max: 180 }, // Thời gian thi (phút)
     status: { type: String, enum: ['draft', 'published', 'view_only', 'updating'], default: 'draft' },
     questions: [{
         id: Number,
