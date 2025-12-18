@@ -1975,3 +1975,49 @@ document.addEventListener('paste', async (e) => {
         }
     }
 });
+
+// ========== CONTACT SETTINGS ==========
+
+// Load contact settings from API and populate form
+async function loadContactSettings() {
+    try {
+        const settings = await apiGetSettings('contact');
+        if (settings && Object.keys(settings).length > 0) {
+            document.getElementById('contactZalo').value = settings.zalo || '';
+            document.getElementById('contactFacebook').value = settings.facebook || '';
+            document.getElementById('contactTelegram').value = settings.telegram || '';
+            console.log('✅ Contact settings loaded:', settings);
+        }
+    } catch (err) {
+        console.log('No contact settings found, using defaults');
+    }
+}
+
+// Save contact settings to API
+async function saveContactSettings(event) {
+    event.preventDefault();
+
+    const contactData = {
+        zalo: document.getElementById('contactZalo').value.trim(),
+        facebook: document.getElementById('contactFacebook').value.trim(),
+        telegram: document.getElementById('contactTelegram').value.trim()
+    };
+
+    try {
+        await apiSaveSettings('contact', contactData);
+        alert('✅ Đã lưu thông tin liên hệ!');
+        console.log('✅ Contact settings saved:', contactData);
+    } catch (err) {
+        alert('Lỗi lưu cài đặt: ' + err.message);
+        console.error('Error saving contact settings:', err);
+    }
+}
+
+// Load settings when settings tab is shown
+const originalShowAdminTab = showAdminTab;
+showAdminTab = async function (tabName) {
+    originalShowAdminTab(tabName);
+    if (tabName === 'settings') {
+        await loadContactSettings();
+    }
+};
