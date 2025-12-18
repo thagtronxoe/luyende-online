@@ -1870,3 +1870,108 @@ function insertImage(btn) {
     insertImageWYSIWYG();
 }
 
+// ========== IMAGE COMPRESSION ON PASTE ==========
+// Compress image to reduce MongoDB storage
+async function compressImage(file, maxWidth = 800, quality = 0.7) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Resize if larger than maxWidth
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to JPEG with compression
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+                // Log compression stats
+                const originalSize = (e.target.result.length / 1024).toFixed(1);
+                const compressedSize = (compressedDataUrl.length / 1024).toFixed(1);
+                console.log(`Image compressed: ${originalSize}KB → ${compressedSize}KB (${Math.round((1 - compressedSize / originalSize) * 100)}% reduction)`);
+
+                resolve(compressedDataUrl);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Global paste handler for contenteditable elements
+document.addEventListener('paste', async (e) => {
+    // Only handle paste in contenteditable elements within exam creator
+    const target = e.target;
+    if (!target.closest || !target.closest('[contenteditable="true"]')) return;
+    if (!target.closest('.question-card')) return; // Only in question cards
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+        if (item.type.startsWith('image/')) {
+            e.preventDefault(); // Prevent default paste
+
+            const file = item.getAsFile();
+            if (!file) continue;
+
+            // Show loading indicator
+            const originalContent = target.innerHTML;
+            const loadingSpan = document.createElement('span');
+            loadingSpan.textContent = '⏳ Đang nén hình...';
+            loadingSpan.style.color = '#888';
+            target.appendChild(loadingSpan);
+
+            try {
+                // Compress the image
+                const compressedDataUrl = await compressImage(file, 800, 0.7);
+
+                // Remove loading indicator
+                loadingSpan.remove();
+
+                // Insert compressed image
+                const img = document.createElement('img');
+                img.src = compressedDataUrl;
+                img.style.maxWidth = '100%';
+                img.style.height = 'auto';
+                img.style.margin = '8px 0';
+                img.style.borderRadius = '4px';
+
+                // Insert at cursor position
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(img);
+                    range.setStartAfter(img);
+                    range.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                } else {
+                    target.appendChild(img);
+                }
+
+                // Show success message
+                console.log('✅ Hình đã được nén và chèn thành công!');
+            } catch (err) {
+                loadingSpan.remove();
+                console.error('Error compressing image:', err);
+                alert('Lỗi khi nén hình ảnh!');
+            }
+
+            break; // Only handle first image
+        }
+    }
+});
