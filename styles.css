@@ -3487,4 +3487,69 @@ body {
     background: #94a3b8;
 }
 
-   
+/* ========== PRE-EXAM & RESULT INFO TABLE ========== */
+.pre-exam-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+}
+
+.info-table {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+    text-align: left;
+}
+
+.info-row {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.info-label {
+    color: var(--text-secondary);
+    font-size: 14px;
+    min-width: 100px;
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.warning-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+/* Mobile responsive for pre-exam/result screens */
+@media (max-width: 480px) {
+    .info-row {
+        flex-direction: column;
+        gap: 4px;
+        align-items: flex-start;
+    }
+
+    .info-label {
+        min-width: auto;
+    }
+
+    .pre-exam-title {
+        font-size: 20px;
+    }
+
+    .card {
+        padding: 24px 16px;
+    }
+
+    .container {
+        padding: 20px 12px;
+    }
+}
