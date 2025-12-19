@@ -957,34 +957,8 @@ function closeAnswerModal() {
     if (modal) modal.remove();
 }
 
-// ========== CHECK LOGIN ON LOAD ==========
-document.addEventListener('DOMContentLoaded', function () {
-    // Check for existing token and user data
-    const token = getToken();
-    const savedUser = localStorage.getItem('luyende_currentUser');
-
-    if (token && savedUser) {
-        currentUser = JSON.parse(savedUser);
-        showDashboard();
-        // Refresh user profile from server to get latest package activation status
-        refreshUserProfile();
-    }
-
-    // Network status detection
-    updateConnectionStatus();
-    window.addEventListener('online', updateConnectionStatus);
-    window.addEventListener('offline', updateConnectionStatus);
-});
-
-// Back to Exam List Context
-window.backToExamList = function () {
-    const pkgId = currentPackageId || (examData && examData.packageId);
-    if (pkgId) {
-        showExamList(pkgId);
-    } else {
-        showDashboard();
-    }
-}
+// NOTE: DOMContentLoaded and backToExamList are defined at end of file
+// Network status listeners are also set up there
 
 // Helper to format Latex content
 function formatMathContent(text) {
