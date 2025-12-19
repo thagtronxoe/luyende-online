@@ -273,6 +273,15 @@ function handleLogout() {
     showScreen('loginScreen');
 }
 
+// Go back to exam list for current package
+function backToExamList() {
+    if (currentPackageId) {
+        showExamList(currentPackageId);
+    } else {
+        showScreen('dashboardScreen');
+    }
+}
+
 // ========== DASHBOARD ==========
 async function showDashboard() {
     document.getElementById('dashboardUserName').textContent = 'Xin chào, ' + currentUser.name;
