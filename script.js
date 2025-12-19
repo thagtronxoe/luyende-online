@@ -2179,7 +2179,7 @@ function initTooltips() {
 }
 
 // ========== URL ROUTING HANDLER ==========
-function handleURLHash() {
+async function handleURLHash() {
     const hash = window.location.hash;
 
     // Reverse lookup: hash -> screenId
@@ -2200,11 +2200,14 @@ function handleURLHash() {
 
         if (protectedScreens.includes(screenId) && !isLoggedIn) {
             showScreen('loginScreen', false);
+        } else if (screenId === 'dashboardScreen') {
+            // Dashboard needs special handling to render packages
+            await showDashboard();
         } else {
             showScreen(screenId, false);
         }
     } else if (isLoggedIn) {
-        showScreen('dashboardScreen', false);
+        await showDashboard();
     } else {
         showScreen('loginScreen', false);
     }
@@ -2225,8 +2228,10 @@ document.addEventListener('DOMContentLoaded', async function () {
             const user = await apiGetCurrentUser();
             if (user && user.role === 'student') {
                 currentUser = user;
-                await showDashboard();
-                handleURLHash(); // Route to correct page
+                // Load packages first (needed for #exams and other routes)
+                await loadPackages();
+                // Then route based on URL hash
+                handleURLHash();
                 return;
             }
         } catch (err) {
