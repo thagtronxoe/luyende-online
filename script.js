@@ -275,9 +275,12 @@ function handleLogout() {
 
 // Go back to exam list for current package
 function backToExamList() {
+    console.log('🔙 backToExamList called, currentPackageId:', currentPackageId);
     if (currentPackageId) {
+        console.log('🔙 Going to exam list for package:', currentPackageId);
         showExamList(currentPackageId);
     } else {
+        console.log('🔙 No currentPackageId, going to dashboard');
         showScreen('dashboardScreen');
     }
 }
