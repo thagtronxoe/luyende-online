@@ -67,7 +67,7 @@ function saveUsers(users) {
 if (typeof examPackages === 'undefined') var examPackages = [];
 if (typeof examsData === 'undefined') var examsData = {};
 
-if (typeof currentPackageId === 'undefined') var currentPackageId = null;
+if (typeof currentPackageId === 'undefined') var currentPackageId = localStorage.getItem('luyende_currentPackageId');
 
 // Load packages from API
 async function loadPackages() {
@@ -1604,7 +1604,7 @@ function selectAnswer(questionIndex, optionIndex, value) {
 
     updateQuestionGrid();
     updateAnsweredCount();
-    updateDebugPanel(); // Debug
+
 
     // Update next button state
     updateNextButtonState();
@@ -1785,7 +1785,7 @@ function updateNextButtonState() {
 
     // Debug log
     console.log(`Q${currentQuestionIndex} Answered?`, isCurrentAnswered, userAnswers[currentQuestionIndex]);
-    updateDebugPanel(); // Debug
+
 
     if (isCurrentAnswered) {
         nextBtn.classList.add('filled');
@@ -2210,32 +2210,7 @@ function initTooltips() {
     });
 }
 
-// DEBUG PANEL
-function initDebugPanel() {
-    let panel = document.getElementById('debugPanel');
-    if (!panel) {
-        panel = document.createElement('div');
-        panel.id = 'debugPanel';
-        panel.style.cssText = 'position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: lime; padding: 10px; border-radius: 5px; font-family: monospace; z-index: 99999; max-width: 300px; font-size: 11px; white-space: pre-wrap; pointer-events: none;';
-        document.body.appendChild(panel);
-    }
-    updateDebugPanel();
-}
 
-function updateDebugPanel() {
-    const panel = document.getElementById('debugPanel');
-    if (!panel) return;
-
-    let ansStr = '';
-    if (typeof userAnswers !== 'undefined' && userAnswers) {
-        ansStr = userAnswers.map((a, i) => i + ':' + (a ? 'YES' : 'NO')).join(' ');
-    }
-
-    panel.innerHTML = `Q: ${typeof currentQuestionIndex !== 'undefined' ? currentQuestionIndex : 'N/A'}\n` +
-        `Ans: ${ansStr.substring(0, 50)}...\n` +
-        `Submitted: ${typeof isExamSubmitted !== 'undefined' ? isExamSubmitted : '?'}\n` +
-        `Storage: ${localStorage.getItem('luyende_activeExamState') ? 'OK' : 'MISSING'}`;
-}
 
 // Tooltip initialized in DOMContentLoaded or elsewhere
 // Argument: Helper to update User UI
@@ -2313,7 +2288,7 @@ window.addEventListener('popstate', handleURLHash);
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async function () {
-    initDebugPanel();
+
     initTooltips();
     // Check for existing session
     const token = getToken();
