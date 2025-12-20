@@ -836,11 +836,14 @@ function startExamFromList(examId) {
 
     // FIND AND SET EXAM TITLE & ID
     if (currentPackageId && examsData[currentPackageId]) {
-        const exam = examsData[currentPackageId].find(e => e.id === examId);
+        // Fix: Check both _id and id for exam lookup
+        const exam = examsData[currentPackageId].find(e =>
+            (e._id === examId) || (e.id === examId) || (String(e._id) === String(examId))
+        );
         if (exam) {
             console.log('📋 Exam data from API:', { title: exam.title, duration: exam.duration, template: exam.template });
             examData.examTitle = exam.title;
-            examData.id = exam.id;
+            examData.id = exam._id || exam.id;
             examData.duration = exam.duration || 90; // Set exam-specific duration
             examData.template = exam.template || 'thpt_toan'; // Set exam template for scoring
 
@@ -853,8 +856,14 @@ function startExamFromList(examId) {
             // Update question array to match the selected exam
             if (exam.questions && exam.questions.length > 0) {
                 examData.questions = exam.questions;
+            } else {
+                console.warn('⚠️ No questions found in exam:', examId);
             }
+        } else {
+            console.error('❌ Exam not found in examsData:', examId, 'Available exams:', examsData[currentPackageId].map(e => ({ _id: e._id, id: e.id })));
         }
+    } else {
+        console.error('❌ No package data available:', { currentPackageId, hasExamsData: !!examsData[currentPackageId] });
     }
 
     // Update pre-exam screen info
