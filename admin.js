@@ -359,8 +359,12 @@ async function countExamsInPackage(packageId) {
 }
 
 async function updatePackageSelect() {
+    console.log('📦 updatePackageSelect called');
     const packages = await getPackages();
+    console.log('📦 packages loaded:', packages?.length, packages);
+
     const select = document.getElementById('examPackageSelect');
+    console.log('📦 select element:', select);
     if (!select) return;
 
     select.innerHTML = '<option value="">-- Chọn gói đề --</option>' +
@@ -368,6 +372,7 @@ async function updatePackageSelect() {
             const pkgId = pkg._id || pkg.id;
             return `<option value="${pkgId}">${pkg.name}</option>`;
         }).join('');
+    console.log('📦 dropdown updated with', packages?.length, 'options');
 }
 
 function showPackageModal() {

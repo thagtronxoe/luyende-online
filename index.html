@@ -31,7 +31,64 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <!-- Google reCAPTCHA -->
+    <script>
+        // Preprocess LaTeX before KaTeX renders
+        // Convert \vec to \overrightarrow for large vector arrows
+        // Convert \frac to \dfrac for display-style fractions
+        document.addEventListener('DOMContentLoaded', function () {
+            function preprocessLatex(element) {
+                if (element.innerHTML) {
+                    element.innerHTML = element.innerHTML
+                        .replace(/\\vec\{/g, '\\overrightarrow{')
+                        .replace(/\\frac\{/g, '\\dfrac{');
+                }
+            }
+
+            // Apply preprocessing to common content areas
+            document.querySelectorAll('.question-text, .option-text, .answer-text, .exam-content').forEach(preprocessLatex);
+
+            // Trigger KaTeX auto-render after preprocessing
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false }
+                    ]
+                });
+            }
+        });
+
+        // Also preprocess when new content is added dynamically
+        window.preprocessAndRenderMath = function (container) {
+            if (!container) container = document.body;
+
+            // Preprocess LaTeX
+            container.querySelectorAll('.question-text, .option-text, .answer-text, .exam-content, [data-latex]').forEach(function (el) {
+                if (el.innerHTML) {
+                    el.innerHTML = el.innerHTML
+                        .replace(/\\vec\{/g, '\\overrightarrow{')
+                        .replace(/\\frac\{/g, '\\dfrac{');
+                }
+            });
+
+            // Also check the container itself
+            if (container.innerHTML) {
+                container.innerHTML = container.innerHTML
+                    .replace(/\\vec\{/g, '\\overrightarrow{')
+                    .replace(/\\frac\{/g, '\\dfrac{');
+            }
+
+            // Render with KaTeX
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(container, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false }
+                    ]
+                });
+            }
+        };
+    </script>
     <script>
         // reCAPTCHA config - must be defined before Google script loads
         var recaptchaWidgets = {};
