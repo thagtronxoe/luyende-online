@@ -1272,6 +1272,9 @@ function blockDevTools(e) {
 
 // Timer
 function startTimer() {
+    console.log('⏱️ Starting timer. Remaining:', timeRemaining);
+    if (timerInterval) clearInterval(timerInterval);
+
     updateTimerDisplay();
     updateQuestionTimer();
 
@@ -1852,166 +1855,172 @@ function closeModal() {
 
 // Submit Exam
 function submitExam() {
-    clearInterval(timerInterval);
-    closeModal();
-
-    // Calculate score based on exam template
-    // THPT Toán: 12 MC (0.25đ) + 4 TF (lũy tiến) + 6 Fill (0.5đ) = 10đ
-    // KHTN/KHXH: 18 MC (0.25đ) + 4 TF (lũy tiến) + 6 Fill (0.25đ) = 10đ
-
-    const template = examData.template || 'thpt_toan';
-    const fillScore = template === 'khtn_khxh' ? 0.25 : 0.5; // 0.25đ for KHTN, 0.5đ for THPT
-
-    let totalScore = 0;
-    let correctCountMC = 0;
-    let correctCountTF = 0;
-    let correctCountFill = 0;
-
-    examData.questions.forEach((question, index) => {
-        if (question.type === 'multiple-choice') {
-            // Multiple choice - 0.25 points each (both templates)
-            if (userAnswers[index] === question.correctAnswer) {
-                totalScore += 0.25;
-                correctCountMC++;
-            }
-        } else if (question.type === 'true-false') {
-            // True/False - Progressive scoring (same for both templates)
-            if (userAnswers[index] && Array.isArray(userAnswers[index])) {
-                let correctInQuestion = 0;
-                question.correctAnswers.forEach((correct, i) => {
-                    if (userAnswers[index][i] === correct) {
-                        correctInQuestion++;
-                    }
-                });
-
-                // Progressive scoring based on number of correct answers
-                if (correctInQuestion === 1) {
-                    totalScore += 0.1;
-                } else if (correctInQuestion === 2) {
-                    totalScore += 0.25;
-                } else if (correctInQuestion === 3) {
-                    totalScore += 0.5;
-                } else if (correctInQuestion === 4) {
-                    totalScore += 1.0;
-                }
-
-                if (correctInQuestion > 0) correctCountTF++;
-            }
-        } else if (question.type === 'fill-in-blank') {
-            // Fill-in-blank - score varies by template
-            if (userAnswers[index] && userAnswers[index].toString().trim() === question.correctAnswer.toString().trim()) {
-                totalScore += fillScore;
-                correctCountFill++;
-            }
-        }
-    });
-
-    // Round to 2 decimal places
-    const score = totalScore.toFixed(2);
-    const totalCorrect = correctCountMC + correctCountTF + correctCountFill;
-
-    // Calculate actual time spent
-    const timeSpent = Math.floor((Date.now() - examStartTime) / 1000);
-    const hours = Math.floor(timeSpent / 3600);
-    const minutes = Math.floor((timeSpent % 3600) / 60);
-    const seconds = timeSpent % 60;
-    const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} `;
-
-    // Save exam result to localStorage
-    saveExamResult({
-        examId: examData.id,
-        displayId: examData.displayId,
-        packageId: currentPackageId,
-        examTitle: examData.examTitle,
-        studentName: currentUser ? currentUser.name : examData.studentName,
-        score: score,
-        correctCount: totalCorrect,
-        totalQuestions: examData.questions.length,
-        timeSpent: timeString,
-        answers: userAnswers.slice(), // Copy of answers
-        questions: examData.questions, // Save questions for review
-        date: new Date().toISOString()
-    });
-
-    // Save to Server API (MongoDB)
+    console.log('📝 Submitting exam...');
     try {
-        const resultData = {
-            odl: examData.displayId || examData.id, // Use display ID or real ID
+        if (timerInterval) clearInterval(timerInterval);
+        closeModal();
+
+        // Calculate score based on exam template
+        // THPT Toán: 12 MC (0.25đ) + 4 TF (lũy tiến) + 6 Fill (0.5đ) = 10đ
+        // KHTN/KHXH: 18 MC (0.25đ) + 4 TF (lũy tiến) + 6 Fill (0.25đ) = 10đ
+
+        const template = examData.template || 'thpt_toan';
+        const fillScore = template === 'khtn_khxh' ? 0.25 : 0.5; // 0.25đ for KHTN, 0.5đ for THPT
+
+        let totalScore = 0;
+        let correctCountMC = 0;
+        let correctCountTF = 0;
+        let correctCountFill = 0;
+
+        examData.questions.forEach((question, index) => {
+            if (question.type === 'multiple-choice') {
+                // Multiple choice - 0.25 points each (both templates)
+                if (userAnswers[index] === question.correctAnswer) {
+                    totalScore += 0.25;
+                    correctCountMC++;
+                }
+            } else if (question.type === 'true-false') {
+                // True/False - Progressive scoring (same for both templates)
+                if (userAnswers[index] && Array.isArray(userAnswers[index])) {
+                    let correctInQuestion = 0;
+                    question.correctAnswers.forEach((correct, i) => {
+                        if (userAnswers[index][i] === correct) {
+                            correctInQuestion++;
+                        }
+                    });
+
+                    // Progressive scoring based on number of correct answers
+                    if (correctInQuestion === 1) {
+                        totalScore += 0.1;
+                    } else if (correctInQuestion === 2) {
+                        totalScore += 0.25;
+                    } else if (correctInQuestion === 3) {
+                        totalScore += 0.5;
+                    } else if (correctInQuestion === 4) {
+                        totalScore += 1.0;
+                    }
+
+                    if (correctInQuestion > 0) correctCountTF++;
+                }
+            } else if (question.type === 'fill-in-blank') {
+                // Fill-in-blank - score varies by template
+                if (userAnswers[index] && userAnswers[index].toString().trim() === question.correctAnswer.toString().trim()) {
+                    totalScore += fillScore;
+                    correctCountFill++;
+                }
+            }
+        });
+
+        // Round to 2 decimal places
+        const score = totalScore.toFixed(2);
+        const totalCorrect = correctCountMC + correctCountTF + correctCountFill;
+
+        // Calculate actual time spent
+        const timeSpent = Math.floor((Date.now() - examStartTime) / 1000);
+        const hours = Math.floor(timeSpent / 3600);
+        const minutes = Math.floor((timeSpent % 3600) / 60);
+        const seconds = timeSpent % 60;
+        const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} `;
+
+        // Save exam result to localStorage
+        saveExamResult({
             examId: examData.id,
+            displayId: examData.displayId,
             packageId: currentPackageId,
             examTitle: examData.examTitle,
+            studentName: currentUser ? currentUser.name : examData.studentName,
             score: score,
-            correct: totalCorrect,
-            total: examData.questions.length,
-            actualTime: timeString,
-            answers: userAnswers,
-            date: new Date()
-        };
-        // Call API
-        apiSaveResult(resultData).then(res => {
-            console.log('Result saved to server:', res);
-        }).catch(err => {
-            console.error('Failed to save result to server:', err);
-            // We could queue this for retry later if offline
+            correctCount: totalCorrect,
+            totalQuestions: examData.questions.length,
+            timeSpent: timeString,
+            answers: userAnswers.slice(), // Copy of answers
+            questions: examData.questions, // Save questions for review
+            date: new Date().toISOString()
         });
-    } catch (err) {
-        console.error('Error preparing result for server:', err);
-    }
 
-    // Display results - with null checks
-    const correctAnswersEl = document.getElementById('correctAnswers');
-    const finalScoreEl = document.getElementById('finalScore');
-    const actualTimeEl = document.getElementById('actualTime');
-
-    if (correctAnswersEl) correctAnswersEl.textContent = totalCorrect;
-    if (finalScoreEl) finalScoreEl.textContent = `${score}/10`;
-    if (actualTimeEl) actualTimeEl.textContent = timeString;
-
-    // Update total questions count in result - with null check
-    const correctAnswersSpan = document.querySelector('.info-value span#correctAnswers');
-    const resultTotalQuestions = correctAnswersSpan ? correctAnswersSpan.parentNode : null;
-    if (resultTotalQuestions) {
-        resultTotalQuestions.innerHTML = `<span id="correctAnswers">${totalCorrect}</span>/${examData.questions.length}`;
-    }
-
-    // Update exam duration in result
-    const durationRow = document.querySelectorAll('.info-row')[2]; // Assuming 3rd row is Duration
-    if (durationRow) {
-        const durationValue = durationRow.querySelector('.info-value');
-        if (durationValue) {
-            durationValue.textContent = `${examData.duration} phút`;
+        // Save to Server API (MongoDB)
+        try {
+            const resultData = {
+                odl: examData.displayId || examData.id, // Use display ID or real ID
+                examId: examData.id,
+                packageId: currentPackageId,
+                examTitle: examData.examTitle,
+                score: score,
+                correct: totalCorrect,
+                total: examData.questions.length,
+                actualTime: timeString,
+                answers: userAnswers,
+                date: new Date()
+            };
+            // Call API
+            apiSaveResult(resultData).then(res => {
+                console.log('Result saved to server:', res);
+            }).catch(err => {
+                console.error('Failed to save result to server:', err);
+                // We could queue this for retry later if offline
+            });
+        } catch (err) {
+            console.error('Error preparing result for server:', err);
         }
+
+        // Display results - with null checks
+        const correctAnswersEl = document.getElementById('correctAnswers');
+        const finalScoreEl = document.getElementById('finalScore');
+        const actualTimeEl = document.getElementById('actualTime');
+
+        if (correctAnswersEl) correctAnswersEl.textContent = totalCorrect;
+        if (finalScoreEl) finalScoreEl.textContent = `${score}/10`;
+        if (actualTimeEl) actualTimeEl.textContent = timeString;
+
+        // Update total questions count in result - with null check
+        const correctAnswersSpan = document.querySelector('.info-value span#correctAnswers');
+        const resultTotalQuestions = correctAnswersSpan ? correctAnswersSpan.parentNode : null;
+        if (resultTotalQuestions) {
+            resultTotalQuestions.innerHTML = `<span id="correctAnswers">${totalCorrect}</span>/${examData.questions.length}`;
+        }
+
+        // Update exam duration in result
+        const durationRow = document.querySelectorAll('.info-row')[2]; // Assuming 3rd row is Duration
+        if (durationRow) {
+            const durationValue = durationRow.querySelector('.info-value');
+            if (durationValue) {
+                durationValue.textContent = `${examData.duration} phút`;
+            }
+        }
+
+        // Update exam title in result
+        const resultExamTitle = document.getElementById('resultExamTitle');
+        if (resultExamTitle) {
+            resultExamTitle.textContent = examData.examTitle;
+        }
+
+        // Update result screen student name
+        const resultStudentName = document.getElementById('resultStudentName');
+        if (resultStudentName && currentUser) {
+            resultStudentName.textContent = currentUser.name;
+        }
+
+        // Reset exam state for next attempt
+        resetExamState();
+
+        // Disable exam security and reset zoom
+        disableExamSecurity();
+        document.body.style.zoom = '';
+
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+
+        // Switch to result screen
+        document.getElementById('examScreen').classList.remove('active');
+        document.getElementById('resultScreen').classList.add('active');
+    } catch (err) {
+        console.error('❌ Error submitting exam:', err);
+        alert('Có lỗi xảy ra khi nộp bài: ' + err.message + '\nVui lòng thử lại hoặc chụp ảnh màn hình gửi admin.');
     }
-
-    // Update exam title in result
-    const resultExamTitle = document.getElementById('resultExamTitle');
-    if (resultExamTitle) {
-        resultExamTitle.textContent = examData.examTitle;
-    }
-
-    // Update result screen student name
-    const resultStudentName = document.getElementById('resultStudentName');
-    if (resultStudentName && currentUser) {
-        resultStudentName.textContent = currentUser.name;
-    }
-
-    // Reset exam state for next attempt
-    resetExamState();
-
-    // Disable exam security and reset zoom
-    disableExamSecurity();
-    document.body.style.zoom = '';
-
-    // Exit fullscreen
-    if (document.exitFullscreen) {
-        document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-    }
-
-    // Switch to result screen
-    document.getElementById('examScreen').classList.remove('active');
-    document.getElementById('resultScreen').classList.add('active');
 }
 
 // Save exam result to localStorage
@@ -2306,6 +2315,15 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (freshUser && freshUser.role === 'student') {
                     currentUser = freshUser;
                     localStorage.setItem('luyende_currentUser', JSON.stringify(freshUser));
+
+                    // Update active exam UI with fresh user data
+                    updateUserNameDisplay();
+                    if (typeof examData !== 'undefined') {
+                        examData.studentName = freshUser.name;
+                    }
+                    if (typeof updateSidebarUser === 'function') updateSidebarUser(); // Helper function if exists
+                    const sidebarStudentName = document.getElementById('sidebarStudentName');
+                    if (sidebarStudentName) sidebarStudentName.textContent = freshUser.name.toUpperCase();
                 }
             }).catch(err => {
                 // Token expired - logout silently and redirect to login
