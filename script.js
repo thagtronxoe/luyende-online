@@ -674,6 +674,14 @@ async function showExamList(packageId) {
     // Also render history for this package
     renderHistory(packageId);
 
+    // Reset to "Đề thi" tab (ensure exams are visible, not history)
+    const tabBtns = document.querySelectorAll('#examListScreen .tab-btn');
+    tabBtns.forEach(btn => btn.classList.remove('active'));
+    if (tabBtns[0]) tabBtns[0].classList.add('active'); // First tab = "Đề thi"
+
+    document.getElementById('examsTab')?.classList.add('active');
+    document.getElementById('historyTab')?.classList.remove('active');
+
     showScreen('examListScreen');
 }
 
