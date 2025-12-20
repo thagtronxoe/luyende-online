@@ -2068,6 +2068,13 @@ function saveExamResult(result) {
         // Add new result
         examHistory.push(result);
 
+        // Auto-cleanup: Keep only the 10 most recent entries
+        const MAX_HISTORY = 10;
+        if (examHistory.length > MAX_HISTORY) {
+            console.log(`πŸ"' Cleaning up history: ${examHistory.length} entries, keeping last ${MAX_HISTORY}`);
+            examHistory = examHistory.slice(-MAX_HISTORY); // Keep last 10
+        }
+
         try {
             localStorage.setItem('luyende_examHistory', JSON.stringify(examHistory));
         } catch (e) {
