@@ -63,10 +63,10 @@ function saveUsers(users) {
 
 // Exam Packages - Gói đề (fetched from API)
 // accessType: 'updating' (đang cập nhật), 'open' (mở thoải mái), 'register' (cần đăng kí)
-let examPackages = [];
-let examsData = {};
+window.examPackages = window.examPackages || [];
+window.examsData = window.examsData || {};
 
-let currentPackageId = null;
+window.currentPackageId = window.currentPackageId || null;
 
 // Load packages from API
 async function loadPackages() {
