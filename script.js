@@ -279,12 +279,6 @@ async function showDashboard() {
 
     updateUserNameDisplay();
 
-    // Personalize hero title
-    const heroTitle = document.getElementById('heroTitle');
-    if (heroTitle && currentUser?.name) {
-        heroTitle.textContent = `Xin chΓ o, ${currentUser.name}! πŸ'‹`;
-    }
-
     // Load packages from API
     await loadPackages();
     console.log('showDashboard - loaded packages:', examPackages.length);
