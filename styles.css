@@ -2115,10 +2115,10 @@ body {
 .package-grid {
     display: grid;
     /* Limit max width of cards to prevent excessive stretching */
-    grid-template-columns: repeat(auto-fit, minmax(300px, 400px));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 400px));
     gap: 24px;
-    justify-content: center;
-    /* Center the grid items */
+    justify-content: start;
+    /* Align grid items to the left */
 }
 
 .package-card {
