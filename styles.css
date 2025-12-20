@@ -163,6 +163,9 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     font-family: 'Roboto', Arial, sans-serif;
+    text-shadow: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .btn-primary {
