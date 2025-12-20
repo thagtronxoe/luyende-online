@@ -2025,10 +2025,49 @@ function submitExam() {
 
 // Save exam result to localStorage
 function saveExamResult(result) {
-    let examHistory = JSON.parse(localStorage.getItem('luyende_examHistory') || '[]');
-    examHistory.push(result);
-    localStorage.setItem('luyende_examHistory', JSON.stringify(examHistory));
-    console.log('Exam result saved:', result);
+    try {
+        let examHistory = JSON.parse(localStorage.getItem('luyende_examHistory') || '[]');
+
+        // Add new result
+        examHistory.push(result);
+
+        try {
+            localStorage.setItem('luyende_examHistory', JSON.stringify(examHistory));
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.code === 22) {
+                console.warn('LocalStorage quota exceeded, trying to save minimal data...');
+
+                // Strategy 1: Remove questions array from ALL history (keep only answers/score)
+                examHistory = examHistory.map(h => {
+                    const minimal = { ...h };
+                    delete minimal.questions; // Remove heavy questions data
+                    return minimal;
+                });
+
+                // Try saving again
+                try {
+                    localStorage.setItem('luyende_examHistory', JSON.stringify(examHistory));
+                } catch (e2) {
+                    // Strategy 2: Remove oldest entries
+                    while (examHistory.length > 5) { // Keep only last 5
+                        examHistory.shift();
+                    }
+                    try {
+                        localStorage.setItem('luyende_examHistory', JSON.stringify(examHistory));
+                    } catch (e3) {
+                        console.error('Cannot save history even after cleanup:', e3);
+                        // Alert user but don't block flow
+                        // alert('Bộ nhớ lịch sử đã đầy. Kết quả nộp bài vẫn được lưu lên máy chủ.');
+                    }
+                }
+            } else {
+                throw e;
+            }
+        }
+        console.log('Exam result saved:', result);
+    } catch (err) {
+        console.error('Error saving local history:', err);
+    }
 }
 
 // Get exam history
