@@ -497,7 +497,7 @@ async function showExamList(packageId) {
     }
 
     // Load exams for this package first
-    const exams = await loadExamsForPackage(packageId);
+    let exams = await loadExamsForPackage(packageId);
 
     document.getElementById('examListTitle').textContent = pkg.name;
 
@@ -509,11 +509,30 @@ async function showExamList(packageId) {
         return;
     }
 
-    grid.innerHTML = exams.map(exam => {
-        // Status Handling
-        if (exam.status === 'draft') return ''; // Don't show drafts
+    // Fetch user's exam history to determine completed exams
+    let completedExamIds = new Set();
+    try {
+        const history = await apiGetHistory();
+        if (history && history.length > 0) {
+            history.forEach(h => {
+                if (h.examId) completedExamIds.add(h.examId);
+            });
+        }
+    } catch (err) {
+        console.log('Could not load history:', err);
+    }
 
-        const isCompleted = currentUser.completedExams && currentUser.completedExams.includes(exam.id);
+    // Sort exams: uncompleted first, then completed
+    exams = exams.filter(e => e.status !== 'draft').sort((a, b) => {
+        const aCompleted = completedExamIds.has(a.id);
+        const bCompleted = completedExamIds.has(b.id);
+        if (aCompleted && !bCompleted) return 1;  // a is completed, b is not -> b first
+        if (!aCompleted && bCompleted) return -1; // a is not, b is -> a first
+        return 0; // Same status, keep original order
+    });
+
+    grid.innerHTML = exams.map(exam => {
+        const isCompleted = completedExamIds.has(exam.id);
         const questionCount = exam.questions && exam.questions.length ? exam.questions.length : 22;
         const examDuration = exam.duration || 90;
         const description = exam.description || `Đề thi theo cấu trúc THPT mới - ${questionCount} câu, ${examDuration} phút`;
@@ -531,10 +550,11 @@ async function showExamList(packageId) {
             statusBadge = `<span class="exam-status-badge updating">Đang cập nhật</span>`;
         } else if (isCompleted) {
             actionBtn = `<button class="btn-start-exam" onclick="startExamFromList('${exam.id}')">Làm lại bài</button>`;
+            statusBadge = `<span class="exam-status-badge completed">✓ Đã làm</span>`;
         }
 
         return `
-            <div class="exam-card ${exam.status || ''}">
+            <div class="exam-card ${exam.status || ''} ${isCompleted ? 'completed' : ''}">
                 <div class="exam-card-header">
                     <span class="exam-tag">${examTag}</span>
                     ${statusBadge}
@@ -2175,20 +2195,32 @@ document.addEventListener('DOMContentLoaded', async function () {
     const userData = localStorage.getItem('luyende_currentUser');
 
     if (token && userData) {
+        // Trust localStorage first - show dashboard immediately
         try {
-            // Verify token is still valid
-            const user = await apiGetCurrentUser();
-            if (user && user.role === 'student') {
-                currentUser = user;
-                // Load packages first (needed for #exams and other routes)
-                await loadPackages();
-                // Then route based on URL hash
-                handleURLHash();
-                return;
-            }
-        } catch (err) {
-            // Token invalid, clear it
-            apiLogout();
+            currentUser = JSON.parse(userData);
+        } catch (e) {
+            currentUser = null;
+        }
+
+        if (currentUser) {
+            // Load packages and show dashboard immediately
+            await loadPackages();
+            handleURLHash();
+
+            // Then verify token async in background (update user data if needed)
+            apiGetCurrentUser().then(freshUser => {
+                if (freshUser && freshUser.role === 'student') {
+                    currentUser = freshUser;
+                    localStorage.setItem('luyende_currentUser', JSON.stringify(freshUser));
+                }
+            }).catch(err => {
+                // Token expired - logout silently and redirect to login
+                console.log('Token expired, logging out');
+                apiLogout();
+                currentUser = null;
+                showScreen('loginScreen', false);
+            });
+            return;
         }
     }
 

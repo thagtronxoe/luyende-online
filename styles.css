@@ -2266,6 +2266,7 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     border: 1px solid #e5e7eb;
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .exam-card:hover {
@@ -2380,6 +2381,21 @@ body {
 .exam-status-badge.completed {
     background: #dcfce7;
     color: #16a34a;
+}
+
+.exam-status-badge.updating {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+/* Completed exam cards have subtle visual indicator */
+.exam-card.completed {
+    border-color: #86efac;
+    opacity: 0.9;
+}
+
+.exam-card.completed:hover {
+    opacity: 1;
 }
 
 /* Responsive */
