@@ -293,7 +293,7 @@ async function checkAndResumeExam() {
             const age = (Date.now() - (savedState.timestamp || 0)) / 1000 / 3600;
             if (age > 3) {
                 localStorage.removeItem('luyende_activeExamState');
-                return;
+                return false;
             }
 
             // Confirm? User said "lỡ load lại thì vẫn ở trạng thái làm tiếp". Auto-resume implies no confirm.
@@ -336,9 +336,11 @@ async function checkAndResumeExam() {
                     timeRemaining = Math.max(0, savedTimeRemaining - elapsedTime);
 
                     startExam();
+                    return true;
                 } else {
                     console.error("Resumed exam not found in package:", savedState.examId);
                     localStorage.removeItem('luyende_activeExamState'); // Invalid state
+                    return false;
                 }
             }
         }
@@ -2301,119 +2303,134 @@ function initTooltips() {
             hideTooltip();
         }
     });
-}
 
-// ========== URL ROUTING HANDLER ==========
-async function handleURLHash() {
-    const hash = window.location.hash;
+    // Helper to update User UI
+    function updateUserUI() {
+        if (!currentUser) return;
+        const name = currentUser.name.toUpperCase(); // Force uppercase
 
-    // Reverse lookup: hash -> screenId
-    const hashToScreen = {};
-    for (const [screenId, hashValue] of Object.entries(screenRoutes)) {
-        hashToScreen[hashValue] = screenId;
+        const sidebarStudentName = document.getElementById('sidebarStudentName');
+        const preStudentName = document.getElementById('preStudentName');
+        const headerStudentName = document.getElementById('headerStudentName');
+        const resultStudentName = document.getElementById('resultStudentName');
+
+        if (sidebarStudentName) sidebarStudentName.textContent = name;
+        if (preStudentName) preStudentName.textContent = name;
+        if (headerStudentName) headerStudentName.textContent = name;
+        if (resultStudentName) resultStudentName.textContent = name;
     }
 
-    // Check if user is logged in
-    const token = getToken();
-    const isLoggedIn = token && currentUser;
+    // ========== URL ROUTING HANDLER ==========
+    async function handleURLHash() {
+        const hash = window.location.hash;
 
-    if (hash && hashToScreen[hash]) {
-        const screenId = hashToScreen[hash];
+        // Check if user is logged in
+        const token = getToken();
+        const isLoggedIn = token && currentUser;
 
-        // Protected screens require login
-        const protectedScreens = ['dashboardScreen', 'examListScreen', 'preExamScreen', 'examScreen', 'resultScreen', 'answerReviewScreen'];
+        // Reverse lookup: hash -> screenId
+        const hashToScreen = {};
+        for (const [screenId, hashValue] of Object.entries(screenRoutes)) {
+            hashToScreen[hashValue] = screenId;
+        }
 
-        if (protectedScreens.includes(screenId) && !isLoggedIn) {
-            showScreen('loginScreen', false);
-        } else if (screenId === 'dashboardScreen') {
-            // Dashboard needs special handling to render packages
-            await showDashboard();
-        } else if (screenId === 'examListScreen') {
-            // Exam list needs packageId to load exams
-            const savedPackageId = localStorage.getItem('luyende_currentPackageId');
-            if (savedPackageId) {
-                await showExamList(savedPackageId);
-            } else {
-                // No package saved, go to dashboard instead
+        if (hash && hashToScreen[hash]) {
+            const screenId = hashToScreen[hash];
+
+            // Protected screens require login
+            const protectedScreens = ['dashboardScreen', 'examListScreen', 'preExamScreen', 'examScreen', 'resultScreen', 'answerReviewScreen'];
+
+            if (protectedScreens.includes(screenId) && !isLoggedIn) {
+                showScreen('loginScreen', false);
+            } else if (screenId === 'dashboardScreen') {
                 await showDashboard();
+            } else if (screenId === 'examScreen') {
+                // CRITICAL FIX: Attempt to resume exam if reloading on #exam
+                console.log("Direct access to exam screen, checking resume...");
+                // Use checkAndResumeExam logic manually or call it if showDashboard not used
+                // But checkAndResumeExam expects Dashboard to be hidden later?
+                // Actually, best is:
+                const resumed = await checkAndResumeExam();
+                if (!resumed) {
+                    // If resume failed (no state), go to dashboard
+                    window.location.hash = '#dashboard';
+                }
+            } else if (screenId === 'examListScreen') {
+                // Exam list needs packageId to load exams
+                const savedPackageId = localStorage.getItem('luyende_currentPackageId');
+                if (savedPackageId) {
+                    await showExamList(savedPackageId);
+                } else {
+                    // No package saved, go to dashboard instead
+                    await showDashboard();
+                }
+            } else {
+                showScreen(screenId, false);
+            }
+        } else if (isLoggedIn) {
+            await showDashboard();
+        } else {
+            showScreen('loginScreen', false);
+        }
+    }
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', handleURLHash);
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', async function () {
+        // Check for existing session
+        const token = getToken();
+        const userData = localStorage.getItem('luyende_currentUser');
+
+        if (token && userData) {
+            try {
+                currentUser = JSON.parse(userData);
+            } catch (e) {
+                currentUser = null;
+            }
+
+            if (currentUser) {
+                // IMMEDIATE UPDATE UI
+                updateUserUI();
+
+                // Load packages
+                await loadPackages();
+                await handleURLHash();
+
+                // Then verify token async
+                apiGetCurrentUser().then(freshUser => {
+                    if (freshUser && freshUser.role === 'student') {
+                        currentUser = freshUser;
+                        localStorage.setItem('luyende_currentUser', JSON.stringify(freshUser));
+                        updateUserUI(); // Update again with fresh data
+                    } else {
+                        handleLogout(); // Token invalid
+                    }
+                }).catch(err => {
+                    console.error("Session verify failed:", err);
+                });
             }
         } else {
-            showScreen(screenId, false);
-        }
-    } else if (isLoggedIn) {
-        await showDashboard();
-    } else {
-        showScreen('loginScreen', false);
-    }
-}
-
-// Handle browser back/forward
-window.addEventListener('popstate', handleURLHash);
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', async function () {
-    // Check for existing session
-    const token = getToken();
-    const userData = localStorage.getItem('luyende_currentUser');
-
-    if (token && userData) {
-        // Trust localStorage first - show dashboard immediately
-        try {
-            currentUser = JSON.parse(userData);
-        } catch (e) {
-            currentUser = null;
-        }
-
-        if (currentUser) {
-            // Load packages and show dashboard immediately
-            await loadPackages();
             await handleURLHash();
+        }
+    });
 
-            // Then verify token async in background (update user data if needed)
-            apiGetCurrentUser().then(freshUser => {
-                if (freshUser && freshUser.role === 'student') {
-                    currentUser = freshUser;
-                    localStorage.setItem('luyende_currentUser', JSON.stringify(freshUser));
+    // ========== FORGOT PASSWORD HANDLER ==========
+    function showForgotPasswordContact() {
+        // Show contact modal (same as package activation)
+        const modal = document.getElementById('contactModal');
+        if (modal) {
+            // Update content for support context
+            const header = modal.querySelector('.modal-header h3');
+            const desc = modal.querySelector('.modal-body > p');
 
-                    // Update active exam UI with fresh user data
-                    updateUserNameDisplay();
-                    if (typeof examData !== 'undefined') {
-                        examData.studentName = freshUser.name;
-                    }
-                    if (typeof updateSidebarUser === 'function') updateSidebarUser(); // Helper function if exists
-                    const sidebarStudentName = document.getElementById('sidebarStudentName');
-                    if (sidebarStudentName) sidebarStudentName.textContent = freshUser.name.toUpperCase();
-                }
-            }).catch(err => {
-                // Token expired - logout silently and redirect to login
-                console.log('Token expired, logging out');
-                apiLogout();
-                currentUser = null;
-                showScreen('loginScreen', false);
-            });
-            return;
+            if (header) header.innerHTML = '🔐 Liên hệ lấy lại mật khẩu';
+            if (desc) desc.textContent = 'Để lấy lại mật khẩu, vui lòng liên hệ admin qua các kênh sau để được hỗ trợ xác minh danh tính:';
+
+            modal.classList.add('active');
+        } else {
+            // Fallback if modal doesn't exist
+            alert('Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ:\n\n📧 Email: phamducthang01112007@gmail.com\n📱 Zalo: 0362...\n\nHoặc liên hệ Admin qua trang web.');
         }
     }
-
-    // Handle URL hash for non-logged-in users
-    handleURLHash();
-});
-
-// ========== FORGOT PASSWORD HANDLER ==========
-function showForgotPasswordContact() {
-    // Show contact modal (same as package activation)
-    const modal = document.getElementById('contactModal');
-    if (modal) {
-        // Update content for support context
-        const header = modal.querySelector('.modal-header h3');
-        const desc = modal.querySelector('.modal-body > p');
-
-        if (header) header.innerHTML = '🔐 Liên hệ lấy lại mật khẩu';
-        if (desc) desc.textContent = 'Để lấy lại mật khẩu, vui lòng liên hệ admin qua các kênh sau để được hỗ trợ xác minh danh tính:';
-
-        modal.classList.add('active');
-    } else {
-        // Fallback if modal doesn't exist
-        alert('Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ:\n\n📧 Email: phamducthang01112007@gmail.com\n📱 Zalo: 0362...\n\nHoặc liên hệ Admin qua trang web.');
-    }
-}
