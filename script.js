@@ -253,13 +253,16 @@ function backToExamList() {
 
 // ========== DASHBOARD ==========
 async function showDashboard() {
-    document.getElementById('dashboardUserName').textContent = 'Xin chào, ' + currentUser.name;
-    document.getElementById('examListUserName').textContent = 'Xin chào, ' + currentUser.name;
+    // Debug: log currentUser to check data
+    console.log('showDashboard - currentUser:', currentUser);
+
+    const userName = currentUser?.name || 'User';
+    document.getElementById('dashboardUserName').textContent = 'Xin chào, ' + userName;
+    document.getElementById('examListUserName').textContent = 'Xin chào, ' + userName;
 
     // Load packages from API
     await loadPackages();
-    renderPackages();
-    await loadPackages();
+    console.log('showDashboard - loaded packages:', examPackages.length);
     renderPackages();
     showScreen('dashboardScreen');
 
