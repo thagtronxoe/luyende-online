@@ -1,5 +1,5 @@
 // ========== USER & AUTH SYSTEM ==========
-window.currentUser = window.currentUser || null;
+if (typeof currentUser === 'undefined') var currentUser = null;
 
 // ========== GOOGLE reCAPTCHA SYSTEM ==========
 // reCAPTCHA is configured in index.html inline script (must load before Google script)
@@ -63,19 +63,20 @@ function saveUsers(users) {
 
 // Exam Packages - Gói đề (fetched from API)
 // accessType: 'updating' (đang cập nhật), 'open' (mở thoải mái), 'register' (cần đăng kí)
-window.examPackages = window.examPackages || [];
-window.examsData = window.examsData || {};
+// Use var to create true global variables (accessible without window. prefix)
+if (typeof examPackages === 'undefined') var examPackages = [];
+if (typeof examsData === 'undefined') var examsData = {};
 
-window.currentPackageId = window.currentPackageId || null;
+if (typeof currentPackageId === 'undefined') var currentPackageId = null;
 
 // Load packages from API
 async function loadPackages() {
     try {
-        window.examPackages = await apiGetPackages();
-        console.log('Loaded packages:', window.examPackages.length);
+        examPackages = await apiGetPackages();
+        console.log('Loaded packages:', examPackages.length);
     } catch (err) {
         console.error('Error loading packages:', err);
-        window.examPackages = [];
+        examPackages = [];
     }
 }
 
@@ -83,7 +84,7 @@ async function loadPackages() {
 async function loadExamsForPackage(packageId) {
     try {
         const exams = await apiGetExams(packageId);
-        window.examsData[packageId] = exams;
+        examsData[packageId] = exams;
         console.log(`Loaded ${exams.length} exams for package ${packageId}`);
         return exams;
     } catch (err) {
@@ -94,7 +95,7 @@ async function loadExamsForPackage(packageId) {
 
 // ========== SCREEN NAVIGATION WITH URL ROUTING ==========
 // Map screen IDs to URL hashes
-window.screenRoutes = window.screenRoutes || {
+if (typeof screenRoutes === 'undefined') var screenRoutes = {
     'loginScreen': '#login',
     'registerScreen': '#register',
     'dashboardScreen': '#dashboard',
@@ -1050,7 +1051,7 @@ function toggleSidebar() {
 }
 
 // Exam Data - THPT Toán Format (22 questions)
-window.examData = window.examData || {
+if (typeof examData === 'undefined') var examData = {
     studentName: "PHẠM ĐỨC THẮNG",
     studentId: "SV001",
     examTitle: "đề số 1 khóa TSA",
@@ -1086,13 +1087,13 @@ window.examData = window.examData || {
 };
 
 // State Management
-window.currentQuestionIndex = window.currentQuestionIndex || 0;
-window.userAnswers = window.userAnswers || new Array(examData.questions.length).fill(null);
-window.flaggedQuestions = window.flaggedQuestions || new Set();
-window.timeRemaining = window.timeRemaining || examData.duration * 60; // in seconds
-window.timerInterval = window.timerInterval || null;
-window.examStartTime = window.examStartTime || null;
-window.questionStartTime = window.questionStartTime || Date.now();
+if (typeof currentQuestionIndex === 'undefined') var currentQuestionIndex = 0;
+if (typeof userAnswers === 'undefined') var userAnswers = new Array(examData.questions.length).fill(null);
+if (typeof flaggedQuestions === 'undefined') var flaggedQuestions = new Set();
+if (typeof timeRemaining === 'undefined') var timeRemaining = examData.duration * 60; // in seconds
+if (typeof timerInterval === 'undefined') var timerInterval = null;
+if (typeof examStartTime === 'undefined') var examStartTime = null;
+if (typeof questionStartTime === 'undefined') var questionStartTime = Date.now();
 
 // Initialize
 function init() {
@@ -1168,7 +1169,7 @@ function startExam() {
 }
 
 // ========== EXAM SECURITY ==========
-window.examSecurityEnabled = window.examSecurityEnabled || false;
+if (typeof examSecurityEnabled === 'undefined') var examSecurityEnabled = false;
 
 function enableExamSecurity() {
     examSecurityEnabled = true;
