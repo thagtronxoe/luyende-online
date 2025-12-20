@@ -71,11 +71,11 @@ window.currentPackageId = window.currentPackageId || null;
 // Load packages from API
 async function loadPackages() {
     try {
-        examPackages = await apiGetPackages();
-        console.log('Loaded packages:', examPackages.length);
+        window.examPackages = await apiGetPackages();
+        console.log('Loaded packages:', window.examPackages.length);
     } catch (err) {
         console.error('Error loading packages:', err);
-        examPackages = [];
+        window.examPackages = [];
     }
 }
 
@@ -83,7 +83,7 @@ async function loadPackages() {
 async function loadExamsForPackage(packageId) {
     try {
         const exams = await apiGetExams(packageId);
-        examsData[packageId] = exams;
+        window.examsData[packageId] = exams;
         console.log(`Loaded ${exams.length} exams for package ${packageId}`);
         return exams;
     } catch (err) {
