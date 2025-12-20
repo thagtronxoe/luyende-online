@@ -456,7 +456,7 @@ app.post('/api/exams', adminAuth, async (req, res) => {
     try {
         const examData = {
             ...req.body,
-            createdBy: req.admin._id // Track who created this exam
+            createdBy: req.admin.username // Track who created this exam (store username for display)
         };
         const exam = new Exam(examData);
         await exam.save();
@@ -487,8 +487,12 @@ app.put('/api/exams/:id', adminAuth, async (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy đề thi' });
         }
 
-        // Editors can only update their own exams
-        if (req.admin.role === 'editor' && exam.createdBy && exam.createdBy.toString() !== req.admin._id.toString()) {
+        // Editors can only update their own exams, super admin can edit any
+        const isSuperAdmin = req.admin.role === 'admin' || req.admin.role === 'superadmin';
+        const isCreator = exam.createdBy === req.admin.username ||
+            (exam.createdBy && exam.createdBy.toString() === req.admin._id.toString());
+
+        if (!isSuperAdmin && exam.createdBy && !isCreator) {
             return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa đề thi này' });
         }
 
