@@ -607,15 +607,15 @@ async function showExamList(packageId) {
 
     // Sort exams: uncompleted first, then completed
     exams = exams.filter(e => e.status !== 'draft').sort((a, b) => {
-        const aCompleted = completedExamIds.has(a.id);
-        const bCompleted = completedExamIds.has(b.id);
+        const aCompleted = completedExamIds.has(String(a.id));
+        const bCompleted = completedExamIds.has(String(b.id));
         if (aCompleted && !bCompleted) return 1;  // a is completed, b is not -> b first
         if (!aCompleted && bCompleted) return -1; // a is not, b is -> a first
         return 0; // Same status, keep original order
     });
 
     grid.innerHTML = exams.map(exam => {
-        const isCompleted = completedExamIds.has(exam.id);
+        const isCompleted = completedExamIds.has(String(exam.id)) || completedExamIds.has(String(exam._id));
         const questionCount = exam.questions && exam.questions.length ? exam.questions.length : 22;
         const examDuration = exam.duration || 90;
         const description = exam.description || `Đề thi theo cấu trúc THPT mới - ${questionCount} câu, ${examDuration} phút`;
@@ -1436,7 +1436,7 @@ function displayQuestion(index) {
 
             const text = document.createElement('div');
             text.className = 'tf-text';
-            text.innerHTML = `<span class="tf-label">${labels[i] || ''}</span> ${option} `;
+            text.innerHTML = `<span class="tf-label">${labels[i] || ''}</span> ${formatMathContent(option)} `;
 
             const trueOption = document.createElement('div');
             trueOption.className = 'tf-option';
