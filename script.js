@@ -1605,17 +1605,7 @@ function selectAnswer(questionIndex, optionIndex, value) {
 }
 
 // Update Next Button State
-function updateNextButtonState() {
-    const nextBtn = document.getElementById('nextBtn');
-    const isCurrentAnswered = userAnswers[currentQuestionIndex] !== null &&
-        (Array.isArray(userAnswers[currentQuestionIndex]) ? userAnswers[currentQuestionIndex].some(a => a !== null) : true);
 
-    if (isCurrentAnswered) {
-        nextBtn.classList.remove('muted');
-    } else {
-        nextBtn.classList.add('muted');
-    }
-}
 
 // Navigate Question
 function navigateQuestion(direction) {
@@ -1782,6 +1772,16 @@ function updateNextButtonState() {
     if (!nextBtn || !examData) return;
 
     const isLastQuestion = currentQuestionIndex === examData.questions.length - 1;
+
+    // Toggle filled style if current question is answered
+    const isCurrentAnswered = userAnswers[currentQuestionIndex] !== null &&
+        (Array.isArray(userAnswers[currentQuestionIndex]) ? userAnswers[currentQuestionIndex].some(a => a !== null) : true);
+
+    if (isCurrentAnswered) {
+        nextBtn.classList.add('filled');
+    } else {
+        nextBtn.classList.remove('filled');
+    }
 
     const answeredCount = userAnswers.filter(answer => {
         if (Array.isArray(answer)) {

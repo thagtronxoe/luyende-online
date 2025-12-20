@@ -707,11 +707,14 @@ body {
 }
 
 .navigation-buttons .btn-primary {
-    background: #0047AB !important;
+    background: var(--light-blue);
     color: white !important;
     font-weight: 600;
     font-size: 14px;
-    font-family: 'Open Sans', Arial, Helvetica, sans-serif;
+    font-family: 'Open Sans',
+        Arial,
+        Helvetica,
+        sans-serif;
     letter-spacing: 0.2px;
     min-width: 120px;
     height: 44px;
@@ -725,6 +728,13 @@ body {
     gap: 6px;
     box-shadow: 0 2px 4px rgba(0, 71, 171, 0.3);
 }
+
+.navigation-buttons .btn-primary.filled {
+    background: #0047AB !important;
+    box-shadow: 0 4px 12px rgba(0, 71, 171, 0.4);
+}
+
+
 
 .navigation-buttons .btn-primary svg,
 .navigation-buttons .btn-icon svg {
