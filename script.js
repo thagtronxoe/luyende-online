@@ -2238,7 +2238,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (currentUser) {
             // Load packages and show dashboard immediately
             await loadPackages();
-            handleURLHash();
+            await handleURLHash();
 
             // Then verify token async in background (update user data if needed)
             apiGetCurrentUser().then(freshUser => {
