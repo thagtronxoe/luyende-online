@@ -1971,9 +1971,13 @@ body {
 .dashboard-container,
 .exam-list-container {
     min-height: 100vh;
-    background-color: #f4f6f9;
-    background-image: radial-gradient(#dbe0e8 1.5px, transparent 1.5px);
-    background-size: 24px 24px;
+    /* Premium Mesh Gradient Background */
+    background-color: #f3f4f6;
+    background-image:
+        radial-gradient(at 0% 0%, rgba(199, 210, 254, 0.5) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(221, 214, 254, 0.5) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(200, 230, 255, 0.4) 0px, transparent 50%);
+    background-attachment: fixed;
 }
 
 .dashboard-header {
@@ -2040,7 +2044,7 @@ body {
 }
 
 .dashboard-main {
-    max-width: 1000px;
+    max-width: 850px;
     margin: 0 auto;
     padding: 48px 24px;
 }
@@ -2110,8 +2114,11 @@ body {
 /* Package Cards */
 .package-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    /* Limit max width of cards to prevent excessive stretching */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 400px));
     gap: 24px;
+    justify-content: center;
+    /* Center the grid items */
 }
 
 .package-card {
