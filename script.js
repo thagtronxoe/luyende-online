@@ -582,6 +582,18 @@ async function showExamList(packageId) {
 
     // Fetch user's exam history to determine completed exams
     let completedExamIds = new Set();
+
+    // 1. Always check LocalStorage first (Immediate feedback)
+    try {
+        const localHistory = JSON.parse(localStorage.getItem('luyende_examHistory') || '[]');
+        if (localHistory && localHistory.length > 0) {
+            localHistory.forEach(h => {
+                if (h.examId) completedExamIds.add(h.examId);
+            });
+        }
+    } catch (e) { console.error('Error reading local history:', e); }
+
+    // 2. Try API (Merge)
     try {
         const history = await apiGetHistory();
         if (history && history.length > 0) {
@@ -590,7 +602,7 @@ async function showExamList(packageId) {
             });
         }
     } catch (err) {
-        console.log('Could not load history:', err);
+        console.log('Could not load API history:', err);
     }
 
     // Sort exams: uncompleted first, then completed
