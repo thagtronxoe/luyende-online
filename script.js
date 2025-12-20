@@ -1148,7 +1148,7 @@ function startExam() {
 }
 
 // ========== EXAM SECURITY ==========
-let examSecurityEnabled = false;
+window.examSecurityEnabled = window.examSecurityEnabled || false;
 
 function enableExamSecurity() {
     examSecurityEnabled = true;
