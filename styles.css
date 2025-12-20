@@ -3616,3 +3616,7 @@ body {
 /* ========== FIX: IMAGE ALIGNMENT ========== */
 .image-container { display: inline-block; position: relative; margin: 10px 0; max-width: 100%; }
 .image-container img { display: block; max-width: 100%; height: auto; border-radius: 4px; }
+
+/* ========== FIX: FORCE IMAGE CENTER ========== */
+.image-container { display: flex !important; justify-content: center !important; margin: 10px auto !important; }
+.image-container img { margin: 0 auto !important; }

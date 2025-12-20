@@ -968,10 +968,14 @@
 }
 
 /* ========== IMAGE CONTAINER (Khaothi style) ========== */
+/* ========== IMAGE CONTAINER (Khaothi style) ========== */
 .image-container {
-    display: inline-block;
+    display: flex;
+    /* Use flex to center content reliably */
+    justify-content: center;
     position: relative;
-    margin: 10px 0;
+    margin: 10px auto;
+    /* Center element itself */
     max-width: 100%;
     cursor: default;
 }
@@ -981,6 +985,8 @@
     max-width: 100%;
     height: auto;
     border-radius: 4px;
+    margin: 0 auto;
+    /* Ensure image is centered */
 }
 
 .image-container .resize-frame {
