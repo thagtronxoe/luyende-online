@@ -2120,339 +2120,260 @@ function resetExam() {
     document.getElementById('preExamScreen').classList.add('active');
 }
 
-// Initialize on page load
-window.onload = function () {
-    init();
-    setupTooltips();
-};
 
-// Tooltip attached to body - won't be clipped by overflow
-function setupTooltips() {
-    // Create tooltip container
-    const tooltipEl = document.createElement('div');
-    tooltipEl.id = 'globalTooltip';
-    tooltipEl.innerHTML = '<div class="tooltip-text"></div><div class="tooltip-arrow"></div>';
-    document.body.appendChild(tooltipEl);
 
-    // Style the tooltip
-    const style = document.createElement('style');
-    style.textContent = `
-        #globalTooltip {
-            position: fixed;
-            background: #333;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 400;
-            white-space: nowrap;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.15s ease;
-            z-index: 99999;
-        }
-        #globalTooltip .tooltip-arrow {
-            position: absolute;
-            bottom: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-top: 6px solid #333;
-        }
-    `;
-    document.head.appendChild(style);
 
-    const tooltipText = tooltipEl.querySelector('.tooltip-text');
-    let currentTarget = null;
 
-    // Show tooltip on mouseover
-    document.addEventListener('mouseover', function (e) {
+// Tooltip System - Creates tooltips that attach to body to avoid overflow clipping
+function initTooltips() {
+    // Create tooltip element
+    const tooltip = document.createElement('div');
+    tooltip.id = 'customTooltip';
+    tooltip.style.cssText =
+        'position: fixed;' +
+        'background: #333;' +
+        'color: white;' +
+        'padding: 6px 12px;' +
+        'border-radius: 6px;' +
+        'font-size: 12px;' +
+        'font-weight: 400;' +
+        'white-space: nowrap;' +
+        'pointer-events: none;' +
+        'opacity: 0;' +
+        'transition: opacity 0.15s ease;' +
+        'z-index: 10000;';
+    document.body.appendChild(tooltip);
+
+    // Create arrow element
+    const arrow = document.createElement('div');
+    arrow.id = 'tooltipArrow';
+    arrow.style.cssText =
+        'position: fixed;' +
+        'width: 0;' +
+        'height: 0;' +
+        'border-left: 6px solid transparent;' +
+        'border-right: 6px solid transparent;' +
+        'border-top: 6px solid #333;' +
+        'pointer-events: none;' +
+        'opacity: 0;' +
+        'transition: opacity 0.15s ease;' +
+        'z-index: 10000;';
+    document.body.appendChild(arrow);
+
+    // Show tooltip function
+    function showTooltip(target) {
+        const text = target.getAttribute('data-tooltip');
+        if (!text) return;
+
+        tooltip.textContent = text;
+        tooltip.style.opacity = '1';
+        arrow.style.opacity = '1';
+
+        // Use requestAnimationFrame to ensure layout is calculated
+        requestAnimationFrame(function () {
+            const rect = target.getBoundingClientRect();
+            const tooltipWidth = tooltip.offsetWidth;
+            const tooltipHeight = tooltip.offsetHeight;
+
+            // Position tooltip above the element
+            let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+            let top = rect.top - tooltipHeight - 10;
+
+            // Keep tooltip within viewport
+            if (left < 5) left = 5;
+            if (left + tooltipWidth > window.innerWidth - 5) {
+                left = window.innerWidth - tooltipWidth - 5;
+            }
+
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+
+            // Position arrow
+            arrow.style.left = (rect.left + rect.width / 2 - 6) + 'px';
+            arrow.style.top = (rect.top - 8) + 'px';
+        });
+    }
+
+    // Hide tooltip function
+    function hideTooltip() {
+        tooltip.style.opacity = '0';
+        arrow.style.opacity = '0';
+    }
+
+    // Event delegation for mouseover
+    document.body.addEventListener('mouseover', function (e) {
         const target = e.target.closest('[data-tooltip]');
-        if (target && target !== currentTarget) {
-            currentTarget = target;
-            const text = target.getAttribute('data-tooltip');
-            tooltipText.textContent = text;
-
-            // Need to show first to measure
-            tooltipEl.style.opacity = '1';
-
-            // Position above element
-            setTimeout(function () {
-                const rect = target.getBoundingClientRect();
-                const tooltipWidth = tooltipEl.offsetWidth;
-                const tooltipHeight = tooltipEl.offsetHeight;
-
-                let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
-                let top = rect.top - tooltipHeight - 8;
-
-                // Keep within viewport
-                if (left < 5) left = 5;
-                if (left + tooltipWidth > window.innerWidth - 5) {
-                    left = window.innerWidth - tooltipWidth - 5;
-                }
-
-                tooltipEl.style.left = left + 'px';
-                tooltipEl.style.top = top + 'px';
-            }, 0);
+        if (target) {
+            showTooltip(target);
         }
     });
 
-    // Debug Panel moved to global scope
+    // Event delegation for mouseout
+    document.body.addEventListener('mouseout', function (e) {
+        const target = e.target.closest('[data-tooltip]');
+        if (target && !target.contains(e.relatedTarget)) {
+            hideTooltip();
+        }
+    });
+}
 
+// DEBUG PANEL
+function initDebugPanel() {
+    let panel = document.getElementById('debugPanel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'debugPanel';
+        panel.style.cssText = 'position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: lime; padding: 10px; border-radius: 5px; font-family: monospace; z-index: 99999; max-width: 300px; font-size: 11px; white-space: pre-wrap; pointer-events: none;';
+        document.body.appendChild(panel);
+    }
+    updateDebugPanel();
+}
 
+function updateDebugPanel() {
+    const panel = document.getElementById('debugPanel');
+    if (!panel) return;
 
-    // Tooltip System - Creates tooltips that attach to body to avoid overflow clipping
-    function initTooltips() {
-        // Create tooltip element
-        const tooltip = document.createElement('div');
-        tooltip.id = 'customTooltip';
-        tooltip.style.cssText =
-            'position: fixed;' +
-            'background: #333;' +
-            'color: white;' +
-            'padding: 6px 12px;' +
-            'border-radius: 6px;' +
-            'font-size: 12px;' +
-            'font-weight: 400;' +
-            'white-space: nowrap;' +
-            'pointer-events: none;' +
-            'opacity: 0;' +
-            'transition: opacity 0.15s ease;' +
-            'z-index: 10000;';
-        document.body.appendChild(tooltip);
+    let ansStr = '';
+    if (typeof userAnswers !== 'undefined' && userAnswers) {
+        ansStr = userAnswers.map((a, i) => i + ':' + (a ? 'YES' : 'NO')).join(' ');
+    }
 
-        // Create arrow element
-        const arrow = document.createElement('div');
-        arrow.id = 'tooltipArrow';
-        arrow.style.cssText =
-            'position: fixed;' +
-            'width: 0;' +
-            'height: 0;' +
-            'border-left: 6px solid transparent;' +
-            'border-right: 6px solid transparent;' +
-            'border-top: 6px solid #333;' +
-            'pointer-events: none;' +
-            'opacity: 0;' +
-            'transition: opacity 0.15s ease;' +
-            'z-index: 10000;';
-        document.body.appendChild(arrow);
+    panel.innerHTML = `Q: ${typeof currentQuestionIndex !== 'undefined' ? currentQuestionIndex : 'N/A'}\n` +
+        `Ans: ${ansStr.substring(0, 50)}...\n` +
+        `Submitted: ${typeof isExamSubmitted !== 'undefined' ? isExamSubmitted : '?'}\n` +
+        `Storage: ${localStorage.getItem('luyende_activeExamState') ? 'OK' : 'MISSING'}`;
+}
 
-        // Show tooltip function
-        function showTooltip(target) {
-            const text = target.getAttribute('data-tooltip');
-            if (!text) return;
+// Tooltip initialized in DOMContentLoaded or elsewhere
+// Argument: Helper to update User UI
+function updateUserUI() {
+    if (!currentUser) return;
+    const name = currentUser.name.toUpperCase(); // Force uppercase
 
-            tooltip.textContent = text;
-            tooltip.style.opacity = '1';
-            arrow.style.opacity = '1';
+    const sidebarStudentName = document.getElementById('sidebarStudentName');
+    const preStudentName = document.getElementById('preStudentName');
+    const headerStudentName = document.getElementById('headerStudentName');
+    const resultStudentName = document.getElementById('resultStudentName');
 
-            // Use requestAnimationFrame to ensure layout is calculated
-            requestAnimationFrame(function () {
-                const rect = target.getBoundingClientRect();
-                const tooltipWidth = tooltip.offsetWidth;
-                const tooltipHeight = tooltip.offsetHeight;
+    if (sidebarStudentName) sidebarStudentName.textContent = name;
+    if (preStudentName) preStudentName.textContent = name;
+    if (headerStudentName) headerStudentName.textContent = name;
+    if (resultStudentName) resultStudentName.textContent = name;
+}
 
-                // Position tooltip above the element
-                let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
-                let top = rect.top - tooltipHeight - 10;
+// ========== URL ROUTING HANDLER ==========
+async function handleURLHash() {
+    const hash = window.location.hash;
 
-                // Keep tooltip within viewport
-                if (left < 5) left = 5;
-                if (left + tooltipWidth > window.innerWidth - 5) {
-                    left = window.innerWidth - tooltipWidth - 5;
+    // Check if user is logged in
+    const token = getToken();
+    const isLoggedIn = token && currentUser;
+
+    // Reverse lookup: hash -> screenId
+    const hashToScreen = {};
+    for (const [screenId, hashValue] of Object.entries(screenRoutes)) {
+        hashToScreen[hashValue] = screenId;
+    }
+
+    if (hash && hashToScreen[hash]) {
+        const screenId = hashToScreen[hash];
+
+        // Protected screens require login
+        const protectedScreens = ['dashboardScreen', 'examListScreen', 'preExamScreen', 'examScreen', 'resultScreen', 'answerReviewScreen'];
+
+        if (protectedScreens.includes(screenId) && !isLoggedIn) {
+            showScreen('loginScreen', false);
+        } else if (screenId === 'dashboardScreen') {
+            await showDashboard();
+        } else if (screenId === 'examScreen') {
+            // CRITICAL FIX: Attempt to resume exam if reloading on #exam
+            console.log("Direct access to exam screen, checking resume...");
+            // Use checkAndResumeExam logic manually or call it if showDashboard not used
+            // But checkAndResumeExam expects Dashboard to be hidden later?
+            // Actually, best is:
+            const resumed = await checkAndResumeExam();
+            if (!resumed) {
+                // If resume failed (no state), go to dashboard
+                window.location.hash = '#dashboard';
+            }
+        } else if (screenId === 'examListScreen') {
+            // Exam list needs packageId to load exams
+            const savedPackageId = localStorage.getItem('luyende_currentPackageId');
+            if (savedPackageId) {
+                await showExamList(savedPackageId);
+            } else {
+                // No package saved, go to dashboard instead
+                await showDashboard();
+            }
+        } else {
+            showScreen(screenId, false);
+        }
+    } else if (isLoggedIn) {
+        await showDashboard();
+    } else {
+        showScreen('loginScreen', false);
+    }
+}
+
+// Handle browser back/forward
+window.addEventListener('popstate', handleURLHash);
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', async function () {
+    initDebugPanel();
+    initTooltips();
+    // Check for existing session
+    const token = getToken();
+    const userData = localStorage.getItem('luyende_currentUser');
+
+    if (token && userData) {
+        try {
+            currentUser = JSON.parse(userData);
+        } catch (e) {
+            currentUser = null;
+        }
+
+        if (currentUser) {
+            // IMMEDIATE UPDATE UI
+            updateUserUI();
+
+            // Load packages
+            await loadPackages();
+            await handleURLHash();
+
+            // Then verify token async
+            apiGetCurrentUser().then(freshUser => {
+                if (freshUser && freshUser.role === 'student') {
+                    currentUser = freshUser;
+                    localStorage.setItem('luyende_currentUser', JSON.stringify(freshUser));
+                    updateUserUI(); // Update again with fresh data
+                } else {
+                    handleLogout(); // Token invalid
                 }
-
-                tooltip.style.left = left + 'px';
-                tooltip.style.top = top + 'px';
-
-                // Position arrow
-                arrow.style.left = (rect.left + rect.width / 2 - 6) + 'px';
-                arrow.style.top = (rect.top - 8) + 'px';
+            }).catch(err => {
+                console.error("Session verify failed:", err);
             });
         }
-
-        // Hide tooltip function
-        function hideTooltip() {
-            tooltip.style.opacity = '0';
-            arrow.style.opacity = '0';
-        }
-
-        // Event delegation for mouseover
-        document.body.addEventListener('mouseover', function (e) {
-            const target = e.target.closest('[data-tooltip]');
-            if (target) {
-                showTooltip(target);
-            }
-        });
-
-        // Event delegation for mouseout
-        document.body.addEventListener('mouseout', function (e) {
-            const target = e.target.closest('[data-tooltip]');
-            if (target && !target.contains(e.relatedTarget)) {
-                hideTooltip();
-            }
-        });
+    } else {
+        await handleURLHash();
     }
+});
 
-    // DEBUG PANEL
-    function initDebugPanel() {
-        let panel = document.getElementById('debugPanel');
-        if (!panel) {
-            panel = document.createElement('div');
-            panel.id = 'debugPanel';
-            panel.style.cssText = 'position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: lime; padding: 10px; border-radius: 5px; font-family: monospace; z-index: 99999; max-width: 300px; font-size: 11px; white-space: pre-wrap; pointer-events: none;';
-            document.body.appendChild(panel);
-        }
-        updateDebugPanel();
+// ========== FORGOT PASSWORD HANDLER ==========
+function showForgotPasswordContact() {
+    // Show contact modal (same as package activation)
+    const modal = document.getElementById('contactModal');
+    if (modal) {
+        // Update content for support context
+        const header = modal.querySelector('.modal-header h3');
+        const desc = modal.querySelector('.modal-body > p');
+
+        if (header) header.innerHTML = '🔐 Liên hệ lấy lại mật khẩu';
+        if (desc) desc.textContent = 'Để lấy lại mật khẩu, vui lòng liên hệ admin qua các kênh sau để được hỗ trợ xác minh danh tính:';
+
+        modal.classList.add('active');
+    } else {
+        // Fallback if modal doesn't exist
+        alert('Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ:\n\n📧 Email: phamducthang01112007@gmail.com\n📱 Zalo: 0362...\n\nHoặc liên hệ Admin qua trang web.');
     }
-
-    function updateDebugPanel() {
-        const panel = document.getElementById('debugPanel');
-        if (!panel) return;
-
-        let ansStr = '';
-        if (typeof userAnswers !== 'undefined' && userAnswers) {
-            ansStr = userAnswers.map((a, i) => i + ':' + (a ? 'YES' : 'NO')).join(' ');
-        }
-
-        panel.innerHTML = `Q: ${typeof currentQuestionIndex !== 'undefined' ? currentQuestionIndex : 'N/A'}\n` +
-            `Ans: ${ansStr.substring(0, 50)}...\n` +
-            `Submitted: ${typeof isExamSubmitted !== 'undefined' ? isExamSubmitted : '?'}\n` +
-            `Storage: ${localStorage.getItem('luyende_activeExamState') ? 'OK' : 'MISSING'}`;
-    }
-
-    // Tooltip initialized in DOMContentLoaded or elsewhere
-    // Argument: Helper to update User UI
-    function updateUserUI() {
-        if (!currentUser) return;
-        const name = currentUser.name.toUpperCase(); // Force uppercase
-
-        const sidebarStudentName = document.getElementById('sidebarStudentName');
-        const preStudentName = document.getElementById('preStudentName');
-        const headerStudentName = document.getElementById('headerStudentName');
-        const resultStudentName = document.getElementById('resultStudentName');
-
-        if (sidebarStudentName) sidebarStudentName.textContent = name;
-        if (preStudentName) preStudentName.textContent = name;
-        if (headerStudentName) headerStudentName.textContent = name;
-        if (resultStudentName) resultStudentName.textContent = name;
-    }
-
-    // ========== URL ROUTING HANDLER ==========
-    async function handleURLHash() {
-        const hash = window.location.hash;
-
-        // Check if user is logged in
-        const token = getToken();
-        const isLoggedIn = token && currentUser;
-
-        // Reverse lookup: hash -> screenId
-        const hashToScreen = {};
-        for (const [screenId, hashValue] of Object.entries(screenRoutes)) {
-            hashToScreen[hashValue] = screenId;
-        }
-
-        if (hash && hashToScreen[hash]) {
-            const screenId = hashToScreen[hash];
-
-            // Protected screens require login
-            const protectedScreens = ['dashboardScreen', 'examListScreen', 'preExamScreen', 'examScreen', 'resultScreen', 'answerReviewScreen'];
-
-            if (protectedScreens.includes(screenId) && !isLoggedIn) {
-                showScreen('loginScreen', false);
-            } else if (screenId === 'dashboardScreen') {
-                await showDashboard();
-            } else if (screenId === 'examScreen') {
-                // CRITICAL FIX: Attempt to resume exam if reloading on #exam
-                console.log("Direct access to exam screen, checking resume...");
-                // Use checkAndResumeExam logic manually or call it if showDashboard not used
-                // But checkAndResumeExam expects Dashboard to be hidden later?
-                // Actually, best is:
-                const resumed = await checkAndResumeExam();
-                if (!resumed) {
-                    // If resume failed (no state), go to dashboard
-                    window.location.hash = '#dashboard';
-                }
-            } else if (screenId === 'examListScreen') {
-                // Exam list needs packageId to load exams
-                const savedPackageId = localStorage.getItem('luyende_currentPackageId');
-                if (savedPackageId) {
-                    await showExamList(savedPackageId);
-                } else {
-                    // No package saved, go to dashboard instead
-                    await showDashboard();
-                }
-            } else {
-                showScreen(screenId, false);
-            }
-        } else if (isLoggedIn) {
-            await showDashboard();
-        } else {
-            showScreen('loginScreen', false);
-        }
-    }
-
-    // Handle browser back/forward
-    window.addEventListener('popstate', handleURLHash);
-
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', async function () {
-        initDebugPanel();
-        // Check for existing session
-        const token = getToken();
-        const userData = localStorage.getItem('luyende_currentUser');
-
-        if (token && userData) {
-            try {
-                currentUser = JSON.parse(userData);
-            } catch (e) {
-                currentUser = null;
-            }
-
-            if (currentUser) {
-                // IMMEDIATE UPDATE UI
-                updateUserUI();
-
-                // Load packages
-                await loadPackages();
-                await handleURLHash();
-
-                // Then verify token async
-                apiGetCurrentUser().then(freshUser => {
-                    if (freshUser && freshUser.role === 'student') {
-                        currentUser = freshUser;
-                        localStorage.setItem('luyende_currentUser', JSON.stringify(freshUser));
-                        updateUserUI(); // Update again with fresh data
-                    } else {
-                        handleLogout(); // Token invalid
-                    }
-                }).catch(err => {
-                    console.error("Session verify failed:", err);
-                });
-            }
-        } else {
-            await handleURLHash();
-        }
-    });
-
-    // ========== FORGOT PASSWORD HANDLER ==========
-    function showForgotPasswordContact() {
-        // Show contact modal (same as package activation)
-        const modal = document.getElementById('contactModal');
-        if (modal) {
-            // Update content for support context
-            const header = modal.querySelector('.modal-header h3');
-            const desc = modal.querySelector('.modal-body > p');
-
-            if (header) header.innerHTML = '🔐 Liên hệ lấy lại mật khẩu';
-            if (desc) desc.textContent = 'Để lấy lại mật khẩu, vui lòng liên hệ admin qua các kênh sau để được hỗ trợ xác minh danh tính:';
-
-            modal.classList.add('active');
-        } else {
-            // Fallback if modal doesn't exist
-            alert('Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ:\n\n📧 Email: phamducthang01112007@gmail.com\n📱 Zalo: 0362...\n\nHoặc liên hệ Admin qua trang web.');
-        }
-    }
+}
