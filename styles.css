@@ -2410,14 +2410,20 @@ body {
     color: #d97706;
 }
 
-/* Completed exam cards have subtle visual indicator */
+/* Completed exam cards - dimmed to highlight uncompleted exams */
 .exam-card.completed {
-    border-color: #86efac;
-    opacity: 0.9;
+    opacity: 0.55;
+    filter: grayscale(30%);
+    background: #f8f9fa;
+}
+
+.exam-card.completed .exam-card-title {
+    color: #6b7280;
 }
 
 .exam-card.completed:hover {
-    opacity: 1;
+    opacity: 0.8;
+    filter: grayscale(0%);
 }
 
 /* Responsive */
