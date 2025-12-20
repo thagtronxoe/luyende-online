@@ -2172,7 +2172,7 @@ window.addEventListener('popstate', handleURLHash);
 document.addEventListener('DOMContentLoaded', async function () {
     // Check for existing session
     const token = getToken();
-    const userData = localStorage.getItem('luyende_user');
+    const userData = localStorage.getItem('luyende_currentUser');
 
     if (token && userData) {
         try {
