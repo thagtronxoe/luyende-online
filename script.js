@@ -2341,10 +2341,12 @@ document.addEventListener('DOMContentLoaded', async function () {
                     localStorage.setItem('luyende_currentUser', JSON.stringify(freshUser));
                     updateUserUI(); // Update again with fresh data
                 } else {
-                    handleLogout(); // Token invalid
+                    console.warn("Session verification warning: API returned invalid user data, but keeping local session.", freshUser);
+                    // handleLogout(); // DISABLED to prevent session loss on reload
                 }
             }).catch(err => {
                 console.error("Session verify failed:", err);
+                // handleLogout(); // DISABLED
             });
         }
     } else {
