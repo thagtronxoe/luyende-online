@@ -3578,3 +3578,25 @@ body {
         padding: 16px 12px !important;
     }
 }
+
+/* FIX: Force alignment preservation */
+.question-text div[style*="text-align: center"],
+.question-text p[style*="text-align: center"],
+.mc-question-text div[style*="text-align: center"],
+.mc-question-text p[style*="text-align: center"],
+.fill-question-text div[style*="text-align: center"],
+.fill-question-text p[style*="text-align: center"] {
+    text-align: center !important;
+}
+
+.question-text img[style*="margin: auto"],
+.question-text img[style*="margin-left: auto"][style*="margin-right: auto"] {
+    display: block !important;
+    margin: 0 auto !important;
+}
+
+/* Ensure input fields in fill-in-blank align correctly with text */
+.fill-question-text input {
+    display: inline-block;
+    vertical-align: middle;
+}
