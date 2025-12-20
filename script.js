@@ -241,10 +241,16 @@ function handleLogout() {
 }
 
 // Go back to exam list for current package
+// Go back to exam list for current package
 function backToExamList() {
-    console.log('🔙 backToExamList called, currentPackageId:', currentPackageId);
+    console.log('🔙 backToExamList called, clearing active state');
+
+    // Clear active exam state prevents "Ghost Resume"
+    localStorage.removeItem('luyende_activeExamState');
+    if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+
+    console.log('🔙 Going to exam list for package:', currentPackageId);
     if (currentPackageId) {
-        console.log('🔙 Going to exam list for package:', currentPackageId);
         showExamList(currentPackageId);
     } else {
         console.log('🔙 No currentPackageId, going to dashboard');
