@@ -285,6 +285,7 @@ async function showDashboard() {
 
 // Check and Resume Active Exam
 async function checkAndResumeExam() {
+    isExamSubmitted = false; // Reset submission flag
     try {
         const savedState = JSON.parse(localStorage.getItem('luyende_activeExamState'));
         if (savedState && savedState.examId && savedState.packageId) {
@@ -346,9 +347,18 @@ async function checkAndResumeExam() {
     }
 }
 
-// Save Exam State
+// Global flag to prevent auto-save race conditions
+let isExamSubmitted = false;
+
+// Save Exam State (for resume on reload)
 function saveExamState() {
-    if (!examData) return;
+    // CRITICAL FIX: Do not save if exam is submitted or invalid
+    if (isExamSubmitted || !examData || !examData.id) return;
+
+    // Only save if we are actually in the exam screen
+    const examScreen = document.getElementById('examScreen');
+    if (!examScreen || !examScreen.classList.contains('active')) return;
+
     const state = {
         examId: examData.id || examData._id,
         packageId: currentPackageId,
@@ -1165,6 +1175,8 @@ function init() {
 
 // Start Exam
 function startExam() {
+    isExamSubmitted = false; // Reset submission flag
+
     // Set zoom to 100%
     document.body.style.zoom = '100%';
 
@@ -1777,6 +1789,9 @@ function updateNextButtonState() {
     const isCurrentAnswered = userAnswers[currentQuestionIndex] !== null &&
         (Array.isArray(userAnswers[currentQuestionIndex]) ? userAnswers[currentQuestionIndex].some(a => a !== null) : true);
 
+    // Debug log
+    console.log(`Q${currentQuestionIndex} Answered?`, isCurrentAnswered, userAnswers[currentQuestionIndex]);
+
     if (isCurrentAnswered) {
         nextBtn.classList.add('filled');
     } else {
@@ -1856,6 +1871,11 @@ function closeModal() {
 // Submit Exam
 function submitExam() {
     console.log('📝 Submitting exam...');
+    isExamSubmitted = true; // Block auto-save immediately
+
+    // Force clear state
+    localStorage.removeItem('luyende_activeExamState');
+
     try {
         if (timerInterval) clearInterval(timerInterval);
         closeModal();
