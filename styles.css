@@ -1971,7 +1971,9 @@ body {
 .dashboard-container,
 .exam-list-container {
     min-height: 100vh;
-    background: var(--background);
+    background-color: #f4f6f9;
+    background-image: radial-gradient(#dbe0e8 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
 }
 
 .dashboard-header {
