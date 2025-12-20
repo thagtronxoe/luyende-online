@@ -94,7 +94,7 @@ async function loadExamsForPackage(packageId) {
 
 // ========== SCREEN NAVIGATION WITH URL ROUTING ==========
 // Map screen IDs to URL hashes
-const screenRoutes = {
+window.screenRoutes = window.screenRoutes || {
     'loginScreen': '#login',
     'registerScreen': '#register',
     'dashboardScreen': '#dashboard',
