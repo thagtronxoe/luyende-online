@@ -252,13 +252,25 @@ function backToExamList() {
 }
 
 // ========== DASHBOARD ==========
+// Helper function to update username on all screens
+function updateUserNameDisplay() {
+    const userName = currentUser?.name || 'User';
+    const displayText = 'Xin chào, ' + userName;
+
+    const dashboardName = document.getElementById('dashboardUserName');
+    const examListName = document.getElementById('examListUserName');
+    const reviewName = document.getElementById('reviewUserName');
+
+    if (dashboardName) dashboardName.textContent = displayText;
+    if (examListName) examListName.textContent = displayText;
+    if (reviewName) reviewName.textContent = displayText;
+}
+
 async function showDashboard() {
     // Debug: log currentUser to check data
     console.log('showDashboard - currentUser:', currentUser);
 
-    const userName = currentUser?.name || 'User';
-    document.getElementById('dashboardUserName').textContent = 'Xin chào, ' + userName;
-    document.getElementById('examListUserName').textContent = 'Xin chào, ' + userName;
+    updateUserNameDisplay();
 
     // Load packages from API
     await loadPackages();
@@ -492,6 +504,9 @@ function closeContactModal() {
 
 // ========== EXAM LIST ==========
 async function showExamList(packageId) {
+    // Update username display on this screen
+    updateUserNameDisplay();
+
     currentPackageId = packageId;
     // Save to localStorage for page reload
     localStorage.setItem('luyende_currentPackageId', packageId);
