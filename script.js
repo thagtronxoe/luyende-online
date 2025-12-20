@@ -346,8 +346,14 @@ function switchTab(tabName) {
 }
 
 function renderPackages() {
+    console.log('📦 renderPackages called, examPackages:', examPackages);
+    console.log('📦 examPackages length:', examPackages?.length);
+
     const myGrid = document.getElementById('myPackagesGrid');
     const allGrid = document.getElementById('allPackagesGrid');
+
+    console.log('📦 myGrid element:', myGrid);
+    console.log('📦 allGrid element:', allGrid);
 
     // Get current user's activated packages from currentUser object
     const userActivatedPackages = currentUser?.activatedPackages || [];
