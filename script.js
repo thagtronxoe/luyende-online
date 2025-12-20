@@ -1035,7 +1035,7 @@ function toggleSidebar() {
 }
 
 // Exam Data - THPT Toán Format (22 questions)
-const examData = {
+window.examData = window.examData || {
     studentName: "PHẠM ĐỨC THẮNG",
     studentId: "SV001",
     examTitle: "đề số 1 khóa TSA",
@@ -1071,13 +1071,13 @@ const examData = {
 };
 
 // State Management
-let currentQuestionIndex = 0;
-let userAnswers = new Array(examData.questions.length).fill(null);
-let flaggedQuestions = new Set();
-let timeRemaining = examData.duration * 60; // in seconds
-let timerInterval = null;
-let examStartTime = null;
-let questionStartTime = Date.now();
+window.currentQuestionIndex = window.currentQuestionIndex || 0;
+window.userAnswers = window.userAnswers || new Array(examData.questions.length).fill(null);
+window.flaggedQuestions = window.flaggedQuestions || new Set();
+window.timeRemaining = window.timeRemaining || examData.duration * 60; // in seconds
+window.timerInterval = window.timerInterval || null;
+window.examStartTime = window.examStartTime || null;
+window.questionStartTime = window.questionStartTime || Date.now();
 
 // Initialize
 function init() {
