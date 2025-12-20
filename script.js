@@ -490,6 +490,8 @@ function closeContactModal() {
 // ========== EXAM LIST ==========
 async function showExamList(packageId) {
     currentPackageId = packageId;
+    // Save to localStorage for page reload
+    localStorage.setItem('luyende_currentPackageId', packageId);
     const pkg = examPackages.find(p => (p._id || p.id) === packageId);
     if (!pkg) {
         console.error('Package not found:', packageId);
@@ -577,7 +579,6 @@ async function showExamList(packageId) {
                 </div>
                 <div class="exam-card-footer">
                     ${actionBtn}
-                    ${isCompleted ? '<button class="btn-view-answers" onclick="viewAnswers(\'' + exam.id + '\')">Xem đáp án</button>' : ''}
                 </div>
             </div>
         `;
@@ -2175,6 +2176,15 @@ async function handleURLHash() {
         } else if (screenId === 'dashboardScreen') {
             // Dashboard needs special handling to render packages
             await showDashboard();
+        } else if (screenId === 'examListScreen') {
+            // Exam list needs packageId to load exams
+            const savedPackageId = localStorage.getItem('luyende_currentPackageId');
+            if (savedPackageId) {
+                await showExamList(savedPackageId);
+            } else {
+                // No package saved, go to dashboard instead
+                await showDashboard();
+            }
         } else {
             showScreen(screenId, false);
         }
