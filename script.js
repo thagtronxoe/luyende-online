@@ -900,6 +900,8 @@ function startExamFromList(examId) {
             // Update question array to match the selected exam
             if (exam.questions && exam.questions.length > 0) {
                 examData.questions = exam.questions;
+                // Reset/Initialize state for the new exam
+                resetExamState();
             } else {
                 console.warn('⚠️ No questions found in exam:', examId);
             }
