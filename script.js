@@ -1096,11 +1096,16 @@ window.questionStartTime = window.questionStartTime || Date.now();
 
 // Initialize
 function init() {
-    // Set student names
-    document.getElementById('preStudentName').textContent = examData.studentName;
-    document.getElementById('headerStudentName').textContent = examData.studentName;
-    document.getElementById('sidebarStudentName').textContent = currentUser.name || examData.studentName;
-    document.getElementById('resultStudentName').textContent = currentUser.name || examData.studentName;
+    // Set student names - with null checks since these elements may not exist on all screens
+    const preStudentName = document.getElementById('preStudentName');
+    const headerStudentName = document.getElementById('headerStudentName');
+    const sidebarStudentName = document.getElementById('sidebarStudentName');
+    const resultStudentName = document.getElementById('resultStudentName');
+
+    if (preStudentName) preStudentName.textContent = examData.studentName;
+    if (headerStudentName) headerStudentName.textContent = examData.studentName;
+    if (sidebarStudentName) sidebarStudentName.textContent = currentUser?.name || examData.studentName;
+    if (resultStudentName) resultStudentName.textContent = currentUser?.name || examData.studentName;
 
     // Set exam ID if available
     const sidebarExamId = document.getElementById('sidebarExamId');
