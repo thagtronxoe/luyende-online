@@ -1565,20 +1565,9 @@ function displayQuestion(index) {
     updateAnsweredCount();
 
     // Render LaTeX if available
-    // Preprocess LaTeX: convert \vec to \overrightarrow and \frac to \dfrac for better display
     const questionTextEl = document.getElementById('questionText');
     const answersContainerEl = document.getElementById('answersContainer');
 
-    if (questionTextEl) {
-        questionTextEl.innerHTML = questionTextEl.innerHTML
-            .replace(/\\vec\{/g, '\\overrightarrow{')
-            .replace(/\\frac\{/g, '\\dfrac{');
-    }
-    if (answersContainerEl) {
-        answersContainerEl.innerHTML = answersContainerEl.innerHTML
-            .replace(/\\vec\{/g, '\\overrightarrow{')
-            .replace(/\\frac\{/g, '\\dfrac{');
-    }
 
     renderMathInElement(questionTextEl, {
         delimiters: [
