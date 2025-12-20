@@ -1,5 +1,5 @@
 // ========== USER & AUTH SYSTEM ==========
-let currentUser = null;
+window.currentUser = window.currentUser || null;
 
 // ========== GOOGLE reCAPTCHA SYSTEM ==========
 // reCAPTCHA is configured in index.html inline script (must load before Google script)
