@@ -303,9 +303,41 @@ async function checkAndResumeExam() {
             currentPackageId = savedState.packageId;
             const exams = await loadExamsForPackage(currentPackageId);
             if (exams) {
-                const exam = exams.find(e => (e._id || e.id) === savedState.examId);
+                // Fix: Check both _id and id for exam lookup
+                const exam = exams.find(e =>
+                    (e._id === savedState.examId) || (e.id === savedState.examId) || (String(e._id) === String(savedState.examId))
+                );
+
                 if (exam) {
-                    startExam(exam);
+                    console.log("Resuming exam:", exam.title);
+
+                    // CRITICAL FIX: Populate examData from the found exam
+                    // startExam() takes no arguments, so we must set global examData here
+                    examData.examTitle = exam.title;
+                    examData.id = exam._id || exam.id;
+                    examData.displayId = exam.displayId || exam.id || exam._id;
+                    examData.duration = exam.duration || 90;
+                    examData.template = exam.template || 'thpt_toan';
+                    examData.studentName = currentUser ? currentUser.name : 'User';
+
+                    if (exam.questions && exam.questions.length > 0) {
+                        examData.questions = exam.questions;
+                    }
+
+                    // Restore other state
+                    if (savedState.currentQuestionIndex) currentQuestionIndex = savedState.currentQuestionIndex;
+                    if (savedState.userAnswers) userAnswers = savedState.userAnswers;
+                    if (savedState.flaggedQuestions) flaggedQuestions = new Set(savedState.flaggedQuestions);
+
+                    // Calculate remaining time
+                    const elapsedTime = Math.floor((Date.now() - savedState.timestamp) / 1000);
+                    const savedTimeRemaining = savedState.timeRemaining || (examData.duration * 60);
+                    timeRemaining = Math.max(0, savedTimeRemaining - elapsedTime);
+
+                    startExam();
+                } else {
+                    console.error("Resumed exam not found in package:", savedState.examId);
+                    localStorage.removeItem('luyende_activeExamState'); // Invalid state
                 }
             }
         }
@@ -1516,26 +1548,39 @@ function displayQuestion(index) {
     updateAnsweredCount();
 
     // Render LaTeX if available
-    if (typeof renderMathInElement !== 'undefined') {
-        renderMathInElement(document.getElementById('questionText'), {
-            delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false },
-                { left: '\\(', right: '\\)', display: false },
-                { left: '\\[', right: '\\]', display: true }
-            ],
-            throwOnError: false
-        });
-        renderMathInElement(document.getElementById('answersContainer'), {
-            delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false },
-                { left: '\\(', right: '\\)', display: false },
-                { left: '\\[', right: '\\]', display: true }
-            ],
-            throwOnError: false
-        });
+    // Preprocess LaTeX: convert \vec to \overrightarrow and \frac to \dfrac for better display
+    const questionTextEl = document.getElementById('questionText');
+    const answersContainerEl = document.getElementById('answersContainer');
+
+    if (questionTextEl) {
+        questionTextEl.innerHTML = questionTextEl.innerHTML
+            .replace(/\\vec\{/g, '\\overrightarrow{')
+            .replace(/\\frac\{/g, '\\dfrac{');
     }
+    if (answersContainerEl) {
+        answersContainerEl.innerHTML = answersContainerEl.innerHTML
+            .replace(/\\vec\{/g, '\\overrightarrow{')
+            .replace(/\\frac\{/g, '\\dfrac{');
+    }
+
+    renderMathInElement(questionTextEl, {
+        delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true }
+        ],
+        throwOnError: false
+    });
+    renderMathInElement(answersContainerEl, {
+        delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true }
+        ],
+        throwOnError: false
+    });
 }
 
 // Select Answer
