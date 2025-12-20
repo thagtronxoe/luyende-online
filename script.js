@@ -1613,6 +1613,7 @@ function selectAnswer(questionIndex, optionIndex, value) {
 
     updateQuestionGrid();
     updateAnsweredCount();
+    updateDebugPanel(); // Debug
 
     // Update next button state
     updateNextButtonState();
@@ -1793,6 +1794,7 @@ function updateNextButtonState() {
 
     // Debug log
     console.log(`Q${currentQuestionIndex} Answered?`, isCurrentAnswered, userAnswers[currentQuestionIndex]);
+    updateDebugPanel(); // Debug
 
     if (isCurrentAnswered) {
         nextBtn.classList.add('filled');
@@ -2198,6 +2200,33 @@ function setupTooltips() {
         }
     });
 
+    // DEBUG PANEL
+    function initDebugPanel() {
+        let panel = document.getElementById('debugPanel');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'debugPanel';
+            panel.style.cssText = 'position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: lime; padding: 10px; border-radius: 5px; font-family: monospace; z-index: 99999; max-width: 300px; font-size: 11px; white-space: pre-wrap; pointer-events: none;';
+            document.body.appendChild(panel);
+        }
+        updateDebugPanel();
+    }
+
+    function updateDebugPanel() {
+        const panel = document.getElementById('debugPanel');
+        if (!panel) return;
+
+        let ansStr = '';
+        if (typeof userAnswers !== 'undefined' && userAnswers) {
+            ansStr = userAnswers.map((a, i) => i + ':' + (a ? 'YES' : 'NO')).join(' ');
+        }
+
+        panel.innerHTML = `Q: ${typeof currentQuestionIndex !== 'undefined' ? currentQuestionIndex : 'N/A'}\n` +
+            `Ans: ${ansStr.substring(0, 50)}...\n` +
+            `Submitted: ${typeof isExamSubmitted !== 'undefined' ? isExamSubmitted : '?'}\n` +
+            `Storage: ${localStorage.getItem('luyende_activeExamState') ? 'OK' : 'MISSING'}`;
+    }
+
     // Hide tooltip on mouseout
     document.addEventListener('mouseout', function (e) {
         const target = e.target.closest('[data-tooltip]');
@@ -2381,6 +2410,7 @@ window.addEventListener('popstate', handleURLHash);
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async function () {
+    initDebugPanel();
     // Check for existing session
     const token = getToken();
     const userData = localStorage.getItem('luyende_currentUser');
