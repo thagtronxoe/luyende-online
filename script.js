@@ -1530,8 +1530,10 @@ function displayQuestion(index) {
 
     if (isCurrentAnswered) {
         nextBtn.classList.remove('muted');
+        nextBtn.classList.add('filled');
     } else {
         nextBtn.classList.add('muted');
+        nextBtn.classList.remove('filled');
     }
 
     // Update grid
@@ -1787,8 +1789,10 @@ function updateNextButtonState() {
 
     if (isCurrentAnswered) {
         nextBtn.classList.add('filled');
+        nextBtn.classList.remove('muted');
     } else {
         nextBtn.classList.remove('filled');
+        nextBtn.classList.add('muted');
     }
 
     const answeredCount = userAnswers.filter(answer => {
