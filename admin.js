@@ -1610,27 +1610,33 @@ function execCmd(command, btn = null) {
         }
     }
 
-    // For alignment commands, also apply to selected images
+    // For alignment commands, handle selected images specially
     if (command.startsWith('justify')) {
         const selectedImage = document.querySelector('.image-container.selected');
         if (selectedImage) {
             const align = command.replace('justify', '').toLowerCase();
 
-            // Create or get alignment wrapper
-            let wrapper = selectedImage.parentElement;
-            if (!wrapper.classList.contains('image-align-wrapper')) {
-                wrapper = document.createElement('div');
-                wrapper.className = 'image-align-wrapper';
-                selectedImage.parentNode.insertBefore(wrapper, selectedImage);
-                wrapper.appendChild(selectedImage);
+            // Apply alignment directly to the image container using inline styles
+            // This ensures the styles are saved with innerHTML and persist
+            if (align === 'center') {
+                selectedImage.style.display = 'block';
+                selectedImage.style.marginLeft = 'auto';
+                selectedImage.style.marginRight = 'auto';
+                selectedImage.style.float = 'none';
+            } else if (align === 'left') {
+                selectedImage.style.display = 'inline-block';
+                selectedImage.style.marginLeft = '0';
+                selectedImage.style.marginRight = 'auto';
+                selectedImage.style.float = 'none';
+            } else if (align === 'right') {
+                selectedImage.style.display = 'inline-block';
+                selectedImage.style.marginLeft = 'auto';
+                selectedImage.style.marginRight = '0';
+                selectedImage.style.float = 'none';
             }
 
-            // Apply alignment to wrapper
-            wrapper.style.textAlign = align === 'left' ? 'left' : (align === 'center' ? 'center' : 'right');
-            wrapper.style.display = 'block';
-            wrapper.style.width = '100%';
-
-            return; // Don't apply text alignment to text if image
+            console.log('📸 Image aligned:', align, selectedImage.style.cssText);
+            return; // Don't apply text alignment if image is selected
         }
     }
     // Execute the command
