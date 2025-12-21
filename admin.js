@@ -2093,6 +2093,11 @@ function processAIImport() {
                 .replace(/'/g, "&#039;");
         };
 
+        // CRITICAL: Clear existing empty cards before importing
+        document.getElementById('mcQuestions').innerHTML = '';
+        document.getElementById('tfQuestions').innerHTML = '';
+        document.getElementById('fillQuestions').innerHTML = '';
+
         let addedCount = 0;
 
         questions.forEach(originQ => {
