@@ -427,6 +427,9 @@ function renderPackages() {
         if (userActivatedPackages.includes(pkgId)) {
             return '<div class="package-status open">✓ Đã kích hoạt</div>';
         }
+        if (pkg.accessType === 'free_registration') {
+            return '<div class="package-status free">🆓 Đăng ký miễn phí</div>';
+        }
         return '<div class="package-status register">🔒 Cần kích hoạt</div>';
     }
 
@@ -494,6 +497,31 @@ function handlePackageClick(packageId) {
 
     const pkgId = pkg._id || pkg.id;
     if (!userActivatedPackages.includes(pkgId) && pkg.accessType !== 'open') {
+        // Feature: Free Registration
+        if (pkg.accessType === 'free_registration') {
+            if (confirm(`Bạn có muốn thêm gói "${pkg.name}" vào danh sách đề của bạn miễn phí?`)) {
+                // Activate package for user
+                currentUser.activatedPackages = currentUser.activatedPackages || [];
+                currentUser.activatedPackages.push(pkgId);
+
+                // Update localStorage users
+                const userIndex = users.findIndex(u => u.id === currentUser.id);
+                if (userIndex !== -1) {
+                    users[userIndex].activatedPackages = currentUser.activatedPackages;
+                    localStorage.setItem('luyende_users', JSON.stringify(users));
+                    localStorage.setItem('luyende_currentUser', JSON.stringify(users[userIndex]));
+                }
+
+                // Refresh UI
+                renderPackages();
+                alert('Đã thêm gói đề thành công! Bạn có thể bắt đầu làm bài ngay.');
+                showExamList(pkgId);
+                return;
+            } else {
+                return;
+            }
+        }
+
         showContactModal();
         return;
     }

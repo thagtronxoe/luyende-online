@@ -15,6 +15,13 @@ async function getAdmins() {
     }
 }
 
+function toggleAdminSidebar() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const main = document.querySelector('.admin-main');
+    sidebar.classList.toggle('collapsed');
+    main.classList.toggle('collapsed');
+}
+
 async function handleAdminLogin(event) {
     event.preventDefault();
     console.log('handleAdminLogin called');
@@ -334,7 +341,6 @@ async function renderPackages() {
             <div class="package-name">${pkg.name}</div>
             <div class="package-description">${pkg.description}</div>
             <div class="package-meta">
-                <span>⏱️ ${pkg.duration} phút</span>
                 <span>📝 ${examCounts[pkgId] || 0} đề</span>
             </div>
             <div class="package-actions">
@@ -395,7 +401,7 @@ async function savePackage(event) {
         name: document.getElementById('packageName').value,
         description: document.getElementById('packageDesc').value,
         icon: document.getElementById('packageIcon').value || '📝',
-        duration: parseInt(document.getElementById('packageDuration').value) || 90,
+        duration: 90, // Default duration since field removed
         accessType: document.getElementById('packageAccessType').value || 'open'
     };
 
@@ -421,7 +427,7 @@ async function editPackage(packageId) {
     document.getElementById('packageName').value = pkg.name;
     document.getElementById('packageDesc').value = pkg.description;
     document.getElementById('packageIcon').value = pkg.icon;
-    document.getElementById('packageDuration').value = pkg.duration;
+    // document.getElementById('packageDuration').value = pkg.duration;
     document.getElementById('packageAccessType').value = pkg.accessType || 'open';
     document.getElementById('packageForm').dataset.editId = packageId;
 
