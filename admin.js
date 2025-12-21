@@ -836,34 +836,34 @@ function addMCQuestion(data = null) {
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertMathWYSIWYG()" title="Chèn công thức">∑</button>
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertImageWYSIWYG()" title="Chèn ảnh">🖼</button>
                 </div>
-                <div class="wysiwyg-editor mc-question-text" contenteditable="true" data-placeholder="Nhập nội dung câu hỏi... (Dùng $...$ cho công thức, Ctrl+V để dán ảnh)">${data ? data.question : ''}</div>
+                <div class="wysiwyg-editor mc-question-text" contenteditable="true" data-placeholder="Nhập nội dung câu hỏi... (Dùng $...$ cho công thức, Ctrl+V để dán ảnh)">${data?.question || ''}</div>
             </div>
             <div class="options-grid">
                 <div class="form-group option-group">
                     <label>A.</label>
-                    <div class="wysiwyg-option mc-option" contenteditable="true" data-option="A" data-placeholder="Đáp án A">${data ? data.options[0] : ''}</div>
+                    <div class="wysiwyg-option mc-option" contenteditable="true" data-option="A" data-placeholder="Đáp án A">${data?.options?.[0] || ''}</div>
                 </div>
                 <div class="form-group option-group">
                     <label>B.</label>
-                    <div class="wysiwyg-option mc-option" contenteditable="true" data-option="B" data-placeholder="Đáp án B">${data ? data.options[1] : ''}</div>
+                    <div class="wysiwyg-option mc-option" contenteditable="true" data-option="B" data-placeholder="Đáp án B">${data?.options?.[1] || ''}</div>
                 </div>
                 <div class="form-group option-group">
                     <label>C.</label>
-                    <div class="wysiwyg-option mc-option" contenteditable="true" data-option="C" data-placeholder="Đáp án C">${data ? data.options[2] : ''}</div>
+                    <div class="wysiwyg-option mc-option" contenteditable="true" data-option="C" data-placeholder="Đáp án C">${data?.options?.[2] || ''}</div>
                 </div>
                 <div class="form-group option-group">
                     <label>D.</label>
-                    <div class="wysiwyg-option mc-option" contenteditable="true" data-option="D" data-placeholder="Đáp án D">${data ? data.options[3] : ''}</div>
+                    <div class="wysiwyg-option mc-option" contenteditable="true" data-option="D" data-placeholder="Đáp án D">${data?.options?.[3] || ''}</div>
                 </div>
             </div>
             <div class="form-row-2">
                 <div class="form-group">
                     <label>Đáp án đúng</label>
                     <select class="mc-correct form-select">
-                        <option value="A" ${data && data.correctAnswer === data.options[0] ? 'selected' : ''}>A</option>
-                        <option value="B" ${data && data.correctAnswer === data.options[1] ? 'selected' : ''}>B</option>
-                        <option value="C" ${data && data.correctAnswer === data.options[2] ? 'selected' : ''}>C</option>
-                        <option value="D" ${data && data.correctAnswer === data.options[3] ? 'selected' : ''}>D</option>
+                        <option value="A" ${data?.correct === 'A' || data?.correctAnswer === 'A' || data?.correct === data?.options?.[0] ? 'selected' : ''}>A</option>
+                        <option value="B" ${data?.correct === 'B' || data?.correctAnswer === 'B' || data?.correct === data?.options?.[1] ? 'selected' : ''}>B</option>
+                        <option value="C" ${data?.correct === 'C' || data?.correctAnswer === 'C' || data?.correct === data?.options?.[2] ? 'selected' : ''}>C</option>
+                        <option value="D" ${data?.correct === 'D' || data?.correctAnswer === 'D' || data?.correct === data?.options?.[3] ? 'selected' : ''}>D</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -914,19 +914,25 @@ function addTFQuestion(data = null) {
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertMathWYSIWYG()" title="Chèn công thức">∑</button>
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertImageWYSIWYG()" title="Chèn ảnh">🖼</button>
                 </div>
-                <div class="wysiwyg-editor tf-question-text" contenteditable="true" data-placeholder="VD: Xét tính đúng sai của các mệnh đề về đạo hàm...">${data ? data.question : ''}</div>
+                <div class="wysiwyg-editor tf-question-text" contenteditable="true" data-placeholder="VD: Xét tính đúng sai của các mệnh đề về đạo hàm...">${data?.question || ''}</div>
             </div>
             <div class="tf-options">
-                ${['a', 'b', 'c', 'd'].map((label, idx) => `
-                <div class="tf-option-row">
-                    <label>${label})</label>
-                    <div class="wysiwyg-option tf-option-text" contenteditable="true" data-placeholder="Nội dung mệnh đề ${label}...">${data ? data.options[idx] : ''}</div>
-                    <select class="tf-answer form-select">
-                        <option value="Đúng" ${data && data.correctAnswers[idx] === 'Đúng' ? 'selected' : ''}>Đúng</option>
-                        <option value="Sai" ${data && data.correctAnswers[idx] === 'Sai' ? 'selected' : ''}>Sai</option>
-                    </select>
-                </div>
-                `).join('')}
+                ${['a', 'b', 'c', 'd'].map((label, idx) => {
+        // Handle AI data structure (options is array of objects {content, correct})
+        const optContent = data?.options?.[idx]?.content || data?.options?.[idx] || '';
+        const isCorrect = data?.options?.[idx]?.correct === true || data?.options?.[idx]?.correct === 'true'; // Check boolean or string
+
+        return `
+                    <div class="tf-option-row">
+                        <label>${label})</label>
+                        <div class="wysiwyg-option tf-option-text" contenteditable="true" data-placeholder="Nội dung mệnh đề ${label}...">${optContent}</div>
+                        <select class="tf-answer form-select">
+                            <option value="Đúng" ${isCorrect ? 'selected' : ''}>Đúng</option>
+                            <option value="Sai" ${!isCorrect ? 'selected' : ''}>Sai</option>
+                        </select>
+                    </div>
+                    `;
+    }).join('')}
             </div>
             <div class="form-group">
                 <label>Lời giải (tùy chọn)</label>
@@ -976,12 +982,12 @@ function addFillQuestion(data = null) {
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertMathWYSIWYG()" title="Chèn công thức">∑</button>
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertImageWYSIWYG()" title="Chèn ảnh">🖼</button>
                 </div>
-                <div class="wysiwyg-editor fill-question-text" contenteditable="true" data-placeholder="VD: Cho hàm số f(x) = x³ - 3x² + 2. Giá trị cực đại của hàm số là">${data ? data.question : ''}</div>
+                <div class="wysiwyg-editor fill-question-text" contenteditable="true" data-placeholder="VD: Cho hàm số f(x) = x³ - 3x² + 2. Giá trị cực đại của hàm số là">${data?.question || ''}</div>
             </div>
             <div class="form-row-2">
                 <div class="form-group">
                     <label>Đáp án đúng</label>
-                    <div class="wysiwyg-option fill-correct" contenteditable="true" data-placeholder="VD: 2">${data ? data.correctAnswer : ''}</div>
+                    <div class="wysiwyg-option fill-correct" contenteditable="true" data-placeholder="VD: 2">${data?.correctAnswer || data?.correct || ''}</div>
                 </div>
                 <div class="form-group">
                     <label>Lời giải (tùy chọn)</label>
