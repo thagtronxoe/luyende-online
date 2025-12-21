@@ -1979,6 +1979,7 @@ Tổng cộng: ${config.mcCount + config.tfCount + config.fillCount} câu.
 2. **LOẠI BỎ TIỀN TỐ:** KHÔNG ghi "Câu 1...", "A. ", "B. " ở đầu. CHỈ ghi nội dung.
 3. **CÔNG THỨC TOÁN:** Dùng LaTeX $...$ cho TẤT CẢ các số và công thức (VD: $1$, $2$, $x^2$...). Đảm bảo font chữ đồng bộ.
 4. **HÌNH ẢNH:** Thay thế hình ảnh bằng text: [HÌNH ẢNH].
+5. **XUỐNG DÒNG TRONG LỜI GIẢI:** Dùng \\n để xuống dòng (mỗi bước giải một dòng).
 
 CẤU TRÚC JSON (Mảng đối tượng):
 [
@@ -1987,7 +1988,7 @@ CẤU TRÚC JSON (Mảng đối tượng):
     "question": "Ghi đầy đủ nội dung câu hỏi (bao gồm cả công thức $...$ nếu có)",
     "options": ["Nội dung đáp án A (KHÔNG ghi chữ A.)", "Nội dung đáp án B", "Nội dung đáp án C", "Nội dung đáp án D"],
     "correct": "A (hoặc B, C, D)",
-    "explanation": "Lời giải chi tiết (nếu có)"
+    "explanation": "Bước 1: ...\\nBước 2: ...\\nKết luận: ..."
   },
   {
     "type": "tf",
@@ -2090,7 +2091,9 @@ function processAIImport() {
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+                .replace(/'/g, "&#039;")
+                .replace(/\\n/g, "<br>")  // Convert \n to line breaks
+                .replace(/\n/g, "<br>");  // Also handle actual newlines
         };
 
         // CRITICAL: Clear existing empty cards before importing
