@@ -1436,12 +1436,22 @@ function generateQuestionGrid() {
     const grid = document.getElementById('questionGrid');
     grid.innerHTML = '';
 
-    // Define THPT sections
-    const sections = [
-        { title: 'I. Trắc nghiệm', start: 1, end: 12 },
-        { title: 'II. Đúng / Sai', start: 13, end: 16 },
-        { title: 'III. Trả lời ngắn', start: 17, end: 22 }
-    ];
+    // define sections based on template
+    let sections = [];
+    if (examData.template === 'khtn_khxh') {
+        sections = [
+            { title: 'I. Trắc nghiệm', start: 1, end: 18 },
+            { title: 'II. Đúng / Sai', start: 19, end: 22 },
+            { title: 'III. Trả lời ngắn', start: 23, end: 28 }
+        ];
+    } else {
+        // Default THPT Math
+        sections = [
+            { title: 'I. Trắc nghiệm', start: 1, end: 12 },
+            { title: 'II. Đúng / Sai', start: 13, end: 16 },
+            { title: 'III. Trả lời ngắn', start: 17, end: 22 }
+        ];
+    }
 
     sections.forEach(section => {
         // Add section header
