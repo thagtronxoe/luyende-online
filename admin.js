@@ -834,6 +834,7 @@ function addMCQuestion(data = null) {
                     <button type="button" onmousedown="event.preventDefault()" onclick="execCmd('justifyRight')" title="Căn phải">➡</button>
                     <span class="toolbar-divider"></span>
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertMathWYSIWYG()" title="Chèn công thức">∑</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="insertTableWYSIWYG()" title="Chèn bảng">📊</button>
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertImageWYSIWYG()" title="Chèn ảnh">🖼</button>
                 </div>
                 <div class="wysiwyg-editor mc-question-text" contenteditable="true" data-placeholder="Nhập nội dung câu hỏi... (Dùng $...$ cho công thức, Ctrl+V để dán ảnh)">${data?.question || ''}</div>
@@ -912,6 +913,7 @@ function addTFQuestion(data = null) {
                     <button type="button" onmousedown="event.preventDefault()" onclick="execCmd('justifyRight')" title="Căn phải">➡</button>
                     <span class="toolbar-divider"></span>
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertMathWYSIWYG()" title="Chèn công thức">∑</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="insertTableWYSIWYG()" title="Chèn bảng">📊</button>
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertImageWYSIWYG()" title="Chèn ảnh">🖼</button>
                 </div>
                 <div class="wysiwyg-editor tf-question-text" contenteditable="true" data-placeholder="VD: Xét tính đúng sai của các mệnh đề về đạo hàm...">${data?.question || ''}</div>
@@ -980,6 +982,7 @@ function addFillQuestion(data = null) {
                     <button type="button" onmousedown="event.preventDefault()" onclick="execCmd('justifyRight')" title="Căn phải">➡</button>
                     <span class="toolbar-divider"></span>
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertMathWYSIWYG()" title="Chèn công thức">∑</button>
+                    <button type="button" onmousedown="event.preventDefault()" onclick="insertTableWYSIWYG()" title="Chèn bảng">📊</button>
                     <button type="button" onmousedown="event.preventDefault()" onclick="insertImageWYSIWYG()" title="Chèn ảnh">🖼</button>
                 </div>
                 <div class="wysiwyg-editor fill-question-text" contenteditable="true" data-placeholder="VD: Cho hàm số f(x) = x³ - 3x² + 2. Giá trị cực đại của hàm số là">${data?.question || ''}</div>
@@ -1684,6 +1687,50 @@ function insertMathWYSIWYG() {
     selection.selectAllChildren(mathSpan);
 }
 
+// Insert LaTeX table at cursor position
+function insertTableWYSIWYG() {
+    const rows = parseInt(prompt('Số hàng:', '2')) || 2;
+    const cols = parseInt(prompt('Số cột:', '3')) || 3;
+
+    if (rows < 1 || cols < 1) return;
+
+    // Generate column alignment string (all centered)
+    const colAlign = '|' + 'c|'.repeat(cols);
+
+    // Generate table rows with placeholders
+    let tableRows = [];
+    for (let r = 0; r < rows; r++) {
+        let cells = [];
+        for (let c = 0; c < cols; c++) {
+            cells.push(r === 0 ? `Tiêu đề ${c + 1}` : `Ô ${r},${c + 1}`);
+        }
+        tableRows.push(cells.join(' & '));
+    }
+
+    // Create LaTeX array
+    const latexTable = `$$\\begin{array}{${colAlign}}
+\\hline
+${tableRows.join(' \\\\ \\hline\n')} \\\\ \\hline
+\\end{array}$$`;
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const tableSpan = document.createElement('div');
+    tableSpan.className = 'latex-table';
+    tableSpan.innerHTML = latexTable;
+    tableSpan.style.fontFamily = 'monospace';
+    tableSpan.style.background = '#f0f9ff';
+    tableSpan.style.padding = '8px';
+    tableSpan.style.borderRadius = '4px';
+    tableSpan.style.margin = '8px 0';
+    tableSpan.style.whiteSpace = 'pre-wrap';
+
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(tableSpan);
+}
+
 // Insert image via file picker
 // Helper to upload image to server
 async function uploadImageToServer(base64Data) {
@@ -1980,6 +2027,8 @@ Tổng cộng: ${config.mcCount + config.tfCount + config.fillCount} câu.
 3. **CÔNG THỨC TOÁN:** Dùng LaTeX $...$ cho TẤT CẢ các số và công thức (VD: $1$, $2$, $x^2$...). Đảm bảo font chữ đồng bộ.
 4. **HÌNH ẢNH:** Thay thế hình ảnh bằng text: [HÌNH ẢNH].
 5. **XUỐNG DÒNG TRONG LỜI GIẢI:** Dùng \\n để xuống dòng (mỗi bước giải một dòng).
+6. **BẢNG SỐ LIỆU:** Nếu đề có bảng, dùng LaTeX array:
+   $$\\begin{array}{|c|c|c|}\\hline Tiêu đề 1 & Tiêu đề 2 & ... \\\\ \\hline Giá trị 1 & Giá trị 2 & ... \\\\ \\hline \\end{array}$$
 
 CẤU TRÚC JSON (Mảng đối tượng):
 [
