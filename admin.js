@@ -1995,8 +1995,16 @@ function copyAIPrompt() {
 function processAIImport() {
     let jsonInput = document.getElementById('aiJsonInput').value.trim();
 
-    // Strip markdown code block wrappers if present
-    jsonInput = jsonInput.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
+    // Robust parsing: Find the first '[' and last ']' to ignore any AI conversational preamble/postscript
+    const firstBracket = jsonInput.indexOf('[');
+    const lastBracket = jsonInput.lastIndexOf(']');
+
+    if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+        jsonInput = jsonInput.substring(firstBracket, lastBracket + 1);
+    } else {
+        // Fallback or error if no brackets found
+        // Let JSON.parse throw the specific error if it's not valid
+    }
 
     try {
         const questions = JSON.parse(jsonInput);
