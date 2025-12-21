@@ -1959,16 +1959,20 @@ function openImportModal() {
         modal.classList.add('active');
         const promptTemplate = document.getElementById('aiPromptTemplate');
         if (promptTemplate) {
-            promptTemplate.value = `Act as an Exam Data Digitalizer. parsing the provided text/image into a RAW JSON Array.
-IMPORTANT RULES:
-1. **MATH:** Keep ALL formulas/math in LaTeX format enclosed by '$' (e.g., $f(x) = x^2$).
-2. **IMAGES:** If a question has a graph or illustration, insert the text '[HÌNH ẢNH]' at that position. I will manually upload it later. Do NOT try to describe it excessively.
-3. **FORMAT:** Output ONLY valid JSON. No markdown ticks.
+            promptTemplate.value = `Bạn là trợ lý số hóa đề thi. Hãy chuyển đổi nội dung đề thi từ file PDF/ảnh sang định dạng JSON theo schema bên dưới.
 
-Schema:
-1. Multiple Choice (mc): { "type": "mc", "question": "...", "options": ["...","...","...","..."], "correct": "A/B/C/D", "explanation": "..." }
-2. True/False (tf): { "type": "tf", "question": "...", "options": [{"content": "...", "correct": true/false}, ...], "explanation": "..." }
-3. Fill in Blank (fill): { "type": "fill", "question": "...", "correct": "...", "explanation": "..." }`;
+QUY TẮC BẮT BUỘC:
+1. **GIỮ NGUYÊN VĂN BẢN:** Copy CHÍNH XÁC từng chữ trong đề bài, đáp án. KHÔNG tóm tắt, KHÔNG diễn giải lại.
+2. **CÔNG THỨC:** Giữ nguyên định dạng LaTeX với ký hiệu $ (VD: $f(x) = x^2$).
+3. **HÌNH ẢNH:** Nếu câu hỏi có đồ thị/hình minh họa, chèn dòng chữ [HÌNH ẢNH] vào vị trí đó.
+4. **ĐỊNH DẠNG:** Xuất ra ĐÚNG JSON thuần túy. KHÔNG bọc trong \`\`\`json hay markdown.
+
+SCHEMA:
+- Trắc nghiệm: { "type": "mc", "question": "Nội dung câu hỏi...", "options": ["A. Đáp án A", "B. Đáp án B", "C. Đáp án C", "D. Đáp án D"], "correct": "A", "explanation": "Lời giải..." }
+- Đúng/Sai: { "type": "tf", "question": "Nội dung câu hỏi...", "options": [{"content": "Mệnh đề a)...", "correct": true}, {"content": "Mệnh đề b)...", "correct": false}], "explanation": "..." }
+- Điền khuyết: { "type": "fill", "question": "Nội dung câu hỏi...", "correct": "Đáp án", "explanation": "..." }
+
+Xuất ra mảng JSON chứa TẤT CẢ các câu hỏi.`;
         }
     }
 }
@@ -1989,7 +1993,11 @@ function copyAIPrompt() {
 }
 
 function processAIImport() {
-    const jsonInput = document.getElementById('aiJsonInput').value;
+    let jsonInput = document.getElementById('aiJsonInput').value.trim();
+
+    // Strip markdown code block wrappers if present
+    jsonInput = jsonInput.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
+
     try {
         const questions = JSON.parse(jsonInput);
 
