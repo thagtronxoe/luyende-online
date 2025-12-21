@@ -623,7 +623,6 @@ async function showExamList(packageId) {
         const aNum = parseInt((a.title || '').match(/\d+/)?.[0]) || 999;
         const bNum = parseInt((b.title || '').match(/\d+/)?.[0]) || 999;
         return aNum - bNum;
-        return 0; // Same status, keep original order
     });
 
     grid.innerHTML = exams.map(exam => {
