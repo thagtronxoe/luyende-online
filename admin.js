@@ -1969,9 +1969,9 @@ YÊU CẦU CẤU TRÚC ĐỀ THI (${currentTemplate === 'thpt_toan' ? 'Môn Toá
 Tổng cộng: ${config.mcCount + config.tfCount + config.fillCount} câu.
 
 ⛔ CẢNH BÁO QUAN TRỌNG (VI PHẠM SẼ BỊ LỖI):
-1. **TUYỆT ĐỐI KHÔNG TÓM TẮT:** Phải giữ nguyên 100% văn bản gốc. Không được tự ý rút gọn hay thay đổi câu từ.
-2. **KHÔNG DÙNG DẤU BA CHẤM (...):** Nếu câu hỏi dài, hãy viết hết ra. Cấm dùng "..." để thay thế nội dung.
-3. **CÔNG THỨC TOÁN:** Bắt buộc dùng định dạng LaTeX kẹp giữa 2 dấu $ (Ví dụ: $x^2 + 2x$).
+1. **TUYỆT ĐỐI KHÔNG TÓM TẮT:** Giữ nguyên văn bản gốc.
+2. **LOẠI BỎ TIỀN TỐ:** KHÔNG ghi "Câu 1...", "A. ", "B. " ở đầu. CHỈ ghi nội dung.
+3. **CÔNG THỨC TOÁN:** Dùng LaTeX $...$ cho công thức toán. KHÔNG dùng cho số thường (VD: viết "có 2 nghiệm" thay vì "có $2$ nghiệm").
 4. **HÌNH ẢNH:** Thay thế hình ảnh bằng text: [HÌNH ẢNH].
 
 CẤU TRÚC JSON (Mảng đối tượng):
@@ -2044,11 +2044,31 @@ function processAIImport() {
         }
 
         let addedCount = 0;
+
+        // Helper to clean prefixes widely (e.g. "Câu 1:", "[HTN]", "A.")
+        const cleanText = (text) => {
+            if (!text) return '';
+            return text.replace(/^(Câu \d+|\[.*?\])\.?\s*/i, '').trim(); // Remove "Câu 1." or "[HTN]"
+        };
+        const cleanOption = (text) => {
+            if (!text) return '';
+            return text.replace(/^[A-D]\.\s*/, '').trim(); // Remove "A."
+        };
+
         questions.forEach(q => {
+            q.question = cleanText(q.question);
+
             if (q.type === 'mc') {
+                if (Array.isArray(q.options)) {
+                    q.options = q.options.map(opt => cleanOption(opt));
+                }
                 addMCQuestion(q);
                 addedCount++;
             } else if (q.type === 'tf') {
+                // Ensure options is array of objects
+                if (Array.isArray(q.options)) {
+                    q.options.forEach(opt => { if (opt.content) opt.content = cleanOption(opt.content); });
+                }
                 addTFQuestion(q);
                 addedCount++;
             } else if (q.type === 'fill') {
