@@ -492,13 +492,6 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    overflow: hidden;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    min-width: 0;
 }
 
 .tf-label {
@@ -3446,13 +3439,11 @@ body {
     min-width: 2em;
 }
 
-/* KaTeX inside TF rows - prevent overflow */
+/* KaTeX inside TF rows - allow wrapping but keep normal size */
 .tf-text .katex,
 .tf-row .katex,
 .review-tf-row .katex {
-    font-size: 1em;
-    white-space: normal !important;
-    display: inline !important;
+    white-space: normal;
 }
 
 /* Force vector arrow length if standard CSS allows? Katex handles this internally. */
@@ -3778,33 +3769,5 @@ body {
     .exam-body-wrapper {
         height: calc(100vh - 120px) !important;
         height: calc(100dvh - 120px) !important;
-    }
-
-    /* LaTeX/MathJax overflow handling on mobile */
-    .tf-text,
-    .review-tf-row .tf-text,
-    .tf-option-text,
-    .question-text,
-    .question-content,
-    .mc-text {
-        overflow-x: auto !important;
-        overflow-wrap: break-word !important;
-        word-wrap: break-word !important;
-        word-break: break-word !important;
-        max-width: 100% !important;
-    }
-
-    /* MathJax container overflow */
-    .MathJax,
-    .MathJax_Display,
-    mjx-container {
-        overflow-x: auto !important;
-        max-width: 100% !important;
-        font-size: 0.9em !important;
-    }
-
-    /* TF Options table-like layout fix */
-    .review-tf-options {
-        overflow-x: auto;
     }
 }
