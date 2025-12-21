@@ -2013,52 +2013,65 @@ function openImportModal() {
         const promptTemplate = document.getElementById('aiPromptTemplate');
         if (promptTemplate) {
             const config = getTemplateConfig();
-            promptTemplate.value = `Bạn là một máy quét OCR chính xác tuyệt đối. Nhiệm vụ là trích xuất dữ liệu đề thi thành JSON.
+            promptTemplate.value = `**PROMPT TỐI ƯU CHO MÁY QUÉT OCR ĐỀ THI TOÁN**
 
-YÊU CẦU CẤU TRÚC ĐỀ THI (${currentTemplate === 'thpt_toan' ? 'Môn Toán' : 'Môn KHTN/KHXH'}):
-- Phần 1 (Trắc nghiệm): ${config.mcCount} câu
-- Phần 2 (Đúng/Sai): ${config.tfCount} câu
-- Phần 3 (Điền khuyết): ${config.fillCount} câu
-Tổng cộng: ${config.mcCount + config.tfCount + config.fillCount} câu.
+**Nhiệm vụ:** Bạn là một máy quét OCR chuyên dụng cho đề thi Toán. Hãy chuyển đổi toàn bộ nội dung từ file/hình ảnh đính kèm thành định dạng JSON với độ chính xác tuyệt đối.
 
-⛔ CẢNH BÁO QUAN TRỌNG (VI PHẠM SẼ BỊ LỖI):
-1. **TUYỆT ĐỐI KHÔNG TÓM TẮT:** Giữ nguyên văn bản gốc CẢ CÂU HỎI VÀ LỜI GIẢI. Không được rút gọn lời giải.
-2. **LOẠI BỎ TIỀN TỐ:** KHÔNG ghi "Câu 1...", "A. ", "B. " ở đầu. CHỈ ghi nội dung.
-3. **CÔNG THỨC TOÁN:** Dùng LaTeX $...$ cho TẤT CẢ các số và công thức (VD: $1$, $2$, $x^2$...). Đảm bảo font chữ đồng bộ.
-4. **HÌNH ẢNH:** Thay thế hình ảnh bằng text: [HÌNH ẢNH].
-5. **XUỐNG DÒNG TRONG LỜI GIẢI:** Dùng \\n để xuống dòng (mỗi bước giải một dòng).
+**CẤU TRÚC ĐỀ THI (${currentTemplate === 'thpt_toan' ? 'Môn Toán' : 'Môn KHTN/KHXH'}):**
+- Phần I (Trắc nghiệm): ${config.mcCount} câu
+- Phần II (Đúng/Sai): ${config.tfCount} câu  
+- Phần III (Trả lời ngắn): ${config.fillCount} câu
+- Tổng cộng: ${config.mcCount + config.tfCount + config.fillCount} câu
+
+**YÊU CẦU BẮT BUỘC:**
+
+1. **GIỮ NGUYÊN VĂN BẢN GỐC:** Tuyệt đối không được tóm tắt nội dung câu hỏi hay lời giải. Phải trích xuất toàn bộ văn bản từ phần "Lời giải tham khảo" trong tài liệu, không được viết tắt hay lược bỏ bất kỳ bước giải nào.
+
+2. **ĐỊNH DẠNG LATEX:** Dùng ký hiệu \`$...$\` cho **TẤT CẢ** các số, biến số, công thức và đơn vị (Ví dụ: \`$1$\`, \`$2$\`, \`$x^2$\`, \`$Oxyz$\`, \`$km$\`, \`$m$\`,...).
+
+3. **LOẠI BỎ TIỀN TỐ DƯ THỪA:**
+   - KHÔNG ghi "Câu 1:", "Câu 2:",... ở đầu câu hỏi.
+   - KHÔNG ghi "A. ", "B. ", "a) ", "b) " ở đầu các lựa chọn.
+   - **ĐẶC BIỆT:** Loại bỏ hoàn toàn chữ "Phát biểu" hoặc "Phát biểu:" ở Phần II (Đúng/Sai).
+
+4. **HÌNH ẢNH:** Thay thế tất cả các hình vẽ, đồ thị bằng dòng chữ: \`[HÌNH ẢNH]\`.
+
+5. **XUỐNG DÒNG TRONG LỜI GIẢI:** Sử dụng ký tự \`\\n\` để phân tách các dòng trong phần "explanation" để dễ đọc.
+
 6. **BẢNG SỐ LIỆU:** Nếu đề có bảng, dùng LaTeX array:
-   $$\\begin{array}{|c|c|c|}\\hline Tiêu đề 1 & Tiêu đề 2 & ... \\\\ \\hline Giá trị 1 & Giá trị 2 & ... \\\\ \\hline \\end{array}$$
+   \`$$\\\\begin{array}{|c|c|c|}\\\\hline Tiêu đề 1 & Tiêu đề 2 \\\\\\\\ \\\\hline Giá trị 1 & Giá trị 2 \\\\\\\\ \\\\hline \\\\end{array}$$\`
 
-CẤU TRÚC JSON (Mảng đối tượng):
+**CẤU TRÚC JSON MẪU:**
+\`\`\`json
 [
   {
     "type": "mc",
-    "question": "Ghi đầy đủ nội dung câu hỏi (bao gồm cả công thức $...$ nếu có)",
-    "options": ["Nội dung đáp án A (KHÔNG ghi chữ A.)", "Nội dung đáp án B", "Nội dung đáp án C", "Nội dung đáp án D"],
-    "correct": "A (hoặc B, C, D)",
-    "explanation": "Bước 1: ...\\nBước 2: ...\\nKết luận: ..."
+    "question": "Nội dung câu hỏi trắc nghiệm nhiều lựa chọn...",
+    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+    "correct": "A",
+    "explanation": "Toàn bộ lời giải chi tiết dòng 1...\\nToàn bộ lời giải chi tiết dòng 2..."
   },
   {
     "type": "tf",
-    "question": "Ghi đầy đủ nội dung câu hỏi đúng sai...",
+    "question": "Nội dung câu hỏi đúng sai (KHÔNG có chữ 'Phát biểu')...",
     "options": [
-      {"content": "Nội dung ý a", "correct": true},
+      {"content": "Nội dung ý a (không có a))", "correct": true},
       {"content": "Nội dung ý b", "correct": false},
       {"content": "Nội dung ý c", "correct": false},
       {"content": "Nội dung ý d", "correct": true}
     ],
-    "explanation": "..."
+    "explanation": "Ghi đầy đủ các bước giải chi tiết cho từng ý a, b, c, d..."
   },
   {
     "type": "fill",
-    "question": "Ghi đầy đủ nội dung câu hỏi điền đáp án...",
-    "correct": "Đáp án đúng (số hoặc chữ)",
-    "explanation": "..."
+    "question": "Nội dung câu hỏi trả lời ngắn/điền khuyết...",
+    "correct": "Con số đáp án",
+    "explanation": "Ghi đầy đủ toàn bộ các bước giải dẫn đến kết quả..."
   }
 ]
+\`\`\`
 
-Hãy chuyển đổi TOÀN BỘ đề thi (không bỏ sót câu nào) thành JSON hợp lệ theo mẫu trên.`;
+**Hãy thực hiện ngay sau khi tôi gửi tài liệu.**`;
         }
     }
 }
