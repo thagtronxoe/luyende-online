@@ -81,7 +81,7 @@ const packageSchema = new mongoose.Schema({
     description: String,
     icon: { type: String, default: '📝' },
     duration: { type: Number, default: 90 },
-    accessType: { type: String, enum: ['open', 'register', 'updating'], default: 'register' },
+    accessType: { type: String, enum: ['open', 'register', 'updating', 'free_registration'], default: 'register' },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -393,6 +393,46 @@ app.get('/api/packages', async (req, res) => {
         }));
 
         res.json(packagesWithCount);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Activate package (for students)
+app.post('/api/packages/:id/activate', auth, async (req, res) => {
+    try {
+        let pkg = await Package.findById(req.params.id);
+        if (!pkg) {
+            pkg = await Package.findOne({ id: req.params.id });
+        }
+        if (!pkg) return res.status(404).json({ error: 'Gói đề không tồn tại' });
+
+        if (pkg.accessType !== 'open' && pkg.accessType !== 'free_registration') {
+            return res.status(403).json({ error: 'Gói đề này cần kích hoạt bởi admin' });
+        }
+
+        const user = await User.findById(req.user._id);
+        const pkgId = pkg.id || pkg._id.toString();
+        const pkgMongoId = pkg._id.toString();
+
+        if (!user.activatedPackages) user.activatedPackages = [];
+
+        // Add both IDs to be safe (client uses mix)
+        let changed = false;
+        if (!user.activatedPackages.includes(pkgId)) {
+            user.activatedPackages.push(pkgId);
+            changed = true;
+        }
+        if (!user.activatedPackages.includes(pkgMongoId)) {
+            user.activatedPackages.push(pkgMongoId);
+            changed = true;
+        }
+
+        if (changed) {
+            await user.save();
+        }
+
+        res.json({ message: 'Đã kích hoạt gói đề', activatedPackages: user.activatedPackages });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

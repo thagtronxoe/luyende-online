@@ -480,7 +480,7 @@ function renderPackages() {
 }
 
 // Handle package click based on user's access
-function handlePackageClick(packageId) {
+async function handlePackageClick(packageId) {
     const pkg = examPackages.find(p => (p._id || p.id) === packageId);
     if (!pkg) return;
 
@@ -500,22 +500,36 @@ function handlePackageClick(packageId) {
         // Feature: Free Registration
         if (pkg.accessType === 'free_registration') {
             if (confirm(`Bạn có muốn thêm gói "${pkg.name}" vào danh sách đề của bạn miễn phí?`)) {
-                // Activate package for user
-                currentUser.activatedPackages = currentUser.activatedPackages || [];
-                currentUser.activatedPackages.push(pkgId);
+                try {
+                    // NEW: Call API to activate on server
+                    const result = await apiActivatePackage(pkgId);
 
-                // Update localStorage users
-                const userIndex = users.findIndex(u => u.id === currentUser.id);
-                if (userIndex !== -1) {
-                    users[userIndex].activatedPackages = currentUser.activatedPackages;
-                    localStorage.setItem('luyende_users', JSON.stringify(users));
-                    localStorage.setItem('luyende_currentUser', JSON.stringify(users[userIndex]));
+                    // Update local currentUser
+                    if (result && result.activatedPackages) {
+                        currentUser.activatedPackages = result.activatedPackages;
+                    } else {
+                        currentUser.activatedPackages = currentUser.activatedPackages || [];
+                        if (!currentUser.activatedPackages.includes(pkgId)) currentUser.activatedPackages.push(pkgId);
+                    }
+
+                    // Update localStorage currentUser
+                    localStorage.setItem('luyende_currentUser', JSON.stringify(currentUser));
+
+                    // Update localStorage users list (legacy support)
+                    const userIndex = users.findIndex(u => u.id === currentUser.id);
+                    if (userIndex !== -1) {
+                        users[userIndex].activatedPackages = currentUser.activatedPackages;
+                        localStorage.setItem('luyende_users', JSON.stringify(users));
+                    }
+
+                    // Refresh UI
+                    renderPackages();
+                    alert('Đã thêm gói đề thành công! Bạn có thể bắt đầu làm bài ngay.');
+                    showExamList(pkgId);
+                } catch (err) {
+                    console.error('Activation error:', err);
+                    alert('Lỗi khi thêm gói đề: ' + (err.message || 'Lỗi không xác định'));
                 }
-
-                // Refresh UI
-                renderPackages();
-                alert('Đã thêm gói đề thành công! Bạn có thể bắt đầu làm bài ngay.');
-                showExamList(pkgId);
                 return;
             } else {
                 return;

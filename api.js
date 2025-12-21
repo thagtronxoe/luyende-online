@@ -111,6 +111,10 @@ async function apiGetPackages() {
     return await apiCall('/packages');
 }
 
+async function apiActivatePackage(packageId) {
+    return await apiCall(`/packages/${packageId}/activate`, 'POST');
+}
+
 async function apiCreatePackage(packageData) {
     return await apiCall('/packages', 'POST', packageData);
 }
