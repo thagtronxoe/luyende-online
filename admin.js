@@ -1959,7 +1959,7 @@ function openImportModal() {
         modal.classList.add('active');
         const promptTemplate = document.getElementById('aiPromptTemplate');
         if (promptTemplate) {
-            promptTemplate.value = `Bạn là một máy quét OCR chính xác tuyệt đối. Nhiệm vụ là trích xuất dữ liệu đề thi thành JSON.
+            promptTemplate.value = `Bạn là một máy quét OCR chính xác tuyệt đối. Nhiệm vụ là trích xuất dữ liệu đề thi (Toán, Lý, Hóa, Sinh, Sử, Địa, GDCD...) thành JSON.
 
 ⛔ CẢNH BÁO QUAN TRỌNG (VI PHẠM SẼ BỊ LỖI):
 1. **TUYỆT ĐỐI KHÔNG TÓM TẮT:** Phải giữ nguyên 100% văn bản gốc. Không được tự ý rút gọn hay thay đổi câu từ.
@@ -1971,7 +1971,7 @@ CẤU TRÚC JSON (Mảng đối tượng):
 [
   {
     "type": "mc",
-    "question": "Ghi đầy đủ nội dung câu hỏi trắc nghiệm vào đây (bao gồm cả công thức $...$)",
+    "question": "Ghi đầy đủ nội dung câu hỏi (bao gồm cả công thức $...$ nếu có)",
     "options": ["A. Nội dung đáp án A", "B. Nội dung đáp án B", "C. Nội dung đáp án C", "D. Nội dung đáp án D"],
     "correct": "A (hoặc B, C, D)",
     "explanation": "Lời giải chi tiết (nếu có)"
