@@ -1959,20 +1959,43 @@ function openImportModal() {
         modal.classList.add('active');
         const promptTemplate = document.getElementById('aiPromptTemplate');
         if (promptTemplate) {
-            promptTemplate.value = `Bạn là trợ lý số hóa đề thi. Hãy chuyển đổi nội dung đề thi từ file PDF/ảnh sang định dạng JSON theo schema bên dưới.
+            promptTemplate.value = `Bạn là một máy quét OCR chính xác tuyệt đối. Nhiệm vụ là trích xuất dữ liệu đề thi thành JSON.
 
-QUY TẮC BẮT BUỘC:
-1. **GIỮ NGUYÊN VĂN BẢN:** Copy CHÍNH XÁC từng chữ trong đề bài, đáp án. KHÔNG tóm tắt, KHÔNG diễn giải lại.
-2. **CÔNG THỨC:** Giữ nguyên định dạng LaTeX với ký hiệu $ (VD: $f(x) = x^2$).
-3. **HÌNH ẢNH:** Nếu câu hỏi có đồ thị/hình minh họa, chèn dòng chữ [HÌNH ẢNH] vào vị trí đó.
-4. **ĐỊNH DẠNG:** Xuất ra ĐÚNG JSON thuần túy. KHÔNG bọc trong \`\`\`json hay markdown.
+⛔ CẢNH BÁO QUAN TRỌNG (VI PHẠM SẼ BỊ LỖI):
+1. **TUYỆT ĐỐI KHÔNG TÓM TẮT:** Phải giữ nguyên 100% văn bản gốc. Không được tự ý rút gọn hay thay đổi câu từ.
+2. **KHÔNG DÙNG DẤU BA CHẤM (...):** Nếu câu hỏi dài, hãy viết hết ra. Cấm dùng "..." để thay thế nội dung.
+3. **CÔNG THỨC TOÁN:** Bắt buộc dùng định dạng LaTeX kẹp giữa 2 dấu $ (Ví dụ: $x^2 + 2x$).
+4. **HÌNH ẢNH:** Thay thế hình ảnh bằng text: [HÌNH ẢNH].
 
-SCHEMA:
-- Trắc nghiệm: { "type": "mc", "question": "Nội dung câu hỏi...", "options": ["A. Đáp án A", "B. Đáp án B", "C. Đáp án C", "D. Đáp án D"], "correct": "A", "explanation": "Lời giải..." }
-- Đúng/Sai: { "type": "tf", "question": "Nội dung câu hỏi...", "options": [{"content": "Mệnh đề a)...", "correct": true}, {"content": "Mệnh đề b)...", "correct": false}], "explanation": "..." }
-- Điền khuyết: { "type": "fill", "question": "Nội dung câu hỏi...", "correct": "Đáp án", "explanation": "..." }
+CẤU TRÚC JSON (Mảng đối tượng):
+[
+  {
+    "type": "mc",
+    "question": "Ghi đầy đủ nội dung câu hỏi trắc nghiệm vào đây (bao gồm cả công thức $...$)",
+    "options": ["A. Nội dung đáp án A", "B. Nội dung đáp án B", "C. Nội dung đáp án C", "D. Nội dung đáp án D"],
+    "correct": "A (hoặc B, C, D)",
+    "explanation": "Lời giải chi tiết (nếu có)"
+  },
+  {
+    "type": "tf",
+    "question": "Ghi đầy đủ nội dung câu hỏi đúng sai...",
+    "options": [
+      {"content": "Nội dung ý a", "correct": true},
+      {"content": "Nội dung ý b", "correct": false},
+      {"content": "Nội dung ý c", "correct": false},
+      {"content": "Nội dung ý d", "correct": true}
+    ],
+    "explanation": "..."
+  },
+  {
+    "type": "fill",
+    "question": "Ghi đầy đủ nội dung câu hỏi điền đáp án...",
+    "correct": "Đáp án đúng (số hoặc chữ)",
+    "explanation": "..."
+  }
+]
 
-Xuất ra mảng JSON chứa TẤT CẢ các câu hỏi.`;
+Hãy chuyển đổi TOÀN BỘ đề thi (không bỏ sót câu nào) thành JSON hợp lệ theo mẫu trên.`;
         }
     }
 }
