@@ -2055,9 +2055,36 @@ function processAIImport() {
             // alert('Debug Data Q1: ' + JSON.stringify(questions[0]).substring(0, 200));
         }
 
+        // Helper to normalize keys (handle AI capitalization/aliases)
+        const normalizeOb = (obj) => {
+            const newObj = {};
+            for (let key in obj) {
+                const lowerKey = key.toLowerCase().trim();
+                newObj[lowerKey] = obj[key];
+            }
+            // Map aliases
+            if (newObj.content && !newObj.question) newObj.question = newObj.content;
+            if (newObj.answers && !newObj.options) newObj.options = newObj.answers;
+            if (newObj.choices && !newObj.options) newObj.options = newObj.choices;
+            if (newObj.answer && !newObj.correct) newObj.correct = newObj.answer;
+            if (newObj.correctanswer && !newObj.correct) newObj.correct = newObj.correctanswer;
+
+            // Standardize 'type' if missing or mixed case
+            if (!newObj.type) {
+                // Guess type based on structure if missing
+                if (newObj.options && newObj.options.length === 4 && typeof newObj.correct === 'string') newObj.type = 'mc';
+                else if (newObj.options && typeof newObj.options[0] === 'object') newObj.type = 'tf';
+                else newObj.type = 'fill';
+            } else {
+                newObj.type = newObj.type.toLowerCase();
+            }
+
+            return newObj;
+        };
+
         // Helper to escape HTML (prevent < 5 from being treated as tag)
         const escapeHtml = (text) => {
-            if (!text) return '';
+            if (text === null || text === undefined) return '';
             return String(text)
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
@@ -2068,7 +2095,12 @@ function processAIImport() {
 
         let addedCount = 0;
 
-        questions.forEach(q => {
+        questions.forEach(originQ => {
+            let q = normalizeOb(originQ);
+
+            // Fallback for empty question
+            if (!q.question) q.question = "(Lỗi: Không tìm thấy nội dung câu hỏi trong JSON)";
+
             // Escape data before passing
             const safeQ = { ...q };
             safeQ.question = escapeHtml(q.question);
@@ -2085,7 +2117,8 @@ function processAIImport() {
                 if (Array.isArray(q.options)) {
                     safeQ.options = q.options.map(o => {
                         if (typeof o === 'object') {
-                            return { ...o, content: escapeHtml(o.content) };
+                            const normO = normalizeOb(o);
+                            return { ...normO, content: escapeHtml(normO.content || normO.question || '') };
                         }
                         return escapeHtml(o);
                     });
