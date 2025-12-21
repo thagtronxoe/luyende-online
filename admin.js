@@ -1926,3 +1926,76 @@ showAdminTab = async function (tabName) {
         await loadContactSettings();
     }
 };
+
+// ========== AI IMPORT FUNCTIONS (NotebookLM) ==========
+
+function openImportModal() {
+    const modal = document.getElementById('importAIModal');
+    if (modal) {
+        modal.classList.add('active');
+        const promptTemplate = document.getElementById('aiPromptTemplate');
+        if (promptTemplate) {
+            promptTemplate.value = `Act as an Exam Data Digitalizer. parsing the provided text/image into a RAW JSON Array.
+IMPORTANT RULES:
+1. **MATH:** Keep ALL formulas/math in LaTeX format enclosed by '$' (e.g., $f(x) = x^2$).
+2. **IMAGES:** If a question has a graph or illustration, insert the text '[HÌNH ẢNH]' at that position. I will manually upload it later. Do NOT try to describe it excessively.
+3. **FORMAT:** Output ONLY valid JSON. No markdown ticks.
+
+Schema:
+1. Multiple Choice (mc): { "type": "mc", "question": "...", "options": ["...","...","...","..."], "correct": "A/B/C/D", "explanation": "..." }
+2. True/False (tf): { "type": "tf", "question": "...", "options": [{"content": "...", "correct": true/false}, ...], "explanation": "..." }
+3. Fill in Blank (fill): { "type": "fill", "question": "...", "correct": "...", "explanation": "..." }`;
+        }
+    }
+}
+
+function closeImportModal() {
+    const modal = document.getElementById('importAIModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.getElementById('aiJsonInput').value = ''; // Clear input
+    }
+}
+
+function copyAIPrompt() {
+    const promptText = document.getElementById('aiPromptTemplate');
+    promptText.select();
+    document.execCommand('copy');
+    alert('✅ Đã copy Prompt! Hãy gửi cho AI.');
+}
+
+function processAIImport() {
+    const jsonInput = document.getElementById('aiJsonInput').value;
+    try {
+        const questions = JSON.parse(jsonInput);
+
+        if (!Array.isArray(questions)) {
+            throw new Error('Format must be a JSON Array');
+        }
+
+        let addedCount = 0;
+        questions.forEach(q => {
+            if (q.type === 'mc') {
+                addMCQuestion(q);
+                addedCount++;
+            } else if (q.type === 'tf') {
+                addTFQuestion(q);
+                addedCount++;
+            } else if (q.type === 'fill') {
+                addFillQuestion({
+                    question: q.question,
+                    correctAnswer: q.correct,
+                    explanation: q.explanation
+                });
+                addedCount++;
+            }
+        });
+
+        alert(`✅ Đã nhập thành công ${addedCount} câu hỏi!`);
+        closeImportModal();
+        updateSectionHeaders(); // Update counts
+
+    } catch (e) {
+        alert('❌ Lỗi định dạng JSON: ' + e.message + '\nHãy chắc chắn bạn chỉ copy phần mã JSON từ AI.');
+    }
+}

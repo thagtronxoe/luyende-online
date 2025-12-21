@@ -253,6 +253,9 @@
                                 <button type="button" class="btn btn-outline" onclick="previewExam()">
                                     👁 Xem trước
                                 </button>
+                                <button type="button" class="btn btn-warning" onclick="openImportModal()">
+                                    ✨ Nhập từ AI
+                                </button>
                                 <button type="button" class="btn btn-primary" onclick="saveExam()">
                                     💾 Lưu
                                 </button>
@@ -598,6 +601,41 @@
                 </select>
             </div>
             <button type="button" class="btn btn-primary btn-full" onclick="copyExam()">📋 Sao chép đề</button>
+        </div>
+    </div>
+
+    <!-- AI Import Modal -->
+    <div id="importAIModal" class="modal">
+        <div class="modal-content modal-large" style="max-width: 800px;">
+            <button class="modal-close" onclick="closeImportModal()">&times;</button>
+            <h2>✨ Nhập đề từ AI (NotebookLM)</h2>
+
+            <div class="import-step" style="margin-bottom: 24px;">
+                <h3 style="margin-bottom: 12px; color: var(--primary-color);">Bước 1: Copy Prompt này & Gửi cho AI</h3>
+                <p class="import-desc" style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                    Upload file PDF/Ảnh đề thi lên NotebookLM, sau đó copy toàn bộ câu lệnh bên dưới và gửi cho AI.
+                </p>
+                <div style="position: relative;">
+                    <textarea id="aiPromptTemplate" class="prompt-box" readonly onclick="this.select()"
+                        style="width: 100%; height: 150px; background: #f8f9fa; border: 1px solid #ddd; padding: 12px; font-family: monospace; font-size: 13px; line-height: 1.5; resize: none;"></textarea>
+                    <button class="btn btn-primary btn-sm" onclick="copyAIPrompt()"
+                        style="position: absolute; top: 10px; right: 10px;">📋 Copy Prompt</button>
+                </div>
+            </div>
+
+            <div class="import-step">
+                <h3 style="margin-bottom: 12px; color: var(--primary-color);">Bước 2: Dán kết quả JSON vào đây</h3>
+                <p class="import-desc" style="font-size: 14px; color: #666; margin-bottom: 8px;">
+                    AI sẽ trả về một đoạn mã JSON. Hãy copy và dán nó vào ô bên dưới.
+                </p>
+                <textarea id="aiJsonInput" class="json-input" placeholder='[{"type":"mc", ...}]'
+                    style="width: 100%; height: 200px; border: 1px solid #ddd; padding: 12px; font-family: monospace; font-size: 13px;"></textarea>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 24px; text-align: right;">
+                <button class="btn btn-secondary" onclick="closeImportModal()">Hủy</button>
+                <button class="btn btn-primary" onclick="processAIImport()">🚀 Xử lý & Nhập đề</button>
+            </div>
         </div>
     </div>
 
