@@ -1679,6 +1679,26 @@ function insertMathWYSIWYG() {
 }
 
 // Insert image via file picker
+// Helper to upload image to server
+async function uploadImageToServer(base64Data) {
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Data })
+        });
+
+        if (!response.ok) throw new Error('Upload failed');
+
+        const data = await response.json();
+        return data.url; // Return server URL
+    } catch (err) {
+        console.error('Image upload failed, using base64 fallback:', err);
+        return base64Data; // Fallback to base64 if upload fails
+    }
+}
+
+// Insert image via file picker
 function insertImageWYSIWYG() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -1689,8 +1709,10 @@ function insertImageWYSIWYG() {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = function (e) {
-            insertImageAtCursor(e.target.result);
+        reader.onload = async function (e) {
+            // Upload to server then insert
+            const url = await uploadImageToServer(e.target.result);
+            insertImageAtCursor(url);
         };
         reader.readAsDataURL(file);
     };
@@ -1819,8 +1841,10 @@ function setupPasteHandler(container) {
                     const file = item.getAsFile();
                     const reader = new FileReader();
 
-                    reader.onload = function (e) {
-                        insertImageIntoEditor(editor, e.target.result);
+                    reader.onload = async function (e) {
+                        // Upload to server then insert
+                        const url = await uploadImageToServer(e.target.result);
+                        insertImageIntoEditor(editor, url);
                     };
 
                     reader.readAsDataURL(file);

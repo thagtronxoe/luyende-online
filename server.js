@@ -10,8 +10,51 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '50mb' })); // Allow large base64 uploads
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname)));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve uploaded files
+
+// Ensure uploads directory exists
+const fs = require('fs');
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
+
+// Upload Endpoint (Base64 -> File)
+app.post('/api/upload', (req, res) => {
+    try {
+        const { image } = req.body;
+        if (!image) return res.status(400).json({ error: 'No image provided' });
+
+        // Extract extension and data
+        const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) {
+            return res.status(400).json({ error: 'Invalid base64 string' });
+        }
+
+        const type = matches[1];
+        const data = matches[2];
+        const buffer = Buffer.from(data, 'base64');
+
+        // Generate filename
+        const ext = type.split('/')[1] || 'png';
+        const filename = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
+        const filePath = path.join(uploadDir, filename);
+
+        // Write file
+        fs.writeFileSync(filePath, buffer);
+
+        // Return URL
+        res.json({ url: `/uploads/${filename}` });
+        console.log(`✅ File uploaded: ${filename}`);
+
+    } catch (err) {
+        console.error('Upload error:', err);
+        res.status(500).json({ error: 'Upload failed' });
+    }
+});
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/luyenthionline')
