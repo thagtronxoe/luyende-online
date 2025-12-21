@@ -249,12 +249,17 @@ function backToExamList() {
     localStorage.removeItem('luyende_activeExamState');
     if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
 
+    // Restore packageId from localStorage if not in memory
+    if (!currentPackageId) {
+        currentPackageId = localStorage.getItem('luyende_currentPackageId');
+    }
+
     console.log('🔙 Going to exam list for package:', currentPackageId);
     if (currentPackageId) {
         showExamList(currentPackageId);
     } else {
         console.log('🔙 No currentPackageId, going to dashboard');
-        showScreen('dashboardScreen');
+        showDashboard();
     }
 }
 
@@ -573,16 +578,34 @@ async function showExamList(packageId) {
         return;
     }
 
-    // Load exams for this package first
-    let exams = await loadExamsForPackage(packageId);
-
     document.getElementById('examListTitle').textContent = pkg.name;
-
     const grid = document.getElementById('examGrid');
+
+    // Show loading skeleton immediately
+    grid.innerHTML = `
+        <div class="exam-card skeleton">
+            <div class="skeleton-line" style="height: 20px; width: 60%; margin-bottom: 12px;"></div>
+            <div class="skeleton-line" style="height: 16px; width: 80%; margin-bottom: 8px;"></div>
+            <div class="skeleton-line" style="height: 40px; width: 100%; margin-top: 16px;"></div>
+        </div>
+        <div class="exam-card skeleton">
+            <div class="skeleton-line" style="height: 20px; width: 60%; margin-bottom: 12px;"></div>
+            <div class="skeleton-line" style="height: 16px; width: 80%; margin-bottom: 8px;"></div>
+            <div class="skeleton-line" style="height: 40px; width: 100%; margin-top: 16px;"></div>
+        </div>
+        <div class="exam-card skeleton">
+            <div class="skeleton-line" style="height: 20px; width: 60%; margin-bottom: 12px;"></div>
+            <div class="skeleton-line" style="height: 16px; width: 80%; margin-bottom: 8px;"></div>
+            <div class="skeleton-line" style="height: 40px; width: 100%; margin-top: 16px;"></div>
+        </div>
+    `;
+    showScreen('examListScreen');
+
+    // Load exams for this package
+    let exams = await loadExamsForPackage(packageId);
 
     if (!exams || exams.length === 0) {
         grid.innerHTML = '<div class="no-exams">Chưa có đề thi nào trong gói này</div>';
-        switchScreen('examListScreen');
         return;
     }
 
