@@ -1959,7 +1959,14 @@ function openImportModal() {
         modal.classList.add('active');
         const promptTemplate = document.getElementById('aiPromptTemplate');
         if (promptTemplate) {
-            promptTemplate.value = `Bạn là một máy quét OCR chính xác tuyệt đối. Nhiệm vụ là trích xuất dữ liệu đề thi (Toán, Lý, Hóa, Sinh, Sử, Địa, GDCD...) thành JSON.
+            const config = getTemplateConfig();
+            promptTemplate.value = `Bạn là một máy quét OCR chính xác tuyệt đối. Nhiệm vụ là trích xuất dữ liệu đề thi thành JSON.
+
+YÊU CẦU CẤU TRÚC ĐỀ THI (${currentTemplate === 'thpt_toan' ? 'Môn Toán' : 'Môn KHTN/KHXH'}):
+- Phần 1 (Trắc nghiệm): ${config.mcCount} câu
+- Phần 2 (Đúng/Sai): ${config.tfCount} câu
+- Phần 3 (Điền khuyết): ${config.fillCount} câu
+Tổng cộng: ${config.mcCount + config.tfCount + config.fillCount} câu.
 
 ⛔ CẢNH BÁO QUAN TRỌNG (VI PHẠM SẼ BỊ LỖI):
 1. **TUYỆT ĐỐI KHÔNG TÓM TẮT:** Phải giữ nguyên 100% văn bản gốc. Không được tự ý rút gọn hay thay đổi câu từ.
