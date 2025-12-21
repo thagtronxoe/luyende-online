@@ -2072,6 +2072,14 @@ function processAIImport() {
         closeImportModal();
         updateSectionHeaders(); // Update counts
 
+        // Render MathJax for new content
+        if (window.MathJax) {
+            window.MathJax.typesetPromise ? window.MathJax.typesetPromise() : window.MathJax.typeset();
+        }
+
+        // Scroll to questions
+        document.getElementById('mcQuestions').scrollIntoView({ behavior: 'smooth' });
+
     } catch (e) {
         alert('❌ Lỗi định dạng JSON: ' + e.message + '\nHãy chắc chắn bạn chỉ copy phần mã JSON từ AI.');
     }
