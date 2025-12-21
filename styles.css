@@ -3665,3 +3665,103 @@ body {
     margin: 0 !important;
     /* Allow parent alignment to control */
 }
+
+/* ========== MOBILE RESPONSIVE FIXES ========== */
+@media (max-width: 768px) {
+
+    /* TF Review Row - Stack vertically on mobile */
+    .review-tf-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        padding: 10px 12px;
+    }
+
+    .review-tf-row .tf-label {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .review-tf-row .tf-text {
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .review-tf-row .tf-answer,
+    .review-tf-row .tf-correct {
+        display: inline-block;
+        font-size: 11px;
+        margin-right: 8px;
+    }
+
+    .review-tf-row .tf-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 16px;
+    }
+
+    .review-tf-row {
+        position: relative;
+    }
+
+    /* Answer Review Card - Reduce padding */
+    .review-question {
+        padding: 12px;
+    }
+
+    .review-question-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .review-explanation {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    /* Answer Modal - Full width on mobile */
+    .answer-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .answer-modal-header {
+        padding: 16px;
+    }
+
+    .answer-modal-body {
+        padding: 12px;
+    }
+
+    .answer-item {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+    }
+
+    .answer-options {
+        margin-left: 0;
+    }
+
+    /* Fullscreen Exam Mode on Mobile */
+    #examScreen {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 9999 !important;
+        background: white !important;
+    }
+
+    /* Note: Fullscreen exam uses z-index to appear on top */
+
+    /* Exam Content Full Height */
+    .exam-body-wrapper {
+        height: calc(100vh - 120px) !important;
+        height: calc(100dvh - 120px) !important;
+    }
+}
