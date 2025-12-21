@@ -1985,7 +1985,7 @@ CẤU TRÚC JSON (Mảng đối tượng):
   {
     "type": "mc",
     "question": "Ghi đầy đủ nội dung câu hỏi (bao gồm cả công thức $...$ nếu có)",
-    "options": ["A. Nội dung đáp án A", "B. Nội dung đáp án B", "C. Nội dung đáp án C", "D. Nội dung đáp án D"],
+    "options": ["Nội dung đáp án A (KHÔNG ghi chữ A.)", "Nội dung đáp án B", "Nội dung đáp án C", "Nội dung đáp án D"],
     "correct": "A (hoặc B, C, D)",
     "explanation": "Lời giải chi tiết (nếu có)"
   },
