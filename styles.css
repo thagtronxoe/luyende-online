@@ -494,6 +494,11 @@ body {
     padding: 14px 16px;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    min-width: 0;
 }
 
 .tf-label {
@@ -3439,6 +3444,15 @@ body {
 
 .katex .overrightarrow-arrow {
     min-width: 2em;
+}
+
+/* KaTeX inside TF rows - prevent overflow */
+.tf-text .katex,
+.tf-row .katex,
+.review-tf-row .katex {
+    font-size: 1em;
+    white-space: normal !important;
+    display: inline !important;
 }
 
 /* Force vector arrow length if standard CSS allows? Katex handles this internally. */
