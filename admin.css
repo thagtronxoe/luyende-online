@@ -953,6 +953,15 @@
     border-radius: 4px;
 }
 
+/* Explanation fields - larger like question editor */
+.mc-explanation,
+.tf-explanation,
+.fill-explanation {
+    min-height: 100px;
+    font-size: 15px;
+    line-height: 1.8;
+}
+
 /* Option group layout */
 .option-group {
     display: flex;

@@ -1975,7 +1975,7 @@ YÊU CẦU CẤU TRÚC ĐỀ THI (${currentTemplate === 'thpt_toan' ? 'Môn Toá
 Tổng cộng: ${config.mcCount + config.tfCount + config.fillCount} câu.
 
 ⛔ CẢNH BÁO QUAN TRỌNG (VI PHẠM SẼ BỊ LỖI):
-1. **TUYỆT ĐỐI KHÔNG TÓM TẮT:** Giữ nguyên văn bản gốc.
+1. **TUYỆT ĐỐI KHÔNG TÓM TẮT:** Giữ nguyên văn bản gốc CẢ CÂU HỎI VÀ LỜI GIẢI. Không được rút gọn lời giải.
 2. **LOẠI BỎ TIỀN TỐ:** KHÔNG ghi "Câu 1...", "A. ", "B. " ở đầu. CHỈ ghi nội dung.
 3. **CÔNG THỨC TOÁN:** Dùng LaTeX $...$ cho TẤT CẢ các số và công thức (VD: $1$, $2$, $x^2$...). Đảm bảo font chữ đồng bộ.
 4. **HÌNH ẢNH:** Thay thế hình ảnh bằng text: [HÌNH ẢNH].
@@ -2164,10 +2164,9 @@ function processAIImport() {
         closeImportModal();
         updateSectionHeaders(); // Update counts
 
-        // Render MathJax for new content
-        if (window.MathJax) {
-            window.MathJax.typesetPromise ? window.MathJax.typesetPromise() : window.MathJax.typeset();
-        }
+        // NOTE: Intentionally NOT rendering MathJax here
+        // Admin needs to see raw LaTeX code for editing (e.g., $\vec{u}$)
+        // MathJax will render on Preview and Student view only
 
         // Scroll to questions
         document.getElementById('mcQuestions').scrollIntoView({ behavior: 'smooth' });
