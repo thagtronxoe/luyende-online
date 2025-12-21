@@ -2106,6 +2106,26 @@ function processAIImport() {
             // Fallback for empty question
             if (!q.question) q.question = "(Lỗi: Không tìm thấy nội dung câu hỏi trong JSON)";
 
+            // Transform LaTeX for better display: \vec -> \overrightarrow, \frac -> \dfrac
+            const transformLatex = (text) => {
+                if (!text) return text;
+                return text
+                    .replace(/\\vec\{/g, '\\overrightarrow{')
+                    .replace(/\\frac\{/g, '\\dfrac{');
+            };
+
+            q.question = transformLatex(q.question);
+            q.explanation = transformLatex(q.explanation);
+            if (Array.isArray(q.options)) {
+                q.options = q.options.map(o => {
+                    if (typeof o === 'object' && o.content) {
+                        return { ...o, content: transformLatex(o.content) };
+                    }
+                    return transformLatex(o);
+                });
+            }
+            if (q.correct) q.correct = transformLatex(q.correct);
+
             // Escape data before passing
             const safeQ = { ...q };
             safeQ.question = escapeHtml(q.question);
