@@ -284,17 +284,7 @@ app.post('/api/auth/admin-login', async (req, res) => {
     }
 });
 
-// Get current user
-app.get('/api/auth/me', auth, (req, res) => {
-    res.json({
-        id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        username: req.user.username,
-        role: req.user.role,
-        activatedPackages: req.user.activatedPackages
-    });
-});
+
 
 // ========== USER ROUTES ==========
 
