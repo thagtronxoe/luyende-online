@@ -611,18 +611,18 @@ async function showExamList(packageId) {
         console.log('Could not load API history:', err);
     }
 
-    // Sort exams: by title first (Đề số 1, 2, 3...), then uncompleted first
+    // Sort exams: incomplete FIRST, then by title number (Đề số 1, 2, 3...)
     exams = exams.filter(e => e.status !== 'draft').sort((a, b) => {
-        // First: sort by title (extract number from "Đề số X" or use title alphabetically)
+        // FIRST: sort by completion status (incomplete FIRST)
+        const aCompleted = completedExamIds.has(String(a.id)) || completedExamIds.has(String(a._id));
+        const bCompleted = completedExamIds.has(String(b.id)) || completedExamIds.has(String(b._id));
+        if (!aCompleted && bCompleted) return -1; // a is NOT completed -> a first
+        if (aCompleted && !bCompleted) return 1;  // b is NOT completed -> b first
+
+        // SECOND: within same completion status, sort by title number
         const aNum = parseInt((a.title || '').match(/\d+/)?.[0]) || 999;
         const bNum = parseInt((b.title || '').match(/\d+/)?.[0]) || 999;
-        if (aNum !== bNum) return aNum - bNum; // Sort by number ascending
-
-        // Second: sort by completion status (incomplete first)
-        const aCompleted = completedExamIds.has(String(a.id));
-        const bCompleted = completedExamIds.has(String(b.id));
-        if (aCompleted && !bCompleted) return 1;  // a is completed, b is not -> b first
-        if (!aCompleted && bCompleted) return -1; // a is not, b is -> a first
+        return aNum - bNum;
         return 0; // Same status, keep original order
     });
 

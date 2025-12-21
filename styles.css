@@ -2279,12 +2279,11 @@ body {
     color: #9ca3af;
 }
 
-/* Exam Grid - 3 columns, left aligned */
+/* Exam Grid - 3 columns */
 .exam-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 380px));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
-    justify-content: start;
 }
 
 .exam-card {
