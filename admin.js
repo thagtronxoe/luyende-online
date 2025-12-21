@@ -2049,20 +2049,54 @@ function processAIImport() {
             throw new Error('Format must be a JSON Array');
         }
 
+        // Debug: Check if data exists
+        if (questions.length > 0) {
+            console.log('Sample parsed:', questions[0]);
+            // alert('Debug Data Q1: ' + JSON.stringify(questions[0]).substring(0, 200));
+        }
+
+        // Helper to escape HTML (prevent < 5 from being treated as tag)
+        const escapeHtml = (text) => {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
+
         let addedCount = 0;
 
         questions.forEach(q => {
+            // Escape data before passing
+            const safeQ = { ...q };
+            safeQ.question = escapeHtml(q.question);
+            safeQ.explanation = escapeHtml(q.explanation);
+
             if (q.type === 'mc') {
-                addMCQuestion(q);
+                if (Array.isArray(q.options)) {
+                    safeQ.options = q.options.map(o => escapeHtml(o));
+                }
+                addMCQuestion(safeQ);
                 addedCount++;
             } else if (q.type === 'tf') {
-                addTFQuestion(q);
+                // Options for TF are objects
+                if (Array.isArray(q.options)) {
+                    safeQ.options = q.options.map(o => {
+                        if (typeof o === 'object') {
+                            return { ...o, content: escapeHtml(o.content) };
+                        }
+                        return escapeHtml(o);
+                    });
+                }
+                addTFQuestion(safeQ);
                 addedCount++;
             } else if (q.type === 'fill') {
                 addFillQuestion({
-                    question: q.question,
-                    correctAnswer: q.correct,
-                    explanation: q.explanation
+                    question: safeQ.question,
+                    correctAnswer: escapeHtml(q.correct),
+                    explanation: safeQ.explanation
                 });
                 addedCount++;
             }
