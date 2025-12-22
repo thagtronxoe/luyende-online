@@ -1160,7 +1160,12 @@ function closeAnswerModal() {
 // Helper to format Latex content
 function formatMathContent(text) {
     if (!text) return '';
-    return text
+    // Fix: Convert $...$ to \(...\) to ensure KaTeX renders it
+    let formatted = text
+        .replace(/\$\$([\s\S]+?)\$\$/g, '\\[$1\\]') // Display math
+        .replace(/\$([\s\S]+?)\$/g, '\\($1\\)');   // Inline math
+
+    return formatted
         .replace(/\\frac/g, '\\dfrac')
         .replace(/\\vec/g, '\\overrightarrow')
         .replace(/\\lim\s*_/g, '\\lim\\limits_');

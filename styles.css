@@ -3815,12 +3815,7 @@ body {
     width: 100%;
 }
 
-/* Make LaTeX font match system font ("Ugly" fix) */
-.katex,
-.katex .base,
-.katex-display {
-    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-}
+/* Original KaTeX font (Serif) restored - "Ugly" fix reverted */
 
 #questionText table,
 .katex table {
