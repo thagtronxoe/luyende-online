@@ -3807,3 +3807,30 @@ body {
         height: calc(100dvh - 120px) !important;
     }
 }
+
+/* FIX: Handle LaTeX/Table overflow in questions */
+#questionText {
+    overflow-x: auto;
+    width: 100%;
+}
+
+#questionText table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+}
+
+#questionText .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    padding-bottom: 5px;
+    /* Scrollbar spacing */
+}
+
+#questionText img {
+    max-width: 100%;
+    height: auto;
+}
