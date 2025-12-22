@@ -809,6 +809,32 @@ function initExamCreator() {
     updateSectionHeaders();
 }
 
+// ========== EXAM CREATION HELPERS ==========
+
+// Helper to check if an option should be selected (handles whitespace/formatting)
+function isOptionSelected(data, optionIndex, letter) {
+    if (!data) return false;
+
+    // Get the correct answer from data (try both fields)
+    const correctAnswer = data.correctAnswer || data.correct;
+    if (!correctAnswer) return false;
+
+    // Check 1: Direct letter match (A, B, C, D)
+    if (correctAnswer === letter) return true;
+
+    // Check 2: Content match with trimming
+    const optionContent = data.options && data.options[optionIndex]
+        ? String(data.options[optionIndex]).trim()
+        : '';
+    const correctContent = String(correctAnswer).trim();
+
+    if (optionContent && correctContent && optionContent === correctContent) {
+        return true;
+    }
+
+    return false;
+}
+
 function addMCQuestion(data = null) {
     const container = document.getElementById('mcQuestions');
     const index = container.children.length + 1;
@@ -867,10 +893,10 @@ function addMCQuestion(data = null) {
                 <div class="form-group">
                     <label>Đáp án đúng</label>
                     <select class="mc-correct form-select">
-                        <option value="A" ${data?.correct === 'A' || data?.correctAnswer === 'A' || data?.correct === data?.options?.[0] ? 'selected' : ''}>A</option>
-                        <option value="B" ${data?.correct === 'B' || data?.correctAnswer === 'B' || data?.correct === data?.options?.[1] ? 'selected' : ''}>B</option>
-                        <option value="C" ${data?.correct === 'C' || data?.correctAnswer === 'C' || data?.correct === data?.options?.[2] ? 'selected' : ''}>C</option>
-                        <option value="D" ${data?.correct === 'D' || data?.correctAnswer === 'D' || data?.correct === data?.options?.[3] ? 'selected' : ''}>D</option>
+                        <option value="A" ${isOptionSelected(data, 0, 'A') ? 'selected' : ''}>A</option>
+                        <option value="B" ${isOptionSelected(data, 1, 'B') ? 'selected' : ''}>B</option>
+                        <option value="C" ${isOptionSelected(data, 2, 'C') ? 'selected' : ''}>C</option>
+                        <option value="D" ${isOptionSelected(data, 3, 'D') ? 'selected' : ''}>D</option>
                     </select>
                 </div>
                 <div class="form-group">
