@@ -3808,26 +3808,55 @@ body {
     }
 }
 
-/* FIX: Handle LaTeX/Table overflow in questions */
+
+/* FIX: Auto-shrink LaTeX/Table to fit card (User preference) */
 #questionText {
-    overflow-x: auto;
     width: 100%;
 }
 
 #questionText table {
-    display: block;
     width: 100%;
-    overflow-x: auto;
     max-width: 100%;
+    font-size: 0.85em;
+    /* Shrink table text to fit */
     border-collapse: collapse;
+    table-layout: auto;
+    /* Allow column squashing */
 }
 
+/* KaTeX Adjustment */
 #questionText .katex-display {
-    overflow-x: auto;
-    overflow-y: hidden;
     max-width: 100%;
-    padding-bottom: 5px;
-    /* Scrollbar spacing */
+    overflow-x: auto;
+    /* Fallback: allow scroll if absolutely necessary */
+    overflow-y: hidden;
+    font-size: 0.9em;
+    /* Default shrink */
+    scrollbar-width: thin;
+    /* Make scrollbar less intrusive */
+}
+
+/* Responsive shrinking */
+@media (max-width: 768px) {
+    #questionText .katex-display {
+        font-size: 0.75em;
+        /* Shrink more on tablet */
+    }
+
+    #questionText table {
+        font-size: 0.75em;
+    }
+}
+
+@media (max-width: 480px) {
+    #questionText .katex-display {
+        font-size: 0.6em;
+        /* Shrink significant on mobile */
+    }
+
+    #questionText table {
+        font-size: 0.65em;
+    }
 }
 
 #questionText img {
