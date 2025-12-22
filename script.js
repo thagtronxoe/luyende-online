@@ -1159,7 +1159,8 @@ function closeAnswerModal() {
 
 // Helper to format Latex content
 function formatMathContent(text) {
-    if (!text) return '';
+    if (text === null || text === undefined) return '';
+    if (typeof text !== 'string') text = String(text);
     // Fix: Convert $...$ to \(...\) to ensure KaTeX renders it
     let formatted = text
         .replace(/\$\$([\s\S]+?)\$\$/g, '\\[$1\\]') // Display math
