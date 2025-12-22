@@ -346,7 +346,7 @@ async function checkAndResumeExam() {
                     const savedTimeRemaining = savedState.timeRemaining || (examData.duration * 60);
                     timeRemaining = Math.max(0, savedTimeRemaining - elapsedTime);
 
-                    startExam();
+                    startExam(true);
                     return true;
                 } else {
                     console.error("Resumed exam not found in package:", savedState.examId);
@@ -1280,8 +1280,8 @@ function init() {
 }
 
 // Start Exam
-function startExam() {
-    isExamSubmitted = false; // Reset submission flag
+function startExam(isResume = false) {
+    if (!isResume) isExamSubmitted = false; // Reset submission flag
 
     // Set zoom to 100%
     document.body.style.zoom = '100%';
@@ -1327,7 +1327,7 @@ function startExam() {
     displayQuestion(0);
 
     // CRITICAL FIX: Reset timeRemaining to actual exam duration before starting timer
-    timeRemaining = examData.duration * 60;
+    if (!isResume) timeRemaining = examData.duration * 60;
     console.log('📌 Starting exam with duration:', examData.duration, 'minutes, timeRemaining:', timeRemaining, 'seconds');
 
     startTimer();
