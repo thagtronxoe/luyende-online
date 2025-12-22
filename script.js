@@ -1647,9 +1647,9 @@ function displayQuestion(index) {
     // Update grid
     updateQuestionGrid();
 
-    // Render KaTeX in the new question content
+    // Render KaTeX in content
     if (typeof renderMathInElement !== 'undefined') {
-        renderMathInElement(document.getElementById('questionText'), {
+        const renderOptions = {
             delimiters: [
                 { left: '$$', right: '$$', display: true },
                 { left: '$', right: '$', display: false },
@@ -1657,46 +1657,21 @@ function displayQuestion(index) {
                 { left: '\\[', right: '\\]', display: true }
             ],
             throwOnError: false
-        });
+        };
 
-        // Also render options in case they contain math
-        renderMathInElement(document.getElementById('answersContainer'), {
-            delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false },
-                { left: '\\(', right: '\\)', display: false },
-                { left: '\\[', right: '\\]', display: true }
-            ],
-            throwOnError: false
-        });
+        // Render Question Text
+        const qText = document.getElementById('questionText');
+        if (qText) renderMathInElement(qText, renderOptions);
+
+        // Render Answers
+        const ansContainer = document.getElementById('answersContainer');
+        if (ansContainer) renderMathInElement(ansContainer, renderOptions);
     }
 
+
+
     // Update answered count
-    updateAnsweredCount();
-
-    // Render LaTeX if available
-    const questionTextEl = document.getElementById('questionText');
-    const answersContainerEl = document.getElementById('answersContainer');
-
-
-    renderMathInElement(questionTextEl, {
-        delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false },
-            { left: '\\(', right: '\\)', display: false },
-            { left: '\\[', right: '\\]', display: true }
-        ],
-        throwOnError: false
-    });
-    renderMathInElement(answersContainerEl, {
-        delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false },
-            { left: '\\(', right: '\\)', display: false },
-            { left: '\\[', right: '\\]', display: true }
-        ],
-        throwOnError: false
-    });
+    if (typeof updateAnsweredCount === 'function') updateAnsweredCount();
 }
 
 // Select Answer

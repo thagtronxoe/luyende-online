@@ -3809,53 +3809,60 @@ body {
 }
 
 
+
 /* FIX: Auto-shrink LaTeX/Table to fit card (User preference) */
 #questionText {
     width: 100%;
 }
 
-#questionText table {
+/* Make LaTeX font match system font ("Ugly" fix) */
+.katex,
+.katex .base,
+.katex-display {
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+#questionText table,
+.katex table {
     width: 100%;
     max-width: 100%;
-    font-size: 0.85em;
-    /* Shrink table text to fit */
+    font-size: 0.9em;
+    /* Balanced size */
     border-collapse: collapse;
     table-layout: auto;
-    /* Allow column squashing */
 }
 
 /* KaTeX Adjustment */
 #questionText .katex-display {
     max-width: 100%;
     overflow-x: auto;
-    /* Fallback: allow scroll if absolutely necessary */
     overflow-y: hidden;
-    font-size: 0.9em;
-    /* Default shrink */
+    font-size: 1em;
+    /* Keep math readable */
     scrollbar-width: thin;
-    /* Make scrollbar less intrusive */
+    padding: 4px 0;
 }
 
 /* Responsive shrinking */
 @media (max-width: 768px) {
     #questionText .katex-display {
-        font-size: 0.75em;
-        /* Shrink more on tablet */
+        font-size: 0.85em;
     }
 
-    #questionText table {
-        font-size: 0.75em;
+    #questionText table,
+    .katex table {
+        font-size: 0.8em;
     }
 }
 
 @media (max-width: 480px) {
     #questionText .katex-display {
-        font-size: 0.6em;
-        /* Shrink significant on mobile */
+        font-size: 0.75em;
     }
 
-    #questionText table {
-        font-size: 0.65em;
+    #questionText table,
+    .katex table {
+        font-size: 0.7em;
     }
 }
 
