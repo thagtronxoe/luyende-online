@@ -2440,8 +2440,9 @@ async function renderSubjects() {
     } catch (e) { }
 
     tbody.innerHTML = subjects.map(subject => {
-        // Count exams for this subject
-        const examCount = examStats.filter(s => s._id.subjectId === subject.id)
+        // Count exams for this subject (ensure examStats is an array)
+        const stats = Array.isArray(examStats) ? examStats : [];
+        const examCount = stats.filter(s => s._id && s._id.subjectId === subject.id)
             .reduce((sum, s) => sum + (s.total || 0), 0);
 
         // Format grade for display
