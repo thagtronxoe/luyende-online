@@ -714,7 +714,7 @@ async function copyExam() {
 
         // Create new exam with copied data
         const newExam = {
-            id: generateExamId(), // New unique ID
+            id: await generateExamId(), // New unique ID
             displayId: '', // Will be auto-generated
             packageId: targetPackageId,
             title: newTitle,
@@ -1111,7 +1111,7 @@ async function saveExam() {
     });
 
     // Create or update exam object
-    const uniqueId = editingId || generateExamId();
+    const uniqueId = editingId || await generateExamId();
     const displayIdInput = document.getElementById('examDisplayId').value.trim();
 
     const newExam = {
@@ -1389,13 +1389,33 @@ async function viewHistoryDetail(odl) {
     alert(details);
 }
 
-// Helper: Generate Sequential ID starting from 1000
-function generateExamId() {
-    const STORAGE_KEY = 'luyende_examIdCounter';
-    let counter = parseInt(localStorage.getItem(STORAGE_KEY)) || 1000;
-    const newId = counter.toString();
-    localStorage.setItem(STORAGE_KEY, (counter + 1).toString());
-    return newId;
+// Helper: Generate Random 5-digit ID (10000-99999)
+async function generateExamId() {
+    const min = 10000;
+    const max = 99999;
+
+    // Get all existing exams to check for duplicates
+    const exams = await getAllExams();
+
+    // Keep trying until we get a unique ID
+    let attempts = 0;
+    const maxAttempts = 100;
+
+    while (attempts < maxAttempts) {
+        const randomId = Math.floor(Math.random() * (max - min + 1)) + min;
+        const idString = randomId.toString();
+
+        // Check if this ID already exists
+        const existingExam = exams.find(e => e.id === idString || e.displayId === idString);
+        if (!existingExam) {
+            return idString;
+        }
+        attempts++;
+    }
+
+    // Fallback: if somehow we can't find unique ID after 100 attempts
+    // Use timestamp-based ID (last 5 digits)
+    return Date.now().toString().slice(-5);
 }
 
 // ========== PREVIEW FUNCTIONALITY ==========

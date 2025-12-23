@@ -373,6 +373,9 @@ body {
     color: var(--text-primary);
     font-weight: 400;
     flex: 1;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .answers-grid {
@@ -440,6 +443,8 @@ body {
 .mc-text {
     flex: 1;
     line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 /* True-False Table Layout */
@@ -492,6 +497,8 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     padding: 14px 16px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .tf-label {
@@ -658,6 +665,8 @@ body {
     line-height: 1.6;
     cursor: default;
     user-select: none;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .navigation-buttons {
