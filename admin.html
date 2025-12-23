@@ -203,6 +203,7 @@
                                     <th>Icon</th>
                                     <th>Mã môn</th>
                                     <th>Tên môn</th>
+                                    <th>Khối</th>
                                     <th>Màu</th>
                                     <th>Số đề</th>
                                     <th>Actions</th>
@@ -473,13 +474,26 @@
             <input type="hidden" id="editingSubjectId">
             <form id="subjectForm" onsubmit="saveSubject(event)">
                 <div class="form-group">
-                    <label>Mã môn (ID) <span class="required">*</span></label>
-                    <input type="text" id="subjectId" placeholder="VD: toan, ly, hoa, sinh..." required>
-                    <small style="color: #64748b;">Chữ thường, không dấu, không khoảng trắng</small>
+                    <label>Tên môn <span class="required">*</span></label>
+                    <input type="text" id="subjectName" placeholder="VD: Toán, Vật lý, Hóa học..." required
+                        oninput="updateSubjectIdPreview()">
                 </div>
                 <div class="form-group">
-                    <label>Tên môn <span class="required">*</span></label>
-                    <input type="text" id="subjectName" placeholder="VD: Toán, Vật lý, Hóa học..." required>
+                    <label>Khối lớp <span class="required">*</span></label>
+                    <select id="subjectGrade" required onchange="updateSubjectIdPreview()">
+                        <option value="">-- Chọn khối --</option>
+                        <option value="10">Lớp 10</option>
+                        <option value="11">Lớp 11</option>
+                        <option value="12">Lớp 12</option>
+                        <option value="thpt">THPT (Tất cả)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Mã môn (tự sinh)</label>
+                    <div id="subjectIdPreview"
+                        style="padding: 10px 12px; background: #f1f5f9; border-radius: 6px; font-family: monospace; color: #475569;">
+                        -</div>
+                    <input type="hidden" id="subjectId">
                 </div>
                 <div class="form-row-2">
                     <div class="form-group">

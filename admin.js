@@ -2444,11 +2444,20 @@ async function renderSubjects() {
         const examCount = examStats.filter(s => s._id.subjectId === subject.id)
             .reduce((sum, s) => sum + (s.total || 0), 0);
 
+        // Format grade for display
+        let gradeDisplay = '-';
+        if (subject.grade === 'thpt') {
+            gradeDisplay = 'THPT';
+        } else if (subject.grade) {
+            gradeDisplay = 'Lớp ' + subject.grade;
+        }
+
         return `
             <tr>
                 <td style="font-size: 24px;">${subject.icon}</td>
                 <td><code>${subject.id}</code></td>
                 <td><strong>${subject.name}</strong></td>
+                <td>${gradeDisplay}</td>
                 <td><span style="display: inline-block; width: 24px; height: 24px; background: ${subject.color}; border-radius: 4px;"></span></td>
                 <td>${examCount}</td>
                 <td>
@@ -2465,9 +2474,11 @@ function showSubjectModal(subjectId = null) {
     const title = document.getElementById('subjectModalTitle');
     const idInput = document.getElementById('subjectId');
     const nameInput = document.getElementById('subjectName');
+    const gradeSelect = document.getElementById('subjectGrade');
     const iconInput = document.getElementById('subjectIcon');
     const colorInput = document.getElementById('subjectColor');
     const editingInput = document.getElementById('editingSubjectId');
+    const idPreview = document.getElementById('subjectIdPreview');
 
     if (subjectId) {
         // Edit mode
@@ -2475,24 +2486,63 @@ function showSubjectModal(subjectId = null) {
         if (subject) {
             title.textContent = 'Sửa môn học';
             idInput.value = subject.id;
-            idInput.disabled = true; // Cannot change ID
             nameInput.value = subject.name;
+            gradeSelect.value = subject.grade || '';
             iconInput.value = subject.icon;
             colorInput.value = subject.color;
             editingInput.value = subject.id;
+            idPreview.textContent = subject.id + ' (không thể thay đổi)';
+            idPreview.style.color = '#94a3b8';
         }
     } else {
         // Create mode
         title.textContent = 'Thêm môn học';
         idInput.value = '';
-        idInput.disabled = false;
         nameInput.value = '';
+        gradeSelect.value = '';
         iconInput.value = '📐';
         colorInput.value = '#3b82f6';
         editingInput.value = '';
+        idPreview.textContent = '-';
+        idPreview.style.color = '#475569';
     }
 
     modal.classList.add('active');
+}
+
+// Function to convert Vietnamese text to ASCII (remove diacritics)
+function removeVietnameseDiacritics(str) {
+    return str.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D');
+}
+
+// Auto-generate subject ID from name + grade
+function updateSubjectIdPreview() {
+    const name = document.getElementById('subjectName').value.trim();
+    const grade = document.getElementById('subjectGrade').value;
+    const editingId = document.getElementById('editingSubjectId').value;
+
+    // Don't update if editing existing subject
+    if (editingId) return;
+
+    const preview = document.getElementById('subjectIdPreview');
+    const hiddenInput = document.getElementById('subjectId');
+
+    if (name && grade) {
+        // Convert name to ASCII lowercase, remove spaces
+        const nameSlug = removeVietnameseDiacritics(name)
+            .toLowerCase()
+            .replace(/\s+/g, '')
+            .replace(/[^a-z0-9]/g, '');
+        const generatedId = nameSlug + '_' + grade;
+        preview.textContent = generatedId;
+        hiddenInput.value = generatedId;
+    } else {
+        preview.textContent = '-';
+        hiddenInput.value = '';
+    }
 }
 
 function closeSubjectModal() {
@@ -2507,17 +2557,20 @@ async function saveSubject(event) {
     event.preventDefault();
 
     const editingId = document.getElementById('editingSubjectId').value;
+    const grade = document.getElementById('subjectGrade').value;
     const subjectData = {
         id: document.getElementById('subjectId').value.trim().toLowerCase(),
         name: document.getElementById('subjectName').value.trim(),
+        grade: grade,
         icon: document.getElementById('subjectIcon').value.trim() || '📐',
         color: document.getElementById('subjectColor').value || '#3b82f6'
     };
 
-    if (!subjectData.id || !subjectData.name) {
-        alert('Vui lòng nhập mã môn và tên môn!');
+    if (!subjectData.id || !subjectData.name || !subjectData.grade) {
+        alert('Vui lòng nhập mã môn, tên môn và chọn khối lớp!');
         return;
     }
+
 
     try {
         const token = localStorage.getItem('luyende_token');
