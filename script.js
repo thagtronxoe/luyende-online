@@ -2786,8 +2786,175 @@ function switchCourseFilter(filter) {
         tab.classList.toggle('active', tab.dataset.filter === filter);
     });
 
+    // Show/hide grade tabs based on filter
+    const gradeTabs = document.querySelector('.grade-tabs-simple');
+    if (gradeTabs) {
+        gradeTabs.style.display = (filter === 'enrolled') ? 'none' : 'flex';
+    }
+
     // Re-render course list
-    renderCourseList();
+    if (filter === 'enrolled') {
+        renderEnrolledCourses();
+    } else {
+        renderCourseList();
+    }
+}
+
+// Render enrolled VIP courses (all on one page)
+async function renderEnrolledCourses() {
+    const container = document.getElementById('courseList');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="course-empty">
+            <div class="course-empty-icon">⏳</div>
+            <div class="course-empty-text">Đang tải...</div>
+        </div>
+    `;
+
+    try {
+        const token = localStorage.getItem('luyende_token');
+
+        // Get user's VIP access
+        const vipResponse = await fetch('/api/vip/my', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        let userVip = [];
+        if (vipResponse.ok) {
+            userVip = await vipResponse.json();
+        }
+
+        // Update enrolled count
+        const enrolledCountEl = document.getElementById('enrolledCount');
+        if (enrolledCountEl) {
+            enrolledCountEl.textContent = userVip.length;
+        }
+
+        if (userVip.length === 0) {
+            container.innerHTML = `
+                <div class="course-empty">
+                    <div class="course-empty-icon">📭</div>
+                    <div class="course-empty-text">Bạn chưa đăng ký khóa học VIP nào</div>
+                    <p style="color: #9ca3af; font-size: 14px; margin-top: 8px;">Liên hệ Admin để đăng ký gói VIP</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Grade labels
+        const gradeLabels = {
+            '10': 'Lớp 10',
+            '11': 'Lớp 11',
+            '12': 'Lớp 12',
+            'thpt': 'THPT QG'
+        };
+
+        // Get subject info for display
+        let html = '';
+        for (const vip of userVip) {
+            const subject = cachedSubjects.find(s => s.id === vip.subjectId);
+            if (!subject) continue;
+
+            const gradeName = gradeLabels[vip.grade] || vip.grade;
+            const groupId = `enrolled-${vip.subjectId}-${vip.grade}`;
+
+            html += `
+                <div class="course-group" id="${groupId}">
+                    <div class="course-group-header" onclick="toggleCourseGroup('${groupId}'); loadEnrolledExams('${vip.subjectId}', '${vip.grade}', '${groupId}')">
+                        <div class="course-group-left">
+                            <div class="course-checkbox"></div>
+                            <span class="course-group-icon">${subject.icon}</span>
+                            <span class="course-group-title">${subject.name} - ${gradeName}</span>
+                        </div>
+                        <div class="course-group-right">
+                            <span class="badge-vip">👑 VIP</span>
+                            <svg class="course-group-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="course-items" id="${groupId}-items">
+                        <div class="course-item" style="justify-content: center; padding: 20px;">
+                            <span style="color: #9ca3af;">Click để xem danh sách đề VIP</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html || `
+            <div class="course-empty">
+                <div class="course-empty-icon">📭</div>
+                <div class="course-empty-text">Không tìm thấy khóa học đã đăng ký</div>
+            </div>
+        `;
+
+    } catch (err) {
+        console.error('Error loading enrolled courses:', err);
+        container.innerHTML = `
+            <div class="course-empty">
+                <div class="course-empty-icon">❌</div>
+                <div class="course-empty-text">Lỗi tải dữ liệu</div>
+            </div>
+        `;
+    }
+}
+
+// Load exams for an enrolled VIP course
+async function loadEnrolledExams(subjectId, grade, groupId) {
+    const itemsContainer = document.getElementById(`${groupId}-items`);
+    if (!itemsContainer) return;
+
+    // Check if already loaded
+    if (itemsContainer.dataset.loaded === 'true') return;
+
+    try {
+        const params = new URLSearchParams();
+        params.append('subjectId', subjectId);
+        params.append('grade', grade);
+        params.append('accessType', 'vip'); // Only VIP exams
+
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/filter?${params.toString()}`, {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+
+        if (!response.ok) throw new Error('Failed to load exams');
+
+        const exams = await response.json();
+
+        if (exams.length === 0) {
+            itemsContainer.innerHTML = `
+                <div class="course-item" style="justify-content: center; padding: 20px;">
+                    <span style="color: #9ca3af;">Chưa có đề VIP</span>
+                </div>
+            `;
+        } else {
+            itemsContainer.innerHTML = exams.map((exam, index) => `
+                <div class="course-item">
+                    <div class="course-item-left">
+                        <div class="course-checkbox"></div>
+                        <span class="course-item-title">${exam.title}</span>
+                    </div>
+                    <div class="course-item-right">
+                        <span class="badge-vip">VIP</span>
+                        <button class="btn-do-exam primary" onclick="startExamFromFilter('${exam.id}')">Làm bài</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        itemsContainer.dataset.loaded = 'true';
+
+    } catch (err) {
+        console.error('Error loading enrolled exams:', err);
+        itemsContainer.innerHTML = `
+            <div class="course-item" style="justify-content: center; padding: 20px;">
+                <span style="color: #ef4444;">Lỗi tải dữ liệu</span>
+            </div>
+        `;
+    }
 }
 
 // Toggle accordion group
