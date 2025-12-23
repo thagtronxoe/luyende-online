@@ -4347,3 +4347,317 @@ body {
         font-size: 18px;
     }
 }
+
+/* ========== SIMPLIFIED DASHBOARD STYLES ========== */
+
+/* Course Filter Tabs - Like reference image */
+.course-filter-tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 24px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.course-filter-tab {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.course-filter-tab:hover {
+    color: #374151;
+}
+
+.course-filter-tab.active {
+    color: #2563eb;
+}
+
+.course-filter-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #2563eb;
+    border-radius: 3px 3px 0 0;
+}
+
+/* Simple Grade Tabs - No icons */
+.grade-tabs-simple {
+    display: flex;
+    gap: 8px;
+    padding: 0 24px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.grade-tabs-simple::-webkit-scrollbar {
+    display: none;
+}
+
+.grade-tab-simple {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.grade-tab-simple:hover {
+    border-color: #9ca3af;
+    color: #374151;
+}
+
+.grade-tab-simple.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+}
+
+/* Course List Section */
+.course-list-section {
+    padding: 0 24px;
+}
+
+.course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Course Group - Accordion header */
+.course-group {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.course-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.course-group-header:hover {
+    background: #f9fafb;
+}
+
+.course-group-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.course-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    flex-shrink: 0;
+}
+
+.course-group-icon {
+    font-size: 16px;
+}
+
+.course-group-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.course-group-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.course-group-arrow {
+    color: #9ca3af;
+    transition: transform 0.2s;
+}
+
+.course-group.open .course-group-arrow {
+    transform: rotate(180deg);
+}
+
+/* Course Items inside group */
+.course-items {
+    display: none;
+    padding-left: 30px;
+}
+
+.course-group.open .course-items {
+    display: block;
+}
+
+.course-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.course-item:last-child {
+    border-bottom: none;
+}
+
+.course-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.course-item-title {
+    font-size: 14px;
+    color: #374151;
+}
+
+.course-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.course-item-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Simple action button */
+.btn-do-exam {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-do-exam.primary {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-do-exam.primary:hover {
+    background: #1d4ed8;
+}
+
+.btn-do-exam.vip {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fbbf24;
+}
+
+.btn-do-exam.vip:hover {
+    background: #fde68a;
+}
+
+.btn-do-exam.locked {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* VIP Badge - Simple */
+.badge-vip {
+    background: #fef3c7;
+    color: #b45309;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-free {
+    background: #dcfce7;
+    color: #16a34a;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Empty state */
+.course-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: #6b7280;
+}
+
+.course-empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.course-empty-text {
+    font-size: 16px;
+    color: #9ca3af;
+}
+
+/* Download count indicator */
+.download-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.download-count svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Mobile responsive for new dashboard */
+@media (max-width: 768px) {
+    .course-filter-tabs {
+        padding: 0 16px;
+    }
+
+    .course-filter-tab {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    .grade-tabs-simple {
+        padding: 0 16px;
+    }
+
+    .grade-tab-simple {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    .course-list-section {
+        padding: 0 16px;
+    }
+
+    .course-group-title {
+        font-size: 14px;
+    }
+
+    .course-item-title {
+        font-size: 13px;
+    }
+}

@@ -292,45 +292,31 @@
             </header>
 
             <main class="dashboard-main">
-                <!-- Grade Tabs -->
-                <div class="grade-tabs">
-                    <button class="grade-tab active" data-grade="all" onclick="switchGradeTab('all')">
-                        <span class="tab-icon">📚</span>
-                        <span class="tab-label">Tất cả</span>
+                <!-- Course Filter Tabs -->
+                <div class="course-filter-tabs">
+                    <button class="course-filter-tab active" data-filter="suggested"
+                        onclick="switchCourseFilter('suggested')">
+                        Khóa học gợi ý
                     </button>
-                    <button class="grade-tab" data-grade="10" onclick="switchGradeTab('10')">
-                        <span class="tab-icon">🔟</span>
-                        <span class="tab-label">Lớp 10</span>
-                    </button>
-                    <button class="grade-tab" data-grade="11" onclick="switchGradeTab('11')">
-                        <span class="tab-icon">1️⃣1️⃣</span>
-                        <span class="tab-label">Lớp 11</span>
-                    </button>
-                    <button class="grade-tab" data-grade="12" onclick="switchGradeTab('12')">
-                        <span class="tab-icon">1️⃣2️⃣</span>
-                        <span class="tab-label">Lớp 12</span>
-                    </button>
-                    <button class="grade-tab" data-grade="thpt" onclick="switchGradeTab('thpt')">
-                        <span class="tab-icon">🎓</span>
-                        <span class="tab-label">THPT QG</span>
+                    <button class="course-filter-tab" data-filter="enrolled" onclick="switchCourseFilter('enrolled')">
+                        Đang học (<span id="enrolledCount">0</span>)
                     </button>
                 </div>
 
-                <!-- Subject Cards Grid -->
-                <div class="subjects-section">
-                    <h2 class="section-title" id="sectionTitle">Chọn môn học</h2>
-                    <div class="subject-grid" id="subjectGrid">
-                        <!-- Subject cards will be rendered here by JS -->
-                    </div>
+                <!-- Grade Tabs - Simple text without icons -->
+                <div class="grade-tabs-simple">
+                    <button class="grade-tab-simple active" data-grade="all" onclick="switchGradeTab('all')">Tất
+                        cả</button>
+                    <button class="grade-tab-simple" data-grade="10" onclick="switchGradeTab('10')">Lớp 10</button>
+                    <button class="grade-tab-simple" data-grade="11" onclick="switchGradeTab('11')">Lớp 11</button>
+                    <button class="grade-tab-simple" data-grade="12" onclick="switchGradeTab('12')">Lớp 12</button>
+                    <button class="grade-tab-simple" data-grade="thpt" onclick="switchGradeTab('thpt')">THPT QG</button>
                 </div>
 
-                <!-- My VIP Section -->
-                <div class="vip-section" id="vipSection" style="display: none;">
-                    <h2 class="section-title">
-                        <span class="vip-badge">👑 VIP</span> Gói đề của tôi
-                    </h2>
-                    <div class="vip-subjects" id="vipSubjectsGrid">
-                        <!-- VIP subjects will be rendered here -->
+                <!-- Course List - Accordion Style -->
+                <div class="course-list-section">
+                    <div class="course-list" id="courseList">
+                        <!-- Course items will be rendered here by JS -->
                     </div>
                 </div>
             </main>

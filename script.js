@@ -2567,17 +2567,21 @@ function renderSubjects() {
     }).join('');
 }
 
-// Switch grade tab
+// Switch grade tab - updated for new simple tabs
 function switchGradeTab(grade) {
     currentGrade = grade;
 
-    // Update active tab
-    document.querySelectorAll('.grade-tab').forEach(tab => {
+    // Update active tab - support both old and new class names
+    document.querySelectorAll('.grade-tab, .grade-tab-simple').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.grade === grade);
     });
 
-    // Re-render subjects
-    renderSubjects();
+    // Re-render course list (new) or subjects (fallback)
+    if (document.getElementById('courseList')) {
+        renderCourseList();
+    } else {
+        renderSubjects();
+    }
 }
 
 // Show exams for a subject
@@ -2770,6 +2774,184 @@ async function startExamFromFilter(examId) {
     }
 }
 
+// Current course filter state
+if (typeof currentCourseFilter === 'undefined') var currentCourseFilter = 'suggested';
+
+// Switch course filter tab
+function switchCourseFilter(filter) {
+    currentCourseFilter = filter;
+
+    // Update active tab
+    document.querySelectorAll('.course-filter-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.filter === filter);
+    });
+
+    // Re-render course list
+    renderCourseList();
+}
+
+// Toggle accordion group
+function toggleCourseGroup(groupId) {
+    const group = document.getElementById(groupId);
+    if (group) {
+        group.classList.toggle('open');
+    }
+}
+
+// Render course list in accordion style
+function renderCourseList() {
+    const container = document.getElementById('courseList');
+    if (!container) return;
+
+    if (cachedSubjects.length === 0) {
+        container.innerHTML = `
+            <div class="course-empty">
+                <div class="course-empty-icon">📚</div>
+                <div class="course-empty-text">Chưa có khóa học nào</div>
+            </div>
+        `;
+        return;
+    }
+
+    // Filter subjects that have exams for current grade
+    const subjectsWithExams = cachedSubjects.filter(subject => {
+        const stats = getSubjectStats(subject.id, currentGrade);
+        return stats.total > 0;
+    });
+
+    if (subjectsWithExams.length === 0) {
+        container.innerHTML = `
+            <div class="course-empty">
+                <div class="course-empty-icon">📭</div>
+                <div class="course-empty-text">Chưa có đề thi cho khối này</div>
+            </div>
+        `;
+        return;
+    }
+
+    // Build accordion HTML
+    container.innerHTML = subjectsWithExams.map((subject, index) => {
+        const stats = getSubjectStats(subject.id, currentGrade);
+        const groupId = `course-group-${subject.id}`;
+
+        return `
+            <div class="course-group" id="${groupId}">
+                <div class="course-group-header" onclick="toggleCourseGroup('${groupId}')">
+                    <div class="course-group-left">
+                        <div class="course-checkbox"></div>
+                        <span class="course-group-icon">${subject.icon}</span>
+                        <span class="course-group-title">${subject.name} - ${stats.total} đề thi</span>
+                    </div>
+                    <div class="course-group-right">
+                        ${stats.vipCount > 0 ? `<span class="badge-vip">VIP ${stats.vipCount}</span>` : ''}
+                        <svg class="course-group-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="course-items" id="${groupId}-items">
+                    <!-- Will load when expanded -->
+                    <div class="course-item" style="justify-content: center; padding: 20px;">
+                        <span style="color: #9ca3af;">Click để xem danh sách đề</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Add click handlers to load exams when group opens
+    subjectsWithExams.forEach(subject => {
+        const groupId = `course-group-${subject.id}`;
+        const header = document.querySelector(`#${groupId} .course-group-header`);
+        if (header) {
+            header.addEventListener('click', () => loadCourseGroupExams(subject.id, groupId));
+        }
+    });
+}
+
+// Load exams for a course group
+async function loadCourseGroupExams(subjectId, groupId) {
+    const itemsContainer = document.getElementById(`${groupId}-items`);
+    if (!itemsContainer) return;
+
+    // Check if already loaded
+    if (itemsContainer.dataset.loaded === 'true') return;
+
+    try {
+        const params = new URLSearchParams();
+        params.append('subjectId', subjectId);
+        if (currentGrade && currentGrade !== 'all') params.append('grade', currentGrade);
+
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/filter?${params.toString()}`, {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+
+        if (!response.ok) throw new Error('Failed to load exams');
+
+        const exams = await response.json();
+
+        // Check user's VIP access
+        let userVipSubjects = [];
+        try {
+            const vipResponse = await fetch('/api/vip/my', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (vipResponse.ok) {
+                userVipSubjects = await vipResponse.json();
+            }
+        } catch (e) { }
+
+        const hasVip = userVipSubjects.some(v =>
+            v.subjectId === subjectId &&
+            (v.grade === currentGrade || currentGrade === 'all')
+        );
+
+        if (exams.length === 0) {
+            itemsContainer.innerHTML = `
+                <div class="course-item" style="justify-content: center; padding: 20px;">
+                    <span style="color: #9ca3af;">Chưa có đề thi</span>
+                </div>
+            `;
+        } else {
+            itemsContainer.innerHTML = exams.map((exam, index) => {
+                const canAccess = exam.accessType === 'free' || hasVip;
+
+                return `
+                    <div class="course-item">
+                        <div class="course-item-left">
+                            <div class="course-checkbox"></div>
+                            <span class="course-item-title">${exam.title}</span>
+                        </div>
+                        <div class="course-item-right">
+                            <div class="download-count">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                                </svg>
+                                <span>${exam.downloadCount || 0}</span>
+                            </div>
+                            ${exam.accessType === 'vip' && !hasVip
+                        ? `<span class="badge-vip">VIP</span><button class="btn-do-exam locked" disabled>🔒</button>`
+                        : `<button class="btn-do-exam primary" onclick="startExamFromFilter('${exam.id}')">Làm bài</button>`
+                    }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        itemsContainer.dataset.loaded = 'true';
+
+    } catch (err) {
+        console.error('Error loading course exams:', err);
+        itemsContainer.innerHTML = `
+            <div class="course-item" style="justify-content: center; padding: 20px;">
+                <span style="color: #ef4444;">Lỗi tải dữ liệu</span>
+            </div>
+        `;
+    }
+}
+
 // Updated showDashboard to use new system
 const originalShowDashboard = showDashboard;
 showDashboard = async function () {
@@ -2788,16 +2970,19 @@ showDashboard = async function () {
 
     // Reset to "all" grade tab
     currentGrade = 'all';
-    document.querySelectorAll('.grade-tab').forEach(tab => {
+    document.querySelectorAll('.grade-tab, .grade-tab-simple').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.grade === 'all');
     });
 
-    // Render subjects
-    renderSubjects();
+    // Render course list (new accordion style) or subjects (fallback)
+    if (document.getElementById('courseList')) {
+        renderCourseList();
+    } else {
+        renderSubjects();
+    }
 
     showScreen('dashboardScreen');
 
     // Check for active exam resume
     checkAndResumeExam();
 };
-
