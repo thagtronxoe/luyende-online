@@ -90,17 +90,13 @@
                         <span class="nav-icon">👥</span>
                         <span class="nav-text">Quản lý Users</span>
                     </button>
-                    <button class="admin-nav-item" data-tab="packages" onclick="showAdminTab('packages')">
-                        <span class="nav-icon">📦</span>
-                        <span class="nav-text">Quản lý Gói đề</span>
+                    <button class="admin-nav-item" data-tab="subjects" onclick="showAdminTab('subjects')">
+                        <span class="nav-icon">📚</span>
+                        <span class="nav-text">Quản lý Môn học</span>
                     </button>
                     <button class="admin-nav-item" data-tab="exams" onclick="showAdminTab('exams')">
                         <span class="nav-icon">📝</span>
                         <span class="nav-text">Quản lý Đề thi</span>
-                    </button>
-                    <button class="admin-nav-item" data-tab="history" onclick="showAdminTab('history')">
-                        <span class="nav-icon">📋</span>
-                        <span class="nav-text">Lịch sử làm bài</span>
                     </button>
                     <button class="admin-nav-item" data-tab="admins" onclick="showAdminTab('admins')">
                         <span class="nav-icon">🔐</span>
@@ -190,14 +186,32 @@
                     </div>
                 </div>
 
-                <!-- Packages Tab -->
-                <div class="admin-tab" id="packagesTab">
+                <!-- Subjects Tab (replaces Packages) -->
+                <div class="admin-tab" id="subjectsTab">
                     <div class="admin-header">
-                        <h1>Quản lý Gói đề</h1>
-                        <button class="btn btn-primary" onclick="showPackageModal()">+ Tạo gói mới</button>
+                        <h1>Quản lý Môn học</h1>
+                        <button class="btn btn-primary" onclick="showSubjectModal()">+ Thêm môn</button>
                     </div>
-                    <div class="packages-grid" id="adminPackagesGrid">
-                        <!-- Packages will be rendered here -->
+                    <p class="tab-desc" style="margin-bottom: 16px; color: #64748b;">
+                        Tất cả môn học đều mở cho học sinh xem. Đề VIP trong mỗi môn sẽ cần kích hoạt riêng cho từng
+                        user.
+                    </p>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Icon</th>
+                                    <th>Mã môn</th>
+                                    <th>Tên môn</th>
+                                    <th>Màu</th>
+                                    <th>Số đề</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subjectsTableBody">
+                                <!-- Subjects will be rendered here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -227,9 +241,9 @@
                                     <tr>
                                         <th>ID</th>
                                         <th>Tên đề thi</th>
-                                        <th>Gói đề</th>
-                                        <th>Ngày tạo</th>
-                                        <th>Người tạo</th>
+                                        <th>Môn</th>
+                                        <th>Khối</th>
+                                        <th>Loại</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -390,40 +404,6 @@
                     </div>
                 </div>
 
-                <!-- History Tab -->
-                <div class="admin-tab" id="historyTab">
-                    <div class="admin-header">
-                        <h1>Lịch sử làm bài</h1>
-                        <div class="search-box">
-                            <input type="text" id="historySearchInput" placeholder="Tìm theo tên hoặc username..."
-                                oninput="filterHistory()">
-                            <select id="historyPackageFilter" onchange="filterHistory()">
-                                <option value="">Tất cả gói đề</option>
-                            </select>
-                            <button class="btn btn-secondary" onclick="clearHistorySearch()">Xóa</button>
-                        </div>
-                    </div>
-                    <div class="admin-table-container">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>STT</th>
-                                    <th>Học sinh</th>
-                                    <th>Gói đề</th>
-                                    <th>Tên đề</th>
-                                    <th>Điểm</th>
-                                    <th>Thời gian làm</th>
-                                    <th>Ngày làm</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historyTableBody">
-                                <!-- History will be rendered here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
                 <!-- Admins Tab -->
                 <div class="admin-tab" id="adminsTab">
                     <div class="admin-header">
@@ -485,36 +465,36 @@
         </div>
     </div>
 
-    <!-- Package Modal -->
-    <div id="packageModal" class="modal">
+    <!-- Subject Modal (replaces Package Modal) -->
+    <div id="subjectModal" class="modal">
         <div class="modal-content modal-form">
-            <button class="modal-close" onclick="closePackageModal()">&times;</button>
-            <h2>Tạo gói đề mới</h2>
-            <form id="packageForm" onsubmit="savePackage(event)">
+            <button class="modal-close" onclick="closeSubjectModal()">&times;</button>
+            <h2 id="subjectModalTitle">Thêm môn học</h2>
+            <input type="hidden" id="editingSubjectId">
+            <form id="subjectForm" onsubmit="saveSubject(event)">
                 <div class="form-group">
-                    <label>Tên gói đề</label>
-                    <input type="text" id="packageName" placeholder="VD: Đề thi giữa kì 2 lớp 12" required>
+                    <label>Mã môn (ID) <span class="required">*</span></label>
+                    <input type="text" id="subjectId" placeholder="VD: toan, ly, hoa, sinh..." required>
+                    <small style="color: #64748b;">Chữ thường, không dấu, không khoảng trắng</small>
                 </div>
                 <div class="form-group">
-                    <label>Mô tả</label>
-                    <textarea id="packageDesc" rows="3" placeholder="Mô tả ngắn về gói đề"></textarea>
+                    <label>Tên môn <span class="required">*</span></label>
+                    <input type="text" id="subjectName" placeholder="VD: Toán, Vật lý, Hóa học..." required>
                 </div>
                 <div class="form-row-2">
                     <div class="form-group">
                         <label>Icon (emoji)</label>
-                        <input type="text" id="packageIcon" value="📝" maxlength="2">
+                        <input type="text" id="subjectIcon" value="📐" maxlength="4">
+                    </div>
+                    <div class="form-group">
+                        <label>Màu chủ đề</label>
+                        <input type="color" id="subjectColor" value="#3b82f6" style="height: 40px;">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Trạng thái truy cập</label>
-                    <select id="packageAccessType" class="form-select">
-                        <option value="open">✓ Đã kích hoạt (Tất cả user)</option>
-                        <option value="free_registration">🆓 Đăng ký miễn phí</option>
-                        <option value="register">🔒 Cần kích hoạt riêng</option>
-                        <option value="updating">🔄 Đang cập nhật</option>
-                    </select>
+                <button type="submit" class="btn btn-primary btn-full">Lưu môn học</button>
+                <div style="margin-top: 10px;">
+                    <button type="button" class="btn btn-secondary btn-full" onclick="closeSubjectModal()">Hủy</button>
                 </div>
-                <button type="submit" class="btn btn-primary btn-full">Lưu gói đề</button>
             </form>
         </div>
     </div>
@@ -587,7 +567,7 @@
 
     <!-- User Detail Modal -->
     <div id="userDetailModal" class="modal">
-        <div class="modal-content modal-form" style="max-width: 500px;">
+        <div class="modal-content modal-form" style="max-width: 550px;">
             <button class="modal-close" onclick="closeUserDetailModal()">&times;</button>
             <h2>👤 Thông tin học sinh</h2>
             <input type="hidden" id="detailUserId">
@@ -610,12 +590,15 @@
                 </div>
             </div>
             <hr style="margin: 16px 0; border: none; border-top: 1px solid #e5e7eb;">
-            <h3 style="margin-bottom: 12px; font-size: 16px;">📦 Kích hoạt gói đề</h3>
-            <div id="userPackagesList" class="user-packages-list">
-                <!-- Package checkboxes will be rendered here -->
+            <h3 style="margin-bottom: 12px; font-size: 16px;">👑 Kích hoạt VIP (theo môn + khối)</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+                Chọn các môn/khối mà học sinh được phép làm đề VIP.
+            </p>
+            <div id="userVipList" class="user-vip-list">
+                <!-- VIP checkboxes will be rendered here -->
             </div>
-            <button type="button" class="btn btn-primary btn-full" style="margin-top: 16px;"
-                onclick="saveUserPackages()">Lưu thay đổi</button>
+            <button type="button" class="btn btn-primary btn-full" style="margin-top: 16px;" onclick="saveUserVip()">Lưu
+                thay đổi</button>
             <button type="button" class="btn btn-secondary btn-full" style="margin-top: 8px;"
                 onclick="resetUserPassword()">🔑 Đặt lại mật khẩu</button>
         </div>

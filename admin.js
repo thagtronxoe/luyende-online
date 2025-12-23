@@ -112,10 +112,10 @@ async function showAdminTab(tabName) {
 
     // Refresh data when switching tabs
     if (tabName === 'users') await renderUsers();
-    if (tabName === 'packages') await renderPackages();
+    if (tabName === 'subjects') await renderSubjects();
     if (tabName === 'exams') await showExamList();
     if (tabName === 'dashboard') await updateDashboardStats();
-    if (tabName === 'history') await renderAllHistory();
+    if (tabName === 'admins') await renderAdmins();
 }
 
 // ========== DASHBOARD STATS ==========
@@ -491,7 +491,6 @@ function getExamHistory() {
 
 async function renderExams() {
     let exams = await getAllExams();
-    const packages = await getPackages();
     const tbody = document.getElementById('examsTableBody');
 
     // Defensive check - ensure exams is an array
@@ -523,29 +522,30 @@ async function renderExams() {
         return;
     }
 
-    tbody.innerHTML = filteredExams.map(exam => {
-        // Convert both to strings for comparison and log for debugging
-        const examPkgId = String(exam.packageId || '');
-        const pkg = packages.find(p => {
-            const pid = String(p._id || p.id || '');
-            return pid === examPkgId;
-        });
+    // Grade labels
+    const gradeLabels = {
+        '10': 'Lớp 10',
+        '11': 'Lớp 11',
+        '12': 'Lớp 12',
+        'thpt': 'THPT QG'
+    };
 
-        const pkgName = pkg ? pkg.name : 'Chưa gán';
-        const date = exam.createdAt ? new Date(exam.createdAt).toLocaleDateString('vi-VN') : 'N/A';
+    tbody.innerHTML = filteredExams.map(exam => {
         const examId = exam._id || exam.id || '';
+        const subjectName = exam.subjectId || 'Chưa gán';
+        const gradeName = gradeLabels[exam.grade] || exam.grade || 'Chưa gán';
+        const accessType = exam.accessType === 'vip' ? '👑 VIP' : '🆓 Free';
 
         return `
             <tr>
                 <td>${exam.displayId ? '#' + exam.displayId : '#' + (examId ? examId.slice(-6) : 'N/A')}</td>
                 <td title="${exam.title || ''}"><strong>${exam.title || 'Không có tên'}</strong></td>
-                <td>${pkgName}</td>
-                <td>${date}</td>
-                <td>${exam.createdBy || 'Admin'}</td>
+                <td>${subjectName}</td>
+                <td>${gradeName}</td>
+                <td>${accessType}</td>
                 <td>
-                    <button class="btn-action btn-edit" onclick="editExam('${examId}')">✏️ Sửa</button>
-                    <button class="btn-action btn-copy" onclick="showCopyExamModal('${examId}')">📋 Copy</button>
-                    <button class="btn-action btn-delete" onclick="deleteExam('${examId}')">🗑️ Xóa</button>
+                    <button class="btn-action btn-edit" onclick="editExam('${examId}')">Sửa</button>
+                    <button class="btn-action btn-delete" onclick="deleteExam('${examId}')">Xóa</button>
                 </td>
             </tr>
         `;
@@ -2397,3 +2397,336 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 500);
 });
 
+// ========== SUBJECT MANAGEMENT ==========
+
+let cachedAdminSubjects = [];
+
+async function getSubjectsAdmin() {
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch('/api/subjects', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+        if (response.ok) {
+            cachedAdminSubjects = await response.json();
+            return cachedAdminSubjects;
+        }
+    } catch (err) {
+        console.error('Error loading subjects:', err);
+    }
+    return [];
+}
+
+async function renderSubjects() {
+    const subjects = await getSubjectsAdmin();
+    const tbody = document.getElementById('subjectsTableBody');
+    if (!tbody) return;
+
+    if (subjects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Chưa có môn học nào</td></tr>';
+        return;
+    }
+
+    // Get exam stats to show count
+    let examStats = [];
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch('/api/exams/stats', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+        if (response.ok) {
+            examStats = await response.json();
+        }
+    } catch (e) { }
+
+    tbody.innerHTML = subjects.map(subject => {
+        // Count exams for this subject
+        const examCount = examStats.filter(s => s._id.subjectId === subject.id)
+            .reduce((sum, s) => sum + (s.total || 0), 0);
+
+        return `
+            <tr>
+                <td style="font-size: 24px;">${subject.icon}</td>
+                <td><code>${subject.id}</code></td>
+                <td><strong>${subject.name}</strong></td>
+                <td><span style="display: inline-block; width: 24px; height: 24px; background: ${subject.color}; border-radius: 4px;"></span></td>
+                <td>${examCount}</td>
+                <td>
+                    <button class="btn-action btn-edit" onclick="editSubject('${subject.id}')">Sửa</button>
+                    <button class="btn-action btn-delete" onclick="deleteSubject('${subject.id}')">Xóa</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function showSubjectModal(subjectId = null) {
+    const modal = document.getElementById('subjectModal');
+    const title = document.getElementById('subjectModalTitle');
+    const idInput = document.getElementById('subjectId');
+    const nameInput = document.getElementById('subjectName');
+    const iconInput = document.getElementById('subjectIcon');
+    const colorInput = document.getElementById('subjectColor');
+    const editingInput = document.getElementById('editingSubjectId');
+
+    if (subjectId) {
+        // Edit mode
+        const subject = cachedAdminSubjects.find(s => s.id === subjectId);
+        if (subject) {
+            title.textContent = 'Sửa môn học';
+            idInput.value = subject.id;
+            idInput.disabled = true; // Cannot change ID
+            nameInput.value = subject.name;
+            iconInput.value = subject.icon;
+            colorInput.value = subject.color;
+            editingInput.value = subject.id;
+        }
+    } else {
+        // Create mode
+        title.textContent = 'Thêm môn học';
+        idInput.value = '';
+        idInput.disabled = false;
+        nameInput.value = '';
+        iconInput.value = '📐';
+        colorInput.value = '#3b82f6';
+        editingInput.value = '';
+    }
+
+    modal.classList.add('active');
+}
+
+function closeSubjectModal() {
+    document.getElementById('subjectModal').classList.remove('active');
+}
+
+function editSubject(subjectId) {
+    showSubjectModal(subjectId);
+}
+
+async function saveSubject(event) {
+    event.preventDefault();
+
+    const editingId = document.getElementById('editingSubjectId').value;
+    const subjectData = {
+        id: document.getElementById('subjectId').value.trim().toLowerCase(),
+        name: document.getElementById('subjectName').value.trim(),
+        icon: document.getElementById('subjectIcon').value.trim() || '📐',
+        color: document.getElementById('subjectColor').value || '#3b82f6'
+    };
+
+    if (!subjectData.id || !subjectData.name) {
+        alert('Vui lòng nhập mã môn và tên môn!');
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const method = editingId ? 'PUT' : 'POST';
+        const url = editingId ? `/api/subjects/${editingId}` : '/api/subjects';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(subjectData)
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || 'Lỗi lưu môn học');
+        }
+
+        alert('✅ Đã lưu môn học!');
+        closeSubjectModal();
+        await renderSubjects();
+    } catch (err) {
+        alert('Lỗi: ' + err.message);
+    }
+}
+
+async function deleteSubject(subjectId) {
+    if (!confirm(`Bạn có chắc muốn xóa môn "${subjectId}"?`)) return;
+
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/subjects/${subjectId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!response.ok) throw new Error('Lỗi xóa môn học');
+
+        alert('✅ Đã xóa môn học!');
+        await renderSubjects();
+    } catch (err) {
+        alert('Lỗi: ' + err.message);
+    }
+}
+
+// ========== VIP ACTIVATION FOR USERS ==========
+
+async function renderUserVip(userId) {
+    const container = document.getElementById('userVipList');
+    if (!container) return;
+
+    // Get all subjects
+    const subjects = await getSubjectsAdmin();
+
+    // Get user's current VIP access
+    let userVip = [];
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/vip/user/${userId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (response.ok) {
+            userVip = await response.json();
+        }
+    } catch (e) {
+        console.error('Error loading user VIP:', e);
+    }
+
+    const grades = [
+        { id: '10', name: 'Lớp 10' },
+        { id: '11', name: 'Lớp 11' },
+        { id: '12', name: 'Lớp 12' },
+        { id: 'thpt', name: 'THPT QG' }
+    ];
+
+    // Create a matrix of subject x grade checkboxes
+    let html = '<div style="max-height: 300px; overflow-y: auto;">';
+
+    subjects.forEach(subject => {
+        html += `<div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;">`;
+        html += `<div style="font-weight: 600; margin-bottom: 8px;">${subject.icon} ${subject.name}</div>`;
+        html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+
+        grades.forEach(grade => {
+            const isChecked = userVip.some(v => v.subjectId === subject.id && v.grade === grade.id);
+            html += `
+                <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer;">
+                    <input type="checkbox" class="vip-checkbox" 
+                        data-subject="${subject.id}" 
+                        data-grade="${grade.id}"
+                        ${isChecked ? 'checked' : ''}>
+                    ${grade.name}
+                </label>
+            `;
+        });
+
+        html += '</div></div>';
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+async function saveUserVip() {
+    const userId = document.getElementById('detailUserId').value;
+    if (!userId) return;
+
+    const checkboxes = document.querySelectorAll('.vip-checkbox:checked');
+    const vipAccess = [];
+
+    checkboxes.forEach(cb => {
+        vipAccess.push({
+            subjectId: cb.dataset.subject,
+            grade: cb.dataset.grade
+        });
+    });
+
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/vip/user/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ vipAccess })
+        });
+
+        if (!response.ok) throw new Error('Lỗi lưu VIP');
+
+        alert('✅ Đã lưu quyền VIP!');
+        closeUserDetailModal();
+        await renderUsers();
+    } catch (err) {
+        alert('Lỗi: ' + err.message);
+    }
+}
+
+// Update showUserDetail to show VIP instead of packages
+const originalShowUserDetail = showUserDetail;
+showUserDetail = async function (userId) {
+    // Call original function first
+    await originalShowUserDetail(userId);
+
+    // Then render VIP checkboxes
+    await renderUserVip(userId);
+};
+
+// ========== ADMIN LIST ==========
+
+async function renderAdmins() {
+    const tbody = document.getElementById('adminsTableBody');
+    if (!tbody) return;
+
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch('/api/admins', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!response.ok) throw new Error('Failed to load admins');
+
+        const admins = await response.json();
+
+        if (admins.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Chưa có admin nào</td></tr>';
+            return;
+        }
+
+        const roleLabels = {
+            'super': '👑 Super Admin',
+            'admin': '🔐 Admin',
+            'editor': '✏️ Soạn đề'
+        };
+
+        tbody.innerHTML = admins.map(admin => `
+            <tr>
+                <td>${admin._id ? admin._id.slice(-6) : admin.id}</td>
+                <td><strong>${admin.name}</strong></td>
+                <td>${admin.username}</td>
+                <td>${roleLabels[admin.role] || admin.role}</td>
+                <td>
+                    <button class="btn-action btn-delete" onclick="deleteAdmin('${admin._id || admin.id}')">Xóa</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error('Error loading admins:', err);
+        tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Lỗi tải danh sách admins</td></tr>';
+    }
+}
+
+async function deleteAdmin(adminId) {
+    if (!confirm('Bạn có chắc muốn xóa admin này?')) return;
+
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/admins/${adminId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!response.ok) throw new Error('Lỗi xóa admin');
+
+        alert('✅ Đã xóa admin!');
+        await renderAdmins();
+    } catch (err) {
+        alert('Lỗi: ' + err.message);
+    }
+}
