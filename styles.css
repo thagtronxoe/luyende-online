@@ -3874,3 +3874,476 @@ body {
     max-width: 100%;
     height: auto;
 }
+
+/* ========== NEW DASHBOARD STYLES ========== */
+
+/* Grade Tabs */
+.grade-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.grade-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.grade-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 80px;
+    backdrop-filter: blur(5px);
+}
+
+.grade-tab:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.grade-tab.active {
+    background: white;
+    color: #667eea;
+    border-color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.grade-tab .tab-icon {
+    font-size: 24px;
+}
+
+.grade-tab .tab-label {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Subject Grid */
+.subjects-section {
+    padding: 0 8px;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.subject-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+}
+
+.subject-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.subject-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--subject-color, #3b82f6);
+}
+
+.subject-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    border-color: var(--subject-color, #3b82f6);
+}
+
+.subject-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-bottom: 12px;
+    background: var(--subject-bg, #f0f5ff);
+}
+
+.subject-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.subject-stats {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.stat-badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.stat-badge.total {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.stat-badge.vip {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+}
+
+/* VIP Section */
+.vip-section {
+    margin-top: 32px;
+    padding: 0 8px;
+}
+
+.vip-badge {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.vip-subjects {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.vip-subject-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.vip-subject-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+/* Semester Tabs */
+.semester-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 0;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.semester-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.semester-tab {
+    padding: 8px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 20px;
+    background: white;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.semester-tab:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.semester-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: transparent;
+    color: white;
+}
+
+/* Subject Header in Exam List */
+.subject-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.subject-header .subject-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.subject-info {
+    flex: 1;
+}
+
+.subject-info .exam-list-title {
+    margin: 0 0 4px;
+    font-size: 24px;
+}
+
+.exam-count {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* Back Button */
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-right: 12px;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* New Exam Grid */
+.exam-grid-new {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.exam-card-new {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 2px solid #e2e8f0;
+    transition: all 0.2s;
+}
+
+.exam-card-new:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.exam-card-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.exam-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.exam-details h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 4px;
+}
+
+.exam-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.exam-card-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.access-badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.access-badge.free {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.access-badge.vip {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+}
+
+.access-badge.vip-locked {
+    background: #fef3c7;
+    color: #b45309;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-start-exam {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-start-exam:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-register-vip {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 2px solid #fbbf24;
+    background: transparent;
+    color: #b45309;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-register-vip:hover {
+    background: #fef3c7;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.empty-state-text {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .grade-tabs {
+        padding: 12px 16px;
+        margin: 0 -8px 16px;
+        border-radius: 0;
+    }
+
+    .grade-tab {
+        padding: 10px 16px;
+        min-width: 70px;
+    }
+
+    .grade-tab .tab-icon {
+        font-size: 20px;
+    }
+
+    .subject-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .subject-card {
+        padding: 16px;
+    }
+
+    .subject-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+    }
+
+    .semester-tabs {
+        padding: 8px 0;
+    }
+
+    .semester-tab {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .exam-card-new {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .exam-card-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .subject-header .subject-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+    }
+
+    .subject-info .exam-list-title {
+        font-size: 18px;
+    }
+}

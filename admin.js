@@ -1114,14 +1114,40 @@ async function saveExam() {
     const uniqueId = editingId || await generateExamId();
     const displayIdInput = document.getElementById('examDisplayId').value.trim();
 
+    // NEW: Get new fields
+    const grade = document.getElementById('examGrade')?.value || '';
+    const subjectId = document.getElementById('examSubject')?.value || '';
+    const semester = document.getElementById('examSemester')?.value || null;
+    const accessType = document.getElementById('examAccessType')?.value || 'free';
+
+    // Validation for new required fields
+    if (!grade) {
+        alert('Vui lòng chọn khối lớp!');
+        return;
+    }
+    if (!subjectId) {
+        alert('Vui lòng chọn môn học!');
+        return;
+    }
+
     const newExam = {
         id: uniqueId,
         displayId: displayIdInput || uniqueId,
+
+        // NEW FIELDS
+        subjectId: subjectId,
+        grade: grade,
+        semester: semester,
+        accessType: accessType,
+
+        // LEGACY (keep for backwards compatibility)
         packageId: packageId || null,
+
+        // STANDARD FIELDS
         title: examTitle,
         description: document.getElementById('examDescription').value.trim() || '',
-        tag: examTag,
-        template: currentTemplate || 'thpt_toan', // Store template type for scoring
+        tag: examTag || `${subjectId}_${grade}`, // Auto-generate tag
+        template: currentTemplate || 'thpt_toan',
         status: examStatus,
         duration: parseInt(document.getElementById('examDuration').value) || 90,
         questions: [...mcQuestions, ...tfQuestions, ...fillQuestions],
@@ -2292,3 +2318,82 @@ function processAIImport() {
         alert('❌ Lỗi định dạng JSON: ' + e.message + '\nHãy chắc chắn bạn chỉ copy phần mã JSON từ AI.');
     }
 }
+
+// ========== NEW DASHBOARD ADMIN HELPERS ==========
+
+// Load subjects for dropdown
+async function loadSubjectsDropdown() {
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch('/api/subjects', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+
+        if (response.ok) {
+            const subjects = await response.json();
+            const select = document.getElementById('examSubject');
+            if (select) {
+                select.innerHTML = '<option value="">-- Chọn môn --</option>' +
+                    subjects.map(s => `<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+            }
+            console.log('✅ Loaded subjects for admin dropdown:', subjects.length);
+        }
+    } catch (err) {
+        console.error('Error loading subjects dropdown:', err);
+    }
+}
+
+// Handle grade change - toggle semester visibility
+function onGradeChange() {
+    const grade = document.getElementById('examGrade')?.value;
+    const semesterGroup = document.getElementById('semesterGroup');
+
+    if (semesterGroup) {
+        // Hide semester for THPT (no semesters for national exam)
+        semesterGroup.style.display = (grade === 'thpt') ? 'none' : 'block';
+
+        // Clear semester selection for THPT
+        if (grade === 'thpt') {
+            const semesterSelect = document.getElementById('examSemester');
+            if (semesterSelect) semesterSelect.value = '';
+        }
+    }
+}
+
+// Override showExamCreator to load subjects
+const originalShowExamCreator = window.showExamCreator;
+window.showExamCreator = async function (templateType) {
+    // Call original function
+    if (typeof originalShowExamCreator === 'function') {
+        await originalShowExamCreator(templateType);
+    }
+
+    // Load subjects dropdown
+    await loadSubjectsDropdown();
+
+    // Reset new fields
+    const gradeSelect = document.getElementById('examGrade');
+    const subjectSelect = document.getElementById('examSubject');
+    const semesterSelect = document.getElementById('examSemester');
+    const accessTypeSelect = document.getElementById('examAccessType');
+
+    if (gradeSelect) gradeSelect.value = '';
+    if (subjectSelect) subjectSelect.value = '';
+    if (semesterSelect) semesterSelect.value = '';
+    if (accessTypeSelect) accessTypeSelect.value = 'free';
+
+    // Show semester group by default
+    const semesterGroup = document.getElementById('semesterGroup');
+    if (semesterGroup) semesterGroup.style.display = 'block';
+};
+
+// Also load subjects on page init
+document.addEventListener('DOMContentLoaded', () => {
+    // Load subjects dropdown on init if exam tab is active
+    setTimeout(() => {
+        if (document.getElementById('examSubject')) {
+            loadSubjectsDropdown();
+        }
+    }, 500);
+});
+

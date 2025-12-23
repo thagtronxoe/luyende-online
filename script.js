@@ -2443,3 +2443,361 @@ function showForgotPasswordContact() {
         alert('Để được hỗ trợ khôi phục mật khẩu, vui lòng liên hệ:\n\n📧 Email: phamducthang01112007@gmail.com\n📱 Zalo: 0362...\n\nHoặc liên hệ Admin qua trang web.');
     }
 }
+
+// ========== NEW DASHBOARD SYSTEM ==========
+// Global state for new dashboard
+if (typeof cachedSubjects === 'undefined') var cachedSubjects = [];
+if (typeof currentGrade === 'undefined') var currentGrade = 'all';
+if (typeof currentSubject === 'undefined') var currentSubject = null;
+if (typeof currentSemester === 'undefined') var currentSemester = 'all';
+if (typeof examStats === 'undefined') var examStats = [];
+
+// Load subjects from API
+async function loadSubjects() {
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch('/api/subjects', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+        if (response.ok) {
+            cachedSubjects = await response.json();
+            console.log('✅ Loaded subjects:', cachedSubjects.length);
+        }
+    } catch (err) {
+        console.error('Error loading subjects:', err);
+        cachedSubjects = [];
+    }
+}
+
+// Load exam stats from API
+async function loadExamStats() {
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch('/api/exams/stats', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+        if (response.ok) {
+            examStats = await response.json();
+            console.log('✅ Loaded exam stats:', examStats.length);
+        }
+    } catch (err) {
+        console.error('Error loading exam stats:', err);
+        examStats = [];
+    }
+}
+
+// Get stats for a subject and grade
+function getSubjectStats(subjectId, grade) {
+    let total = 0, vipCount = 0;
+
+    examStats.forEach(stat => {
+        const matchGrade = grade === 'all' || stat._id.grade === grade;
+        const matchSubject = stat._id.subjectId === subjectId;
+
+        if (matchGrade && matchSubject) {
+            total += stat.total || 0;
+            vipCount += stat.vipCount || 0;
+        }
+    });
+
+    return { total, vipCount };
+}
+
+// Render subjects grid
+function renderSubjects() {
+    const grid = document.getElementById('subjectGrid');
+    const sectionTitle = document.getElementById('sectionTitle');
+
+    if (!grid) return;
+
+    // Update section title based on current grade
+    const gradeNames = {
+        'all': 'Tất cả môn học',
+        '10': 'Môn học Lớp 10',
+        '11': 'Môn học Lớp 11',
+        '12': 'Môn học Lớp 12',
+        'thpt': 'Môn thi THPT Quốc Gia'
+    };
+    if (sectionTitle) sectionTitle.textContent = gradeNames[currentGrade] || 'Chọn môn học';
+
+    if (cachedSubjects.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📚</div>
+                <div class="empty-state-text">Chưa có môn học nào</div>
+            </div>
+        `;
+        return;
+    }
+
+    // Filter subjects that have exams for current grade
+    const subjectsWithExams = cachedSubjects.filter(subject => {
+        const stats = getSubjectStats(subject.id, currentGrade);
+        return stats.total > 0;
+    });
+
+    if (subjectsWithExams.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <div class="empty-state-text">Chưa có đề thi cho khối này</div>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = subjectsWithExams.map(subject => {
+        const stats = getSubjectStats(subject.id, currentGrade);
+        const bgColor = subject.color + '20'; // Add transparency
+
+        return `
+            <div class="subject-card" 
+                 style="--subject-color: ${subject.color}; --subject-bg: ${bgColor}"
+                 onclick="showSubjectExams('${subject.id}')">
+                <div class="subject-icon-wrapper" style="background: ${bgColor}">
+                    ${subject.icon}
+                </div>
+                <div class="subject-name">${subject.name}</div>
+                <div class="subject-stats">
+                    <span class="stat-badge total">${stats.total} đề</span>
+                    ${stats.vipCount > 0 ? `<span class="stat-badge vip">👑 ${stats.vipCount}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Switch grade tab
+function switchGradeTab(grade) {
+    currentGrade = grade;
+
+    // Update active tab
+    document.querySelectorAll('.grade-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.grade === grade);
+    });
+
+    // Re-render subjects
+    renderSubjects();
+}
+
+// Show exams for a subject
+async function showSubjectExams(subjectId) {
+    currentSubject = cachedSubjects.find(s => s.id === subjectId);
+    if (!currentSubject) return;
+
+    // Update header
+    const iconDisplay = document.getElementById('subjectIconDisplay');
+    const examListTitle = document.getElementById('examListTitle');
+    const examCount = document.getElementById('examCount');
+    const semesterTabs = document.getElementById('semesterTabs');
+
+    if (iconDisplay) iconDisplay.textContent = currentSubject.icon;
+
+    const gradeLabel = {
+        '10': 'Lớp 10',
+        '11': 'Lớp 11',
+        '12': 'Lớp 12',
+        'thpt': 'THPT Quốc Gia'
+    }[currentGrade] || '';
+
+    if (examListTitle) examListTitle.textContent = `${currentSubject.name} - ${gradeLabel}`;
+
+    // Show/hide semester tabs (only for grades 10/11/12)
+    if (semesterTabs) {
+        semesterTabs.style.display = (currentGrade !== 'thpt' && currentGrade !== 'all') ? 'flex' : 'none';
+    }
+
+    // Reset semester filter
+    currentSemester = 'all';
+    document.querySelectorAll('.semester-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.semester === 'all');
+    });
+
+    // Load and render exams
+    await loadSubjectExams();
+
+    showScreen('examListScreen');
+}
+
+// Load exams for current subject/grade/semester
+async function loadSubjectExams() {
+    const grid = document.getElementById('examGrid');
+    if (!grid) return;
+
+    // Show loading
+    grid.innerHTML = `
+        <div class="exam-card-new" style="justify-content: center; padding: 40px;">
+            <span>Đang tải...</span>
+        </div>
+    `;
+
+    try {
+        const params = new URLSearchParams();
+        if (currentSubject) params.append('subjectId', currentSubject.id);
+        if (currentGrade && currentGrade !== 'all') params.append('grade', currentGrade);
+        if (currentSemester && currentSemester !== 'all') params.append('semester', currentSemester);
+
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/filter?${params.toString()}`, {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        });
+
+        if (!response.ok) throw new Error('Failed to load exams');
+
+        const exams = await response.json();
+
+        // Update exam count
+        const examCountEl = document.getElementById('examCount');
+        if (examCountEl) examCountEl.textContent = `${exams.length} đề thi`;
+
+        if (exams.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📝</div>
+                    <div class="empty-state-text">Chưa có đề thi nào</div>
+                </div>
+            `;
+            return;
+        }
+
+        // Check user's VIP access
+        let userVipSubjects = [];
+        try {
+            const vipResponse = await fetch('/api/vip/my', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (vipResponse.ok) {
+                userVipSubjects = await vipResponse.json();
+            }
+        } catch (e) { }
+
+        // Check if user has VIP for this subject/grade
+        const hasVip = userVipSubjects.some(v =>
+            v.subjectId === currentSubject?.id &&
+            (v.grade === currentGrade || currentGrade === 'all')
+        );
+
+        grid.innerHTML = exams.map((exam, index) => {
+            const canAccess = exam.accessType === 'free' || hasVip;
+            const semesterLabel = {
+                'gk1': 'Giữa kì 1',
+                'ck1': 'Cuối kì 1',
+                'gk2': 'Giữa kì 2',
+                'ck2': 'Cuối kì 2'
+            }[exam.semester] || '';
+
+            return `
+                <div class="exam-card-new">
+                    <div class="exam-card-left">
+                        <div class="exam-number">${index + 1}</div>
+                        <div class="exam-details">
+                            <h3>${exam.title}</h3>
+                            <div class="exam-meta">
+                                <span>⏱️ ${exam.duration || 90} phút</span>
+                                ${semesterLabel ? `<span>📅 ${semesterLabel}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="exam-card-right">
+                        ${exam.accessType === 'vip'
+                    ? (hasVip
+                        ? '<span class="access-badge vip">👑 VIP</span>'
+                        : '<span class="access-badge vip-locked">🔒 VIP</span>')
+                    : '<span class="access-badge free">FREE</span>'
+                }
+                        ${canAccess
+                    ? `<button class="btn-start-exam" onclick="startExamFromFilter('${exam.id}')">Làm bài</button>`
+                    : `<button class="btn-register-vip" onclick="showContactModal()">Đăng ký</button>`
+                }
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error('Error loading exams:', err);
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">❌</div>
+                <div class="empty-state-text">Lỗi tải đề thi</div>
+            </div>
+        `;
+    }
+}
+
+// Filter by semester
+function filterBySemester(semester) {
+    currentSemester = semester;
+
+    // Update active tab
+    document.querySelectorAll('.semester-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.semester === semester);
+    });
+
+    // Reload exams
+    loadSubjectExams();
+}
+
+// Start exam from new filter view
+async function startExamFromFilter(examId) {
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/${examId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!response.ok) throw new Error('Failed to load exam');
+
+        const exam = await response.json();
+
+        // Set exam data
+        examData.examTitle = exam.title;
+        examData.id = exam._id || exam.id;
+        examData.displayId = exam.displayId || exam.id;
+        examData.duration = exam.duration || 90;
+        examData.template = exam.template || 'thpt_toan';
+        examData.studentName = currentUser ? currentUser.name : 'User';
+        examData.questions = exam.questions || [];
+
+        // Store subject/grade info for history
+        examData.subjectId = currentSubject?.id;
+        examData.grade = currentGrade;
+
+        showPreExam();
+    } catch (err) {
+        console.error('Error starting exam:', err);
+        alert('Lỗi tải đề thi: ' + err.message);
+    }
+}
+
+// Updated showDashboard to use new system
+const originalShowDashboard = showDashboard;
+showDashboard = async function () {
+    console.log('🎨 showDashboard - New Dashboard');
+
+    updateUserNameDisplay();
+
+    // Load data for new dashboard
+    await Promise.all([
+        loadSubjects(),
+        loadExamStats()
+    ]);
+
+    // Also load legacy packages for backwards compatibility
+    await loadPackages();
+
+    // Reset to "all" grade tab
+    currentGrade = 'all';
+    document.querySelectorAll('.grade-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.grade === 'all');
+    });
+
+    // Render subjects
+    renderSubjects();
+
+    showScreen('dashboardScreen');
+
+    // Check for active exam resume
+    checkAndResumeExam();
+};
+

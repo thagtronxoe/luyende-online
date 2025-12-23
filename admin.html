@@ -276,26 +276,68 @@
                                     <option value="khtn_khxh">KHTN/KHXH (18 TN + 4 ĐS + 6 Điền)</option>
                                 </select>
                             </div>
+
+                            <!-- NEW: Grade Selection -->
                             <div class="form-group">
-                                <label>Chọn gói đề</label>
+                                <label>Khối lớp <span class="required">*</span></label>
+                                <select id="examGrade" class="form-select" onchange="onGradeChange()">
+                                    <option value="">-- Chọn khối --</option>
+                                    <option value="10">Lớp 10</option>
+                                    <option value="11">Lớp 11</option>
+                                    <option value="12">Lớp 12</option>
+                                    <option value="thpt">THPT Quốc Gia</option>
+                                </select>
+                            </div>
+
+                            <!-- NEW: Subject Selection -->
+                            <div class="form-group">
+                                <label>Môn học <span class="required">*</span></label>
+                                <select id="examSubject" class="form-select">
+                                    <option value="">-- Chọn môn --</option>
+                                    <!-- Subjects populated from API -->
+                                </select>
+                            </div>
+
+                            <!-- NEW: Semester Selection (hidden for THPT) -->
+                            <div class="form-group" id="semesterGroup">
+                                <label>Kỳ thi</label>
+                                <select id="examSemester" class="form-select">
+                                    <option value="">-- Chọn kỳ --</option>
+                                    <option value="gk1">Giữa kì 1</option>
+                                    <option value="ck1">Cuối kì 1</option>
+                                    <option value="gk2">Giữa kì 2</option>
+                                    <option value="ck2">Cuối kì 2</option>
+                                </select>
+                            </div>
+
+                            <!-- NEW: Access Type -->
+                            <div class="form-group">
+                                <label>Loại truy cập</label>
+                                <select id="examAccessType" class="form-select">
+                                    <option value="free">🆓 Miễn phí (Free)</option>
+                                    <option value="vip">👑 VIP (Cần đăng ký)</option>
+                                </select>
+                            </div>
+
+                            <!-- Legacy: Package Selection (hidden, for backwards compatibility) -->
+                            <div class="form-group" style="display: none;">
+                                <label>Gói đề (Legacy)</label>
                                 <select id="examPackageSelect" class="form-select">
                                     <!-- Packages will be populated here -->
                                 </select>
                             </div>
+
                             <div class="form-group">
-                                <label>Tên đề thi</label>
+                                <label>Tên đề thi <span class="required">*</span></label>
                                 <input type="text" id="examTitle" placeholder="VD: Đề số 1 - Giữa kì 2"
                                     class="form-input">
                             </div>
                             <div class="form-group">
-                                <label>Mã môn (Tag)</label>
-                                <input type="text" id="examTag" placeholder="VD: THPT Toán" class="form-input">
+                                <label>Mã hiển thị (tự sinh nếu để trống)</label>
+                                <input type="text" id="examDisplayId" placeholder="VD: 45123" class="form-input">
                             </div>
-                            <!-- Removed closing div to include DisplayId in header -->
-                            <div class="form-group">
-                                <label>Mã hiển thị (VD: 1009)</label>
-                                <input type="text" id="examDisplayId" placeholder="VD: 1009" class="form-input">
-                            </div>
+                            <!-- Removed: Tag field - no longer needed -->
+                            <input type="hidden" id="examTag" value="">
                             <div class="form-group">
                                 <label>Mô tả ngắn</label>
                                 <input type="text" id="examDescription"

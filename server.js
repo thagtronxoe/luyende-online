@@ -70,11 +70,29 @@ const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'admin', 'super', 'editor'], default: 'student' },
+    // Legacy field - kept for backwards compatibility
     activatedPackages: [{ type: String }],
+    // NEW: VIP subjects registered by user
+    vipSubjects: [{
+        subjectId: String,      // e.g., "toan", "ly", "hoa"
+        grade: String,          // e.g., "10", "11", "12", "thpt"
+        activatedAt: { type: Date, default: Date.now },
+        expiresAt: Date         // Optional expiration
+    }],
     createdAt: { type: Date, default: Date.now }
 });
 
-// Package Schema
+// Subject Schema (NEW)
+const subjectSchema = new mongoose.Schema({
+    id: { type: String, required: true, unique: true },    // e.g., "toan", "ly", "hoa"
+    name: { type: String, required: true },                // e.g., "Toán", "Vật Lý", "Hóa Học"
+    icon: { type: String, default: '📚' },
+    color: { type: String, default: '#3b82f6' },           // Primary color for UI
+    order: { type: Number, default: 0 },                   // Display order
+    createdAt: { type: Date, default: Date.now }
+});
+
+// Package Schema (LEGACY - kept for backwards compatibility)
 const packageSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
     name: { type: String, required: true },
@@ -85,16 +103,26 @@ const packageSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-// Exam Schema
+// Exam Schema (UPDATED)
 const examSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
-    displayId: String, // Custom short ID like 1009
+    displayId: String,
+
+    // NEW STRUCTURE - Grade/Subject/Semester based
+    subjectId: { type: String },                           // Reference to subject
+    grade: { type: String, enum: ['10', '11', '12', 'thpt'] },
+    semester: { type: String, enum: ['gk1', 'ck1', 'gk2', 'ck2', null] }, // null for THPT
+    accessType: { type: String, enum: ['free', 'vip'], default: 'free' },
+
+    // LEGACY - kept for backwards compatibility
     packageId: String,
+
+    // Standard fields
     title: { type: String, required: true },
-    description: String, // Mô tả ngắn hiển thị dưới tiêu đề
+    description: String,
     tag: String,
-    template: { type: String, enum: ['thpt_toan', 'khtn_khxh'], default: 'thpt_toan' }, // Cấu trúc đề
-    duration: { type: Number, default: 90, min: 10, max: 180 }, // Thời gian thi (phút)
+    template: { type: String, enum: ['thpt_toan', 'khtn_khxh'], default: 'thpt_toan' },
+    duration: { type: Number, default: 90, min: 10, max: 180 },
     status: { type: String, enum: ['draft', 'published', 'view_only', 'updating'], default: 'draft' },
     questions: [{
         id: Number,
@@ -102,10 +130,10 @@ const examSchema = new mongoose.Schema({
         question: String,
         options: [String],
         correctAnswer: mongoose.Schema.Types.Mixed,
-        correctAnswers: [mongoose.Schema.Types.Mixed],  // Support both Boolean and String
+        correctAnswers: [mongoose.Schema.Types.Mixed],
         explanation: String
     }],
-    createdBy: mongoose.Schema.Types.Mixed, // Can be ObjectId or String (for legacy data)
+    createdBy: mongoose.Schema.Types.Mixed,
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -115,6 +143,8 @@ const historySchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     examId: String,
     packageId: String,
+    subjectId: String,                                      // NEW
+    grade: String,                                          // NEW
     examTitle: String,
     score: String,
     correct: Number,
@@ -132,6 +162,7 @@ const settingsSchema = new mongoose.Schema({
 
 // Models
 const User = mongoose.model('User', userSchema);
+const Subject = mongoose.model('Subject', subjectSchema);
 const Package = mongoose.model('Package', packageSchema);
 const Exam = mongoose.model('Exam', examSchema);
 const History = mongoose.model('History', historySchema);
@@ -809,6 +840,222 @@ async function initDefaultAdmin() {
     }
 }
 
+// ========== INIT DEFAULT SUBJECTS ==========
+async function initDefaultSubjects() {
+    try {
+        const subjectCount = await Subject.countDocuments();
+        if (subjectCount === 0) {
+            const defaultSubjects = [
+                { id: 'toan', name: 'Toán', icon: '📐', color: '#3b82f6', order: 1 },
+                { id: 'ly', name: 'Vật Lý', icon: '⚡', color: '#8b5cf6', order: 2 },
+                { id: 'hoa', name: 'Hóa Học', icon: '⚗️', color: '#10b981', order: 3 },
+                { id: 'sinh', name: 'Sinh Học', icon: '🧬', color: '#f59e0b', order: 4 },
+                { id: 'van', name: 'Ngữ Văn', icon: '📖', color: '#ef4444', order: 5 },
+                { id: 'anh', name: 'Tiếng Anh', icon: '🌍', color: '#06b6d4', order: 6 },
+                { id: 'su', name: 'Lịch Sử', icon: '🏛️', color: '#f97316', order: 7 },
+                { id: 'dia', name: 'Địa Lý', icon: '🗺️', color: '#84cc16', order: 8 },
+                { id: 'gdcd', name: 'GDCD', icon: '⚖️', color: '#ec4899', order: 9 },
+                { id: 'tin', name: 'Tin Học', icon: '💻', color: '#6366f1', order: 10 }
+            ];
+            await Subject.insertMany(defaultSubjects);
+            console.log('✅ Created default subjects');
+        }
+    } catch (err) {
+        console.error('Error creating default subjects:', err.message);
+    }
+}
+
+// ========== SUBJECT ROUTES ==========
+
+// Get all subjects (public)
+app.get('/api/subjects', async (req, res) => {
+    try {
+        const subjects = await Subject.find().sort({ order: 1 });
+        res.json(subjects);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Create subject (admin only)
+app.post('/api/subjects', adminAuth, async (req, res) => {
+    try {
+        const subject = new Subject(req.body);
+        await subject.save();
+        res.status(201).json(subject);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update subject (admin only)
+app.put('/api/subjects/:id', adminAuth, async (req, res) => {
+    try {
+        const subject = await Subject.findOneAndUpdate(
+            { id: req.params.id },
+            req.body,
+            { new: true }
+        );
+        if (!subject) {
+            return res.status(404).json({ error: 'Không tìm thấy môn học' });
+        }
+        res.json(subject);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete subject (admin only)
+app.delete('/api/subjects/:id', adminAuth, async (req, res) => {
+    try {
+        await Subject.findOneAndDelete({ id: req.params.id });
+        res.json({ message: 'Đã xóa môn học' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ========== EXAM ROUTES (UPDATED) ==========
+
+// Get exams with new filters (public - for students)
+app.get('/api/exams/filter', async (req, res) => {
+    try {
+        const { grade, subjectId, semester, accessType } = req.query;
+        const query = { status: 'published' };
+
+        if (grade) query.grade = grade;
+        if (subjectId) query.subjectId = subjectId;
+        if (semester) query.semester = semester;
+        if (accessType) query.accessType = accessType;
+
+        const exams = await Exam.find(query).select('-questions');
+        res.json(exams);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get exam counts by grade and subject
+app.get('/api/exams/stats', async (req, res) => {
+    try {
+        const stats = await Exam.aggregate([
+            { $match: { status: 'published' } },
+            {
+                $group: {
+                    _id: { grade: '$grade', subjectId: '$subjectId' },
+                    total: { $sum: 1 },
+                    freeCount: { $sum: { $cond: [{ $eq: ['$accessType', 'free'] }, 1, 0] } },
+                    vipCount: { $sum: { $cond: [{ $eq: ['$accessType', 'vip'] }, 1, 0] } }
+                }
+            }
+        ]);
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ========== VIP ROUTES ==========
+
+// Check if user has VIP access for subject+grade
+app.get('/api/vip/check', auth, async (req, res) => {
+    try {
+        const { subjectId, grade } = req.query;
+        const user = await User.findById(req.user._id);
+
+        const hasVip = user.vipSubjects?.some(vip =>
+            vip.subjectId === subjectId &&
+            vip.grade === grade &&
+            (!vip.expiresAt || new Date(vip.expiresAt) > new Date())
+        );
+
+        res.json({ hasVip });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get user's VIP subjects
+app.get('/api/vip/my', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        res.json(user.vipSubjects || []);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: Activate VIP for user
+app.post('/api/vip/activate', adminAuth, async (req, res) => {
+    try {
+        const { userId, subjectId, grade, expiresAt } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'Không tìm thấy user' });
+        }
+
+        if (!user.vipSubjects) user.vipSubjects = [];
+
+        // Check if already has this VIP
+        const existingIndex = user.vipSubjects.findIndex(
+            v => v.subjectId === subjectId && v.grade === grade
+        );
+
+        if (existingIndex >= 0) {
+            // Update existing
+            user.vipSubjects[existingIndex].expiresAt = expiresAt || null;
+            user.vipSubjects[existingIndex].activatedAt = new Date();
+        } else {
+            // Add new
+            user.vipSubjects.push({
+                subjectId,
+                grade,
+                activatedAt: new Date(),
+                expiresAt: expiresAt || null
+            });
+        }
+
+        await user.save();
+        res.json({ message: 'Đã kích hoạt VIP', vipSubjects: user.vipSubjects });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: Deactivate VIP for user
+app.post('/api/vip/deactivate', adminAuth, async (req, res) => {
+    try {
+        const { userId, subjectId, grade } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'Không tìm thấy user' });
+        }
+
+        user.vipSubjects = (user.vipSubjects || []).filter(
+            v => !(v.subjectId === subjectId && v.grade === grade)
+        );
+
+        await user.save();
+        res.json({ message: 'Đã hủy VIP', vipSubjects: user.vipSubjects });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get all users with VIP (admin)
+app.get('/api/vip/users', adminAuth, async (req, res) => {
+    try {
+        const users = await User.find({
+            'vipSubjects.0': { $exists: true }
+        }).select('name username email vipSubjects');
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ========== CATCH-ALL ROUTE ==========
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -819,4 +1066,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`🚀 Server running on port ${PORT}`);
     await initDefaultAdmin();
+    await initDefaultSubjects();
 });

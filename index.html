@@ -278,7 +278,7 @@
         </div>
     </div>
 
-    <!-- Dashboard Screen (Gói đề) -->
+    <!-- Dashboard Screen (NEW DESIGN) -->
     <div id="dashboardScreen" class="screen">
         <div class="dashboard-container">
             <header class="dashboard-header">
@@ -292,34 +292,62 @@
             </header>
 
             <main class="dashboard-main">
-                <!-- Tab navigation bar -->
-                <div class="tab-navigation">
-                    <button class="tab-btn active" onclick="switchTab('myPackages')">Đề của tôi</button>
-                    <button class="tab-btn" onclick="switchTab('allPackages')">Tất cả gói đề</button>
+                <!-- Grade Tabs -->
+                <div class="grade-tabs">
+                    <button class="grade-tab active" data-grade="all" onclick="switchGradeTab('all')">
+                        <span class="tab-icon">📚</span>
+                        <span class="tab-label">Tất cả</span>
+                    </button>
+                    <button class="grade-tab" data-grade="10" onclick="switchGradeTab('10')">
+                        <span class="tab-icon">🔟</span>
+                        <span class="tab-label">Lớp 10</span>
+                    </button>
+                    <button class="grade-tab" data-grade="11" onclick="switchGradeTab('11')">
+                        <span class="tab-icon">1️⃣1️⃣</span>
+                        <span class="tab-label">Lớp 11</span>
+                    </button>
+                    <button class="grade-tab" data-grade="12" onclick="switchGradeTab('12')">
+                        <span class="tab-icon">1️⃣2️⃣</span>
+                        <span class="tab-label">Lớp 12</span>
+                    </button>
+                    <button class="grade-tab" data-grade="thpt" onclick="switchGradeTab('thpt')">
+                        <span class="tab-icon">🎓</span>
+                        <span class="tab-label">THPT QG</span>
+                    </button>
                 </div>
 
-                <!-- Tab content: Đề của tôi -->
-                <div class="tab-content active" id="myPackagesTab">
-                    <div class="package-grid" id="myPackagesGrid">
-                        <!-- My registered packages will be rendered here -->
+                <!-- Subject Cards Grid -->
+                <div class="subjects-section">
+                    <h2 class="section-title" id="sectionTitle">Chọn môn học</h2>
+                    <div class="subject-grid" id="subjectGrid">
+                        <!-- Subject cards will be rendered here by JS -->
                     </div>
                 </div>
 
-                <!-- Tab content: Tất cả gói đề -->
-                <div class="tab-content" id="allPackagesTab">
-                    <div class="package-grid" id="allPackagesGrid">
-                        <!-- All available packages will be rendered here -->
+                <!-- My VIP Section -->
+                <div class="vip-section" id="vipSection" style="display: none;">
+                    <h2 class="section-title">
+                        <span class="vip-badge">👑 VIP</span> Gói đề của tôi
+                    </h2>
+                    <div class="vip-subjects" id="vipSubjectsGrid">
+                        <!-- VIP subjects will be rendered here -->
                     </div>
                 </div>
             </main>
         </div>
     </div>
 
-    <!-- Exam List Screen -->
+    <!-- Exam List Screen (REDESIGNED) -->
     <div id="examListScreen" class="screen">
         <div class="exam-list-container">
             <header class="dashboard-header">
                 <div class="header-left">
+                    <button class="back-btn" onclick="showDashboard()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                    </button>
                     <img src="luyen_de_logo_white.svg" alt="Luyện Đề Online" class="header-logo clickable"
                         onclick="showDashboard()" title="Về trang chủ">
                 </div>
@@ -330,7 +358,28 @@
             </header>
 
             <main class="exam-list-main">
-                <h1 class="exam-list-title" id="examListTitle">Danh sách đề</h1>
+                <!-- Subject Header -->
+                <div class="subject-header" id="subjectHeader">
+                    <span class="subject-icon" id="subjectIconDisplay">📐</span>
+                    <div class="subject-info">
+                        <h1 class="exam-list-title" id="examListTitle">Toán - Lớp 12</h1>
+                        <span class="exam-count" id="examCount">15 đề thi</span>
+                    </div>
+                </div>
+
+                <!-- Semester Tabs (only for grade 10/11/12) -->
+                <div class="semester-tabs" id="semesterTabs">
+                    <button class="semester-tab active" data-semester="all" onclick="filterBySemester('all')">Tất
+                        cả</button>
+                    <button class="semester-tab" data-semester="gk1" onclick="filterBySemester('gk1')">Giữa kì
+                        1</button>
+                    <button class="semester-tab" data-semester="ck1" onclick="filterBySemester('ck1')">Cuối kì
+                        1</button>
+                    <button class="semester-tab" data-semester="gk2" onclick="filterBySemester('gk2')">Giữa kì
+                        2</button>
+                    <button class="semester-tab" data-semester="ck2" onclick="filterBySemester('ck2')">Cuối kì
+                        2</button>
+                </div>
 
                 <!-- Tab navigation for exam list -->
                 <div class="tab-navigation">
@@ -340,7 +389,7 @@
 
                 <!-- Tab content: Đề thi -->
                 <div class="tab-content active" id="examsTab">
-                    <div class="exam-grid" id="examGrid">
+                    <div class="exam-grid-new" id="examGrid">
                         <!-- Exams will be rendered here -->
                     </div>
                 </div>
