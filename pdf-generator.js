@@ -70,8 +70,29 @@ async function generateExamPDF(examData, pdfSettings = {}) {
     const buffers = [];
     doc.on('data', buffers.push.bind(buffers));
 
-    // Register Vietnamese-compatible font
-    doc.font('Times-Roman');
+    // Use Windows system fonts with Vietnamese Unicode support
+    const path = require('path');
+    const fontPath = 'C:/Windows/Fonts/times.ttf';  // Times New Roman with Vietnamese
+    const fontPathBold = 'C:/Windows/Fonts/timesbd.ttf';  // Times New Roman Bold
+
+    // Register fonts (with fallback to built-in if file not found)
+    const fs = require('fs');
+    if (fs.existsSync(fontPath)) {
+        doc.registerFont('Vietnamese', fontPath);
+        doc.registerFont('Vietnamese-Bold', fontPathBold);
+        doc.font('Vietnamese');
+    } else {
+        // Fallback - try Arial which also has Vietnamese support
+        const arialPath = 'C:/Windows/Fonts/arial.ttf';
+        if (fs.existsSync(arialPath)) {
+            doc.registerFont('Vietnamese', arialPath);
+            doc.registerFont('Vietnamese-Bold', 'C:/Windows/Fonts/arialbd.ttf');
+            doc.font('Vietnamese');
+        } else {
+            console.log('Warning: No Vietnamese font found, using default');
+            doc.font('Helvetica');
+        }
+    }
 
     const examTitle = examData.title || 'Đề thi';
     const subjectName = examData.subjectName || 'TOÁN';
@@ -86,27 +107,27 @@ async function generateExamPDF(examData, pdfSettings = {}) {
     else if (semester === 'ck2') semesterText = 'ĐỀ ÔN TẬP CUỐI HỌC KÌ 2';
 
     // Header
-    doc.fontSize(14).font('Times-Bold');
+    doc.fontSize(14).font('Vietnamese-Bold');
     doc.text('LUYỆN ĐỀ ONLINE', 50, 40);
-    doc.fontSize(10).font('Times-Roman');
+    doc.fontSize(10).font('Vietnamese');
     doc.text('luyendeonline.io.vn', 50, 58);
 
-    doc.fontSize(12).font('Times-Bold');
+    doc.fontSize(12).font('Vietnamese-Bold');
     doc.text(semesterText, 350, 40, { width: 200, align: 'right' });
     doc.text(`Môn: ${subjectName.toUpperCase()}`, 350, 58, { width: 200, align: 'right' });
 
-    doc.fontSize(10).font('Times-Roman');
+    doc.fontSize(10).font('Vietnamese');
     doc.text('(Đề thi có nhiều trang)', 50, 80);
     doc.text(`Thời gian: ${duration} phút`, 350, 80, { width: 200, align: 'right' });
 
     // Title
     doc.moveDown(1);
-    doc.fontSize(16).font('Times-Bold');
+    doc.fontSize(16).font('Vietnamese-Bold');
     doc.text(examTitle.toUpperCase(), { align: 'center' });
 
     // Student info
     doc.moveDown(0.5);
-    doc.fontSize(11).font('Times-Roman');
+    doc.fontSize(11).font('Vietnamese');
     doc.text('Họ, tên thí sinh: .............................................. Số báo danh: .................');
 
     // Questions
@@ -120,14 +141,14 @@ async function generateExamPDF(examData, pdfSettings = {}) {
     // PHẦN I - Trắc nghiệm
     if (mcQuestions.length > 0) {
         doc.moveDown(1);
-        doc.fontSize(11).font('Times-Bold');
+        doc.fontSize(11).font('Vietnamese-Bold');
         doc.text(`PHẦN I. Thí sinh trả lời từ câu 1 đến câu ${mcQuestions.length}. Mỗi câu hỏi thí sinh chỉ chọn một phương án.`);
 
         for (const q of mcQuestions) {
             doc.moveDown(0.5);
-            doc.fontSize(11).font('Times-Bold');
+            doc.fontSize(11).font('Vietnamese-Bold');
             doc.text(`Câu ${questionNum}. `, { continued: true });
-            doc.font('Times-Roman');
+            doc.font('Vietnamese');
 
             // Render question text (with LaTeX if present)
             await renderTextWithLatex(doc, q.question || '');
@@ -147,14 +168,14 @@ async function generateExamPDF(examData, pdfSettings = {}) {
     // PHẦN II - Đúng sai
     if (tfQuestions.length > 0) {
         doc.moveDown(1);
-        doc.fontSize(11).font('Times-Bold');
+        doc.fontSize(11).font('Vietnamese-Bold');
         doc.text(`PHẦN II. Đúng sai - ${tfQuestions.length} câu.`);
 
         tfQuestions.forEach((q, idx) => {
             doc.moveDown(0.5);
-            doc.fontSize(11).font('Times-Bold');
+            doc.fontSize(11).font('Vietnamese-Bold');
             doc.text(`Câu ${idx + 1}. `, { continued: true });
-            doc.font('Times-Roman');
+            doc.font('Vietnamese');
             doc.text(q.question || '');
 
             const labels = ['a)', 'b)', 'c)', 'd)'];
@@ -167,26 +188,26 @@ async function generateExamPDF(examData, pdfSettings = {}) {
     // PHẦN III - Điền số
     if (fibQuestions.length > 0) {
         doc.moveDown(1);
-        doc.fontSize(11).font('Times-Bold');
+        doc.fontSize(11).font('Vietnamese-Bold');
         doc.text(`PHẦN III. Điền đáp án - ${fibQuestions.length} câu.`);
 
         fibQuestions.forEach((q, idx) => {
             doc.moveDown(0.5);
-            doc.fontSize(11).font('Times-Bold');
+            doc.fontSize(11).font('Vietnamese-Bold');
             doc.text(`Câu ${idx + 1}. `, { continued: true });
-            doc.font('Times-Roman');
+            doc.font('Vietnamese');
             doc.text(q.question || '');
         });
     }
 
     // End marker
     doc.moveDown(2);
-    doc.fontSize(11).font('Times-Bold');
+    doc.fontSize(11).font('Vietnamese-Bold');
     doc.text('---------- HẾT ----------', { align: 'center' });
 
     // Footer note
     doc.moveDown(0.5);
-    doc.fontSize(10).font('Times-Roman');
+    doc.fontSize(10).font('Vietnamese');
     doc.text(pdfSettings.footerNote || '- Thí sinh KHÔNG được sử dụng tài liệu.');
     doc.text('- Giám thị không giải thích gì thêm.');
 
