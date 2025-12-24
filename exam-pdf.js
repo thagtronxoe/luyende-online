@@ -457,6 +457,26 @@ async function generateExamPDFWithLaTeX(examData) {
     return pdf;
 }
 
+// Helper: Fetch exam details for PDF
+async function fetchExamForPDF(examId) {
+    const token = localStorage.getItem('luyende_token');
+    const response = await fetch(`/api/exams/${examId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Không thể tải đề thi');
+
+    const examData = await response.json();
+
+    // Add Subject Name fallback if missing
+    if (!examData.subjectName && typeof cachedSubjects !== 'undefined') {
+        const subject = cachedSubjects.find(s => s.id === examData.subjectId);
+        examData.subjectName = subject?.name || 'TOÁN';
+    }
+
+    return examData;
+}
+
 function createPageContainer(pageNum, width, height, padding) {
     const div = document.createElement('div');
     div.className = 'pdf-page-node';
@@ -516,17 +536,7 @@ async function generateAndDownloadExamPDF(examId) {
     console.log('📄 Starting PDF generation for examId:', examId);
 
     try {
-        const token = localStorage.getItem('luyende_token');
-        const response = await fetch(`/api/exams/${examId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) throw new Error('Không thể tải đề thi');
-
-        const examData = await response.json();
-        const subject = typeof cachedSubjects !== 'undefined' ?
-            cachedSubjects?.find(s => s.id === examData.subjectId) : null;
-        examData.subjectName = subject?.name || 'TOÁN';
+        const examData = await fetchExamForPDF(examId);
 
         const pdf = await generateExamPDFWithLaTeX(examData);
 
