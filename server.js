@@ -1152,14 +1152,13 @@ app.get('/api/exams/:id/pdf', auth, async (req, res) => {
             return res.status(500).json({ error: 'Puppeteer is not installed on this server' });
         }
 
-        // Try to find exam by MongoDB _id first, then by examId field
+        // Try finding by custom 'id' field first (most common), then by MongoDB _id
         let exam;
-        if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-            // Valid MongoDB ObjectId format
+        exam = await Exam.findOne({ id: req.params.id });
+
+        if (!exam && req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            // Fallback: try MongoDB ObjectId
             exam = await Exam.findById(req.params.id);
-        } else {
-            // Try finding by examId field (custom ID)
-            exam = await Exam.findOne({ examId: req.params.id });
         }
 
         if (!exam) {
