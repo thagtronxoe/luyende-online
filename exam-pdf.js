@@ -38,12 +38,12 @@ function createPDFRenderContainer() {
             position: fixed;
             left: -9999px;
             top: 0;
-            width: 595px;
+            width: 520px;
             background: white;
-            padding: 25px 35px;
+            padding: 20px 25px;
             font-family: 'Times New Roman', serif;
-            font-size: 10pt;
-            line-height: 1.4;
+            font-size: 9pt;
+            line-height: 1.35;
             color: black;
             box-sizing: border-box;
         `;
@@ -80,13 +80,13 @@ function renderExamToHTML(examData) {
         <style>
             .pdf-content { 
                 font-family: 'Times New Roman', serif; 
-                font-size: 10pt;
+                font-size: 9pt;
                 width: 100%;
             }
             .header-row { 
                 width: 100%;
-                margin-bottom: 2px;
-                font-size: 10pt;
+                margin-bottom: 1px;
+                font-size: 9pt;
             }
             .header-row::after { content: ""; display: table; clear: both; }
             .header-left { float: left; text-align: left; }
@@ -94,54 +94,54 @@ function renderExamToHTML(examData) {
             .exam-title {
                 text-align: center;
                 font-weight: bold;
-                font-size: 12pt;
-                margin: 8px 0;
+                font-size: 11pt;
+                margin: 6px 0;
                 text-transform: uppercase;
                 clear: both;
             }
-            .student-info { margin: 6px 0; font-size: 9pt; clear: both; }
+            .student-info { margin: 4px 0; font-size: 8pt; clear: both; }
             .part-header { 
                 font-weight: bold; 
-                margin: 10px 0 6px 0; 
-                font-size: 10pt;
+                margin: 8px 0 4px 0; 
+                font-size: 9pt;
                 clear: both;
             }
             .question { 
-                margin: 5px 0; 
-                font-size: 10pt;
+                margin: 4px 0; 
+                font-size: 9pt;
                 clear: both;
             }
             .question-num { font-weight: bold; }
-            .question-text { margin-bottom: 3px; }
+            .question-text { margin-bottom: 2px; }
             .options-table { 
                 width: 95%;
-                margin: 3px 0 3px 15px;
-                font-size: 9.5pt;
+                margin: 2px 0 2px 12px;
+                font-size: 8.5pt;
                 border-collapse: collapse;
             }
             .options-table td {
                 width: 50%;
-                padding: 1px 8px 1px 0;
+                padding: 1px 5px 1px 0;
                 vertical-align: top;
             }
             .option-label { font-weight: bold; }
-            .tf-statements { margin-left: 15px; font-size: 9.5pt; }
-            .statement { margin: 2px 0; }
+            .tf-statements { margin-left: 12px; font-size: 8.5pt; }
+            .statement { margin: 1px 0; }
             .end-marker { 
                 text-align: center; 
-                margin-top: 15px; 
+                margin-top: 12px; 
                 font-weight: bold;
-                font-size: 10pt;
+                font-size: 9pt;
                 clear: both;
             }
             .footer-note {
-                margin-top: 6px;
+                margin-top: 4px;
                 font-style: italic;
-                font-size: 9pt;
+                font-size: 8pt;
             }
             /* Formula sizing - smaller for print */
-            .katex { font-size: 0.95em !important; }
-            .katex-display { margin: 5px 0 !important; }
+            .katex { font-size: 0.85em !important; }
+            .katex-display { margin: 3px 0 !important; font-size: 0.85em !important; }
         </style>
         
         <div class="pdf-content">
@@ -289,35 +289,65 @@ async function generateExamPDFWithLaTeX(examData) {
 
     console.log('📄 Rendering KaTeX formulas...');
     await renderKaTeX(container);
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 400));
 
     console.log('📄 Capturing with html2canvas...');
     const canvas = await html2canvas(container, {
-        scale: 2,
+        scale: 1.5, // Reduced scale for smaller formulas
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff'
     });
 
-    const imgWidth = 210;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    // A4 dimensions with margins
+    const pageWidth = 210;
     const pageHeight = 297;
+    const marginTop = 12;
+    const marginBottom = 12;
+    const marginLeft = 10;
+    const marginRight = 10;
+
+    // Printable area
+    const printWidth = pageWidth - marginLeft - marginRight;
+    const printHeight = pageHeight - marginTop - marginBottom;
+
+    // Calculate image dimensions
+    const imgWidth = printWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     const pdf = new jsPDF('p', 'mm', 'a4');
-    let position = 0;
-    let heightLeft = imgHeight;
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    let yOffset = 0;
+    let pageNum = 0;
 
-    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    // Add pages with proper margins
+    while (yOffset < imgHeight) {
+        if (pageNum > 0) {
+            pdf.addPage();
+        }
 
-    while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        // Calculate source position in the original image
+        const srcY = (yOffset / imgHeight) * canvas.height;
+        const remainingHeight = imgHeight - yOffset;
+        const sliceHeight = Math.min(printHeight, remainingHeight);
+
+        // Add image slice with margins
+        pdf.addImage(
+            imgData,
+            'JPEG',
+            marginLeft,           // x position with left margin
+            marginTop - (yOffset > 0 ? (yOffset % printHeight) * (printHeight / sliceHeight) : 0),
+            imgWidth,
+            imgHeight,
+            undefined,
+            'FAST'
+        );
+
+        yOffset += printHeight;
+        pageNum++;
     }
+
 
     container.innerHTML = '';
 
