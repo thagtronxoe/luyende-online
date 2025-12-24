@@ -648,6 +648,14 @@ app.put('/api/exams/:id', adminAuth, async (req, res) => {
         Object.assign(exam, req.body);
         await exam.save();
 
+        // Invalidate PDF cache for this exam
+        const examId = exam.id || exam._id.toString();
+        const pdfPath = path.join(__dirname, 'pdfs', `${examId}.pdf`);
+        if (fs.existsSync(pdfPath)) {
+            fs.unlinkSync(pdfPath);
+            console.log('📄 PDF cache invalidated for:', examId);
+        }
+
         res.json(exam);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1142,37 +1150,58 @@ app.put('/api/settings/pdf', adminAuth, async (req, res) => {
 // ========== PDF GENERATION (PDFKit) ==========
 app.get('/api/exams/:id/pdf', auth, async (req, res) => {
     try {
-        console.log('📄 Generating PDF for exam:', req.params.id);
+        const examId = req.params.id;
+        console.log('📄 PDF request for exam:', examId);
 
-        // Find exam by custom 'id' field first, then by MongoDB _id
-        let exam = await Exam.findOne({ id: req.params.id });
-        if (!exam && req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-            exam = await Exam.findById(req.params.id);
+        // Define PDF cache path
+        const pdfDir = path.join(__dirname, 'pdfs');
+        if (!fs.existsSync(pdfDir)) {
+            fs.mkdirSync(pdfDir, { recursive: true });
+        }
+        const pdfPath = path.join(pdfDir, `${examId}.pdf`);
+
+        // Check if cached PDF exists
+        if (fs.existsSync(pdfPath)) {
+            console.log('📄 Serving cached PDF');
+            const cachedPdf = fs.readFileSync(pdfPath);
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${examId}.pdf`);
+            return res.send(cachedPdf);
+        }
+
+        // No cache - need to generate
+        console.log('📄 Generating new PDF...');
+
+        // Find exam
+        let exam = await Exam.findOne({ id: examId });
+        if (!exam && examId.match(/^[0-9a-fA-F]{24}$/)) {
+            exam = await Exam.findById(examId);
         }
 
         if (!exam) {
             return res.status(404).json({ error: 'Không tìm thấy đề thi' });
         }
 
-        // Get subject name
+        // Get subject and settings
         const subject = await Subject.findOne({ id: exam.subjectId });
         const examData = {
             ...exam.toObject(),
             subjectName: subject ? subject.name : 'TOÁN'
         };
-
-        // Get PDF settings
         const pdfSettingsDoc = await Settings.findOne({ key: 'pdf' });
         const pdfSettings = pdfSettingsDoc ? pdfSettingsDoc.value : {};
 
-        // Generate PDF with PDFKit
+        // Generate PDF
         const pdfBuffer = await generateExamPDF(examData, pdfSettings);
 
-        console.log('📄 PDF generated successfully');
+        // Save to cache
+        fs.writeFileSync(pdfPath, pdfBuffer);
+        console.log('📄 PDF cached to:', pdfPath);
 
         // Send PDF
+        const safeFilename = encodeURIComponent(exam.title || 'de-thi').replace(/%20/g, '_') + '.pdf';
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="${exam.title || 'de-thi'}.pdf"`);
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeFilename}`);
         res.send(pdfBuffer);
 
     } catch (err) {
