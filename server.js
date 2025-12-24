@@ -545,6 +545,47 @@ app.get('/api/exams', async (req, res) => {
     }
 });
 
+// Get exam statistics by subject/grade (for dashboard)
+app.get('/api/exams/stats', async (req, res) => {
+    try {
+        const stats = await Exam.aggregate([
+            { $match: { status: 'published' } },
+            {
+                $group: {
+                    _id: { subjectId: '$subjectId', grade: '$grade' },
+                    total: { $sum: 1 },
+                    vipCount: {
+                        $sum: { $cond: [{ $eq: ['$accessType', 'vip'] }, 1, 0] }
+                    },
+                    freeCount: {
+                        $sum: { $cond: [{ $ne: ['$accessType', 'vip'] }, 1, 0] }
+                    }
+                }
+            }
+        ]);
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Filter exams by subject, grade, semester
+app.get('/api/exams/filter', async (req, res) => {
+    try {
+        const query = { status: 'published' };
+
+        if (req.query.subjectId) query.subjectId = req.query.subjectId;
+        if (req.query.grade) query.grade = req.query.grade;
+        if (req.query.semester) query.semester = req.query.semester;
+        if (req.query.accessType) query.accessType = req.query.accessType;
+
+        const exams = await Exam.find(query).select('-questions.correctAnswer -questions.correctAnswers -questions.explanation').sort({ createdAt: -1 });
+        res.json(exams);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get single exam
 app.get('/api/exams/:id', async (req, res) => {
     try {
