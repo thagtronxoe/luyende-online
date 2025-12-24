@@ -1,97 +1,73 @@
 /**
- * PDF Generator using PDFKit + CodeCogs API for LaTeX
- * No external software required - pure Node.js
+ * PDF Generator using PDFKit + CodeCogs API for LaTeX images
+ * Fetches LaTeX formulas as images from CodeCogs for nice rendering
  */
 
 const PDFDocument = require('pdfkit');
 const https = require('https');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 // Fetch image from URL and return buffer
-function fetchImage(url) {
+function fetchImage(url, timeout = 5000) {
     return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('Timeout')), timeout);
         const protocol = url.startsWith('https') ? https : http;
+
         protocol.get(url, (response) => {
+            clearTimeout(timer);
             if (response.statusCode === 301 || response.statusCode === 302) {
-                // Follow redirect
-                fetchImage(response.headers.location).then(resolve).catch(reject);
+                fetchImage(response.headers.location, timeout).then(resolve).catch(reject);
+                return;
+            }
+            if (response.statusCode !== 200) {
+                reject(new Error(`HTTP ${response.statusCode}`));
                 return;
             }
             const chunks = [];
             response.on('data', chunk => chunks.push(chunk));
             response.on('end', () => resolve(Buffer.concat(chunks)));
             response.on('error', reject);
-        }).on('error', reject);
+        }).on('error', (err) => {
+            clearTimeout(timer);
+            reject(err);
+        });
     });
 }
 
-// Convert LaTeX formula to readable text (simple conversion for common cases)
-function latexToText(latex) {
-    if (!latex) return '';
-
-    let result = latex
-        // Fractions
-        .replace(/\\dfrac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)')
-        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)')
-        // Square root
-        .replace(/\\sqrt\{([^}]+)\}/g, '√($1)')
-        .replace(/\\sqrt\[([^\]]+)\]\{([^}]+)\}/g, '∛($2)')
-        // Subscripts and superscripts (simple)
-        .replace(/\^2/g, '²')
-        .replace(/\^3/g, '³')
-        .replace(/\^n/g, 'ⁿ')
-        .replace(/_\{([^}]+)\}/g, '[$1]')
-        .replace(/\^\{([^}]+)\}/g, '^{$1}')
-        // Greek letters
-        .replace(/\\alpha/g, 'α')
-        .replace(/\\beta/g, 'β')
-        .replace(/\\gamma/g, 'γ')
-        .replace(/\\delta/g, 'δ')
-        .replace(/\\pi/g, 'π')
-        .replace(/\\theta/g, 'θ')
-        .replace(/\\lambda/g, 'λ')
-        .replace(/\\sigma/g, 'σ')
-        .replace(/\\omega/g, 'ω')
-        .replace(/\\phi/g, 'φ')
-        // Operators
-        .replace(/\\times/g, '×')
-        .replace(/\\div/g, '÷')
-        .replace(/\\pm/g, '±')
-        .replace(/\\leq/g, '≤')
-        .replace(/\\geq/g, '≥')
-        .replace(/\\neq/g, '≠')
-        .replace(/\\approx/g, '≈')
-        .replace(/\\infty/g, '∞')
-        .replace(/\\in/g, '∈')
-        .replace(/\\subset/g, '⊂')
-        .replace(/\\cup/g, '∪')
-        .replace(/\\cap/g, '∩')
-        .replace(/\\forall/g, '∀')
-        .replace(/\\exists/g, '∃')
-        .replace(/\\rightarrow/g, '→')
-        .replace(/\\leftarrow/g, '←')
-        .replace(/\\overline\{([^}]+)\}/g, '$1̄')
-        .replace(/\\vec\{([^}]+)\}/g, '$1⃗')
-        // Remove remaining backslash commands
-        .replace(/\\[a-zA-Z]+/g, '')
-        // Clean up braces
-        .replace(/\{/g, '')
-        .replace(/\}/g, '')
-        // Clean up extra spaces
-        .replace(/\s+/g, ' ')
-        .trim();
-
-    return result;
+// Get LaTeX image URL from CodeCogs
+function getLatexImageUrl(latex) {
+    const encoded = encodeURIComponent(latex);
+    return `https://latex.codecogs.com/png.image?\\inline&space;\\dpi{120}${encoded}`;
 }
 
-// Process text: replace LaTeX formulas with readable text
-function processLatexInText(text) {
-    if (!text) return '';
+// Extract LaTeX formulas from text
+function extractLatex(text) {
+    if (!text) return { parts: [{ type: 'text', content: '' }], hasLatex: false };
 
-    // Replace $$...$$ and $...$ with processed formula
-    return text
-        .replace(/\$\$([^$]+)\$\$/g, (match, formula) => latexToText(formula))
-        .replace(/\$([^$]+)\$/g, (match, formula) => latexToText(formula));
+    const parts = [];
+    const regex = /\$\$([^$]+)\$\$|\$([^$]+)\$/g;
+    let lastIndex = 0;
+    let match;
+    let hasLatex = false;
+
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+        }
+        const formula = match[1] || match[2];
+        const isDisplay = !!match[1];
+        parts.push({ type: 'latex', content: formula, display: isDisplay });
+        hasLatex = true;
+        lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+        parts.push({ type: 'text', content: text.slice(lastIndex) });
+    }
+
+    return { parts: parts.length > 0 ? parts : [{ type: 'text', content: text }], hasLatex };
 }
 
 // Generate PDF from exam data
@@ -104,29 +80,25 @@ async function generateExamPDF(examData, pdfSettings = {}) {
     const buffers = [];
     doc.on('data', buffers.push.bind(buffers));
 
-    // Use Windows system fonts with Vietnamese Unicode support
-    const path = require('path');
-    const fontPath = 'C:/Windows/Fonts/times.ttf';  // Times New Roman with Vietnamese
-    const fontPathBold = 'C:/Windows/Fonts/timesbd.ttf';  // Times New Roman Bold
+    // Use Windows system fonts for Vietnamese
+    const fontPath = 'C:/Windows/Fonts/times.ttf';
+    const fontPathBold = 'C:/Windows/Fonts/timesbd.ttf';
 
-    // Register fonts (with fallback to built-in if file not found)
-    const fs = require('fs');
     if (fs.existsSync(fontPath)) {
-        doc.registerFont('Vietnamese', fontPath);
-        doc.registerFont('Vietnamese-Bold', fontPathBold);
-        doc.font('Vietnamese');
+        doc.registerFont('VN', fontPath);
+        doc.registerFont('VN-Bold', fontPathBold);
     } else {
-        // Fallback - try Arial which also has Vietnamese support
         const arialPath = 'C:/Windows/Fonts/arial.ttf';
         if (fs.existsSync(arialPath)) {
-            doc.registerFont('Vietnamese', arialPath);
-            doc.registerFont('Vietnamese-Bold', 'C:/Windows/Fonts/arialbd.ttf');
-            doc.font('Vietnamese');
-        } else {
-            console.log('Warning: No Vietnamese font found, using default');
-            doc.font('Helvetica');
+            doc.registerFont('VN', arialPath);
+            doc.registerFont('VN-Bold', 'C:/Windows/Fonts/arialbd.ttf');
         }
     }
+
+    const normalFont = fs.existsSync(fontPath) ? 'VN' : 'Helvetica';
+    const boldFont = fs.existsSync(fontPath) ? 'VN-Bold' : 'Helvetica-Bold';
+
+    doc.font(normalFont);
 
     const examTitle = examData.title || 'Đề thi';
     const subjectName = examData.subjectName || 'TOÁN';
@@ -141,28 +113,28 @@ async function generateExamPDF(examData, pdfSettings = {}) {
     else if (semester === 'ck2') semesterText = 'ĐỀ ÔN TẬP CUỐI HỌC KÌ 2';
 
     // Header
-    doc.fontSize(14).font('Vietnamese-Bold');
+    doc.fontSize(14).font(boldFont);
     doc.text('LUYỆN ĐỀ ONLINE', 50, 40);
-    doc.fontSize(10).font('Vietnamese');
+    doc.fontSize(10).font(normalFont);
     doc.text('luyendeonline.io.vn', 50, 58);
 
-    doc.fontSize(12).font('Vietnamese-Bold');
+    doc.fontSize(12).font(boldFont);
     doc.text(semesterText, 350, 40, { width: 200, align: 'right' });
     doc.text(`Môn: ${subjectName.toUpperCase()}`, 350, 58, { width: 200, align: 'right' });
 
-    doc.fontSize(10).font('Vietnamese');
+    doc.fontSize(10).font(normalFont);
     doc.text('(Đề thi có nhiều trang)', 50, 80);
     doc.text(`Thời gian: ${duration} phút`, 350, 80, { width: 200, align: 'right' });
 
     // Title
     doc.moveDown(1);
-    doc.fontSize(16).font('Vietnamese-Bold');
-    doc.text(examTitle.toUpperCase(), { align: 'center' });
+    doc.fontSize(16).font(boldFont);
+    doc.text(examTitle.toUpperCase(), 50, doc.y, { align: 'center', width: 495 });
 
     // Student info
     doc.moveDown(0.5);
-    doc.fontSize(11).font('Vietnamese');
-    doc.text('Họ, tên thí sinh: .............................................. Số báo danh: .................');
+    doc.fontSize(11).font(normalFont);
+    doc.text('Họ, tên thí sinh: .............................................. Số báo danh: .................', 50);
 
     // Questions
     const questions = examData.questions || [];
@@ -172,97 +144,141 @@ async function generateExamPDF(examData, pdfSettings = {}) {
 
     let questionNum = 1;
 
-    // PHẦN I - Trắc nghiệm
+    // Helper to render text with LaTeX images
+    async function renderText(text, x, options = {}) {
+        const { parts, hasLatex } = extractLatex(text);
+
+        if (!hasLatex) {
+            doc.text(text, x, doc.y, options);
+            return;
+        }
+
+        let currentX = x;
+        const startY = doc.y;
+
+        for (const part of parts) {
+            if (part.type === 'text') {
+                const width = doc.widthOfString(part.content);
+                doc.text(part.content, currentX, startY, { continued: false });
+                currentX += width;
+            } else {
+                try {
+                    const imgUrl = getLatexImageUrl(part.content);
+                    const imgBuffer = await fetchImage(imgUrl);
+                    doc.image(imgBuffer, currentX, startY - 3, { height: 14 });
+                    currentX += 50; // Approximate width
+                } catch (err) {
+                    // Fallback to text
+                    doc.text(`[${part.content}]`, currentX, startY);
+                }
+            }
+        }
+        doc.moveDown(0.3);
+    }
+
+    // Helper for simple text (no LaTeX processing - faster)
+    function simpleText(text, options = {}) {
+        doc.text(text, 50, doc.y, { width: 495, ...options });
+    }
+
+    // PHẦN I - MC
     if (mcQuestions.length > 0) {
         doc.moveDown(1);
-        doc.fontSize(11).font('Vietnamese-Bold');
-        doc.text(`PHẦN I. Thí sinh trả lời từ câu 1 đến câu ${mcQuestions.length}. Mỗi câu hỏi thí sinh chỉ chọn một phương án.`);
+        doc.font(boldFont).fontSize(11);
+        simpleText(`PHẦN I. Thí sinh trả lời từ câu 1 đến câu ${mcQuestions.length}. Mỗi câu hỏi thí sinh chỉ chọn một phương án.`);
 
         for (const q of mcQuestions) {
-            doc.moveDown(0.5);
+            doc.moveDown(0.3);
+            doc.font(boldFont).fontSize(12);
+            doc.text(`Câu ${questionNum}. `, 50, doc.y, { continued: true });
+            doc.font(normalFont).fontSize(11);
 
-            // Process question text with LaTeX conversion
-            const questionText = processLatexInText(q.question || '');
-            doc.fontSize(11).font('Vietnamese-Bold');
-            doc.text(`Câu ${questionNum}. `, { continued: true });
-            doc.font('Vietnamese');
+            // Simple text without LaTeX image fetching for speed
+            const questionText = (q.question || '').replace(/\$\$?([^$]+)\$\$?/g, '$1');
             doc.text(questionText);
 
-            // Options - process LaTeX and display in 2 rows
-            const opts = (q.options || []).map(opt => processLatexInText(opt));
-            if (opts.length >= 4) {
-                doc.moveDown(0.2);
-                doc.text(`     A. ${opts[0]}`);
-                doc.text(`     B. ${opts[1]}`);
-                doc.text(`     C. ${opts[2]}`);
-                doc.text(`     D. ${opts[3]}`);
-            } else {
-                opts.forEach((opt, i) => {
-                    const label = String.fromCharCode(65 + i); // A, B, C, D
-                    doc.text(`     ${label}. ${opt}`);
-                });
-            }
+            // Options - 2 per row
+            const opts = q.options || [];
+            const allShort = opts.every(o => (o || '').length < 20);
 
+            if (opts.length >= 4) {
+                doc.fontSize(11).font(normalFont);
+                const optA = (opts[0] || '').replace(/\$\$?([^$]+)\$\$?/g, '$1');
+                const optB = (opts[1] || '').replace(/\$\$?([^$]+)\$\$?/g, '$1');
+                const optC = (opts[2] || '').replace(/\$\$?([^$]+)\$\$?/g, '$1');
+                const optD = (opts[3] || '').replace(/\$\$?([^$]+)\$\$?/g, '$1');
+
+                if (allShort) {
+                    doc.text(`     A. ${optA}     B. ${optB}     C. ${optC}     D. ${optD}`, 50);
+                } else {
+                    doc.text(`     A. ${optA}          B. ${optB}`, 50);
+                    doc.text(`     C. ${optC}          D. ${optD}`, 50);
+                }
+            }
             questionNum++;
         }
     }
 
-    // PHẦN II - Đúng sai
+    // PHẦN II - TF
     if (tfQuestions.length > 0) {
         doc.moveDown(1);
-        doc.fontSize(11).font('Vietnamese-Bold');
-        doc.text(`PHẦN II. Đúng sai - ${tfQuestions.length} câu.`);
+        doc.font(boldFont).fontSize(11);
+        simpleText(`PHẦN II. Đúng sai - ${tfQuestions.length} câu.`);
 
         tfQuestions.forEach((q, idx) => {
-            doc.moveDown(0.5);
-            const questionText = processLatexInText(q.question || '');
-            doc.fontSize(11).font('Vietnamese-Bold');
-            doc.text(`Câu ${idx + 1}. `, { continued: true });
-            doc.font('Vietnamese');
-            doc.text(questionText);
+            doc.moveDown(0.3);
+            doc.font(boldFont).fontSize(12);
+            doc.text(`Câu ${idx + 1}. `, 50, doc.y, { continued: true });
+            doc.font(normalFont).fontSize(11);
+            const qText = (q.question || '').replace(/\$\$?([^$]+)\$\$?/g, '$1');
+            doc.text(qText);
 
             const labels = ['a)', 'b)', 'c)', 'd)'];
             (q.options || []).forEach((opt, i) => {
-                const optText = processLatexInText(opt);
-                doc.text(`     ${labels[i]} ${optText}`);
+                const optText = (opt || '').replace(/\$\$?([^$]+)\$\$?/g, '$1');
+                doc.text(`     ${labels[i]} ${optText}`, 50);
             });
         });
     }
 
-    // PHẦN III - Điền số
+    // PHẦN III - Fill
     if (fibQuestions.length > 0) {
         doc.moveDown(1);
-        doc.fontSize(11).font('Vietnamese-Bold');
-        doc.text(`PHẦN III. Điền đáp án - ${fibQuestions.length} câu.`);
+        doc.font(boldFont).fontSize(11);
+        simpleText(`PHẦN III. Điền đáp án - ${fibQuestions.length} câu.`);
 
         fibQuestions.forEach((q, idx) => {
-            doc.moveDown(0.5);
-            const questionText = processLatexInText(q.question || '');
-            doc.fontSize(11).font('Vietnamese-Bold');
-            doc.text(`Câu ${idx + 1}. `, { continued: true });
-            doc.font('Vietnamese');
-            doc.text(questionText);
+            doc.moveDown(0.3);
+            doc.font(boldFont).fontSize(12);
+            doc.text(`Câu ${idx + 1}. `, 50, doc.y, { continued: true });
+            doc.font(normalFont).fontSize(11);
+            const qText = (q.question || '').replace(/\$\$?([^$]+)\$\$?/g, '$1');
+            doc.text(qText);
         });
     }
 
-    // End marker
+    // End
     doc.moveDown(2);
-    doc.fontSize(11).font('Vietnamese-Bold');
-    doc.text('---------- HẾT ----------', { align: 'center' });
+    doc.font(boldFont).fontSize(11);
+    doc.text('---------- HẾT ----------', 50, doc.y, { align: 'center', width: 495 });
 
-    // Footer note
     doc.moveDown(0.5);
-    doc.fontSize(10).font('Vietnamese');
-    doc.text(pdfSettings.footerNote || '- Thí sinh KHÔNG được sử dụng tài liệu.');
-    doc.text('- Giám thị không giải thích gì thêm.');
+    doc.font(normalFont).fontSize(10);
+    doc.text('- Thí sinh KHÔNG được sử dụng tài liệu.', 50);
+    doc.text('- Giám thị không giải thích gì thêm.', 50);
 
     doc.end();
 
     return new Promise((resolve) => {
-        doc.on('end', () => {
-            resolve(Buffer.concat(buffers));
-        });
+        doc.on('end', () => resolve(Buffer.concat(buffers)));
     });
 }
 
-module.exports = { generateExamPDF };
+// Generate and save PDF to file
+async function generateAndSavePDF(examData, pdfSettings, outputPath) {
+    const pdfBuffer = await generateExamPDF(examData, pdfSettings);
+    fs.writeFileSync(outputPath, pdfBuffer);
+    return outputPath;
+}
+
+module.exports = { generateExamPDF, generateAndSavePDF };

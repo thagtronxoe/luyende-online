@@ -7,7 +7,7 @@ const path = require('path');
 require('dotenv').config();
 
 // PDF Generation with PDFKit
-const { generateExamPDF } = require('./pdf-generator');
+const { generateExamPDF, generateAndSavePDF } = require('./pdf-generator');
 
 const app = express();
 
@@ -604,10 +604,25 @@ app.post('/api/exams', adminAuth, async (req, res) => {
     try {
         const examData = {
             ...req.body,
-            createdBy: req.admin.username // Track who created this exam (store username for display)
+            createdBy: req.admin.username
         };
         const exam = new Exam(examData);
         await exam.save();
+
+        // Auto-generate PDF in background
+        const examId = exam.id || exam._id.toString();
+        const pdfDir = path.join(__dirname, 'pdfs');
+        if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
+        const pdfPath = path.join(pdfDir, `${examId}.pdf`);
+
+        // Get subject name for PDF
+        const subject = await Subject.findOne({ id: exam.subjectId });
+        const pdfData = { ...exam.toObject(), subjectName: subject ? subject.name : 'TOÁN' };
+
+        generateAndSavePDF(pdfData, {}, pdfPath)
+            .then(() => console.log('📄 PDF auto-generated for:', examId))
+            .catch(err => console.error('📄 PDF generation failed:', err.message));
+
         res.status(201).json(exam);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -648,13 +663,18 @@ app.put('/api/exams/:id', adminAuth, async (req, res) => {
         Object.assign(exam, req.body);
         await exam.save();
 
-        // Invalidate PDF cache for this exam
+        // Auto-regenerate PDF
         const examId = exam.id || exam._id.toString();
-        const pdfPath = path.join(__dirname, 'pdfs', `${examId}.pdf`);
-        if (fs.existsSync(pdfPath)) {
-            fs.unlinkSync(pdfPath);
-            console.log('📄 PDF cache invalidated for:', examId);
-        }
+        const pdfDir = path.join(__dirname, 'pdfs');
+        if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
+        const pdfPath = path.join(pdfDir, `${examId}.pdf`);
+
+        const subject = await Subject.findOne({ id: exam.subjectId });
+        const pdfData = { ...exam.toObject(), subjectName: subject ? subject.name : 'TOÁN' };
+
+        generateAndSavePDF(pdfData, {}, pdfPath)
+            .then(() => console.log('📄 PDF regenerated for:', examId))
+            .catch(err => console.error('📄 PDF regeneration failed:', err.message));
 
         res.json(exam);
     } catch (err) {
