@@ -28,6 +28,71 @@ async function loadPDFSettings() {
     }
 }
 
+
+// Helper to manage page breaks in DOM before rendering
+function adjustPageLayout(container) {
+    // Constants for A4
+    const PDF_PAGE_HEIGHT_MM = 297;
+    const PDF_MARGIN_TOP_MM = 10;
+    const PDF_MARGIN_BOTTOM_MM = 10;
+    const PDF_PRINT_HEIGHT_MM = PDF_PAGE_HEIGHT_MM - PDF_MARGIN_TOP_MM - PDF_MARGIN_BOTTOM_MM; // 277mm
+
+    // Container is 800px wide, mapped to 190mm (210 - 20) printable width
+    const CONTAINER_WIDTH_PX = 800;
+    const PRINTABLE_WIDTH_MM = 190;
+
+    // Calculate Page Height in Layout Pixels
+    // Ratio: px / mm = 800 / 190
+    const PX_PER_MM = CONTAINER_WIDTH_PX / PRINTABLE_WIDTH_MM;
+    const PAGE_HEIGHT_PX = Math.floor(PDF_PRINT_HEIGHT_MM * PX_PER_MM) - 5; // -5px safety buffer
+
+    console.log(`📄 Page Layout Config: ${PX_PER_MM.toFixed(2)} px/mm, Page Limit: ${PAGE_HEIGHT_PX}px`);
+
+    const contentDiv = container.querySelector('.pdf-content');
+    if (!contentDiv) return;
+
+    const children = Array.from(contentDiv.children);
+    let currentPageY = 0;
+
+    children.forEach(child => {
+        // Skip absolutely positioned elements if any, or existing spacers
+        if (child.classList.contains('page-break-spacer')) return;
+
+        const style = window.getComputedStyle(child);
+        const height = child.offsetHeight;
+        const marginTop = parseFloat(style.marginTop) || 0;
+        const marginBottom = parseFloat(style.marginBottom) || 0;
+
+        // Total space this element takes vertically
+        const elementTotalHeight = height + marginTop + marginBottom;
+
+        // Logic:
+        // If adding this element exceeds the page height...
+        if (currentPageY + elementTotalHeight > PAGE_HEIGHT_PX) {
+            // ...insert a spacer to consume the rest of the current page
+            // so this element starts fresh on the next page
+            const remainingSpace = PAGE_HEIGHT_PX - currentPageY;
+
+            if (remainingSpace > 0) {
+                const spacer = document.createElement('div');
+                spacer.className = 'page-break-spacer';
+                spacer.style.height = remainingSpace + 'px';
+                spacer.style.width = '100%';
+                // spacer.style.background = 'red'; // Debug: visualize breaks
+
+                contentDiv.insertBefore(spacer, child);
+            }
+
+            // Reset Y for new page
+            currentPageY = elementTotalHeight;
+            console.log(`📄 Page break inserted. New page starts with element height ${elementTotalHeight}`);
+        } else {
+            // Fits on current page
+            currentPageY += elementTotalHeight;
+        }
+    });
+}
+
 // Create hidden render container with proper A4 sizing
 function createPDFRenderContainer() {
     let container = document.getElementById('pdfRenderContainer');
@@ -292,6 +357,12 @@ async function generateExamPDFWithLaTeX(examData) {
     console.log('📄 Rendering KaTeX formulas...');
     await renderKaTeX(container);
     await new Promise(r => setTimeout(r, 400));
+
+    // Smart Page Breaks
+    console.log('📄 Adjusting page breaks...');
+    adjustPageLayout(container);
+    // Wait for layout update
+    await new Promise(r => setTimeout(r, 200));
 
     console.log('📄 Capturing with html2canvas...');
     const canvas = await html2canvas(container, {
