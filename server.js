@@ -6,6 +6,15 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 require('dotenv').config();
 
+// PDF Generation
+let puppeteer;
+try {
+    puppeteer = require('puppeteer');
+} catch (e) {
+    console.log('⚠️ Puppeteer not installed - PDF generation will not work');
+}
+const { generateExamPDFHTML } = require('./pdf-template');
+
 const app = express();
 
 // Middleware
@@ -1133,6 +1142,73 @@ app.put('/api/settings/pdf', adminAuth, async (req, res) => {
         res.json(settings.value);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// ========== PDF GENERATION ==========
+app.get('/api/exams/:id/pdf', auth, async (req, res) => {
+    try {
+        if (!puppeteer) {
+            return res.status(500).json({ error: 'Puppeteer is not installed on this server' });
+        }
+
+        const exam = await Exam.findById(req.params.id);
+        if (!exam) {
+            return res.status(404).json({ error: 'Exam not found' });
+        }
+
+        // Get subject name
+        const subject = await Subject.findById(exam.subjectId);
+        const examData = {
+            ...exam.toObject(),
+            subjectName: subject ? subject.name : 'TOÁN'
+        };
+
+        // Get PDF settings
+        const pdfSettingsDoc = await Setting.findOne({ key: 'pdf' });
+        const pdfSettings = pdfSettingsDoc ? pdfSettingsDoc.value : {};
+
+        // Generate HTML
+        const html = generateExamPDFHTML(examData, pdfSettings);
+
+        console.log('📄 Launching Puppeteer for PDF generation...');
+
+        // Launch Puppeteer
+        const browser = await puppeteer.launch({
+            headless: 'new',
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+
+        // Wait for KaTeX to render
+        await page.waitForTimeout(1000);
+
+        // Generate PDF
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            margin: {
+                top: '15mm',
+                right: '15mm',
+                bottom: '15mm',
+                left: '15mm'
+            },
+            printBackground: true
+        });
+
+        await browser.close();
+
+        console.log('📄 PDF generated successfully');
+
+        // Send PDF
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${exam.title || 'de-thi'}.pdf"`);
+        res.send(pdfBuffer);
+
+    } catch (err) {
+        console.error('PDF generation error:', err);
+        res.status(500).json({ error: 'Failed to generate PDF: ' + err.message });
     }
 });
 

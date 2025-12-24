@@ -502,44 +502,67 @@ function createPageContainer(pageNum, width, height, padding, safeTopPadding = 0
     return div;
 }
 
-// Preview PDF in modal
+// Preview PDF - opens in new tab
 async function previewExamPDF(examId) {
-    console.log('📄 Creating PDF preview...');
+    console.log('📄 Fetching PDF from server...');
     try {
-        const examData = await fetchExamForPDF(examId);
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/${examId}/pdf`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-        // Generate PDF using LaTeX support
-        const pdf = await generateExamPDFWithLaTeX(examData);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Lỗi tạo PDF');
+        }
 
-        const pdfBlob = pdf.output('blob');
+        const pdfBlob = await response.blob();
         const pdfUrl = URL.createObjectURL(pdfBlob);
         window.open(pdfUrl, '_blank');
 
         console.log('📄 Preview opened successfully');
-
     } catch (err) {
         console.error('📄 Error creating preview:', err);
         alert('Lỗi xem trước PDF: ' + err.message);
     }
 }
 
-// Download PDF
+// Download PDF - saves to disk
 async function generateAndDownloadExamPDF(examId) {
-    console.log('📄 Starting PDF generation for examId:', examId);
-
+    console.log('📄 Downloading PDF from server...');
     try {
-        const examData = await fetchExamForPDF(examId);
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/${examId}/pdf`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-        const pdf = await generateExamPDFWithLaTeX(examData);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Lỗi tạo PDF');
+        }
 
-        const filename = `${examData.title || 'de-thi'}.pdf`.replace(/[^a-zA-Z0-9-_.\u00C0-\u024F]/g, '-');
-        pdf.save(filename);
+        const pdfBlob = await response.blob();
 
-        console.log('📄 PDF saved as:', filename);
+        // Extract filename from Content-Disposition header or use default
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'de-thi.pdf';
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="(.+)"/);
+            if (match) filename = match[1];
+        }
 
+        // Create download link
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(pdfBlob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log('📄 PDF downloaded:', filename);
     } catch (err) {
-        console.error('📄 Error generating PDF:', err);
-        alert('Lỗi tạo PDF: ' + err.message);
+        console.error('📄 Error downloading PDF:', err);
+        alert('Lỗi tải PDF: ' + err.message);
     }
 }
 
@@ -548,3 +571,4 @@ window.generateAndDownloadExamPDF = generateAndDownloadExamPDF;
 window.previewExamPDF = previewExamPDF;
 window.pdfSettings = pdfSettings;
 window.loadPDFSettings = loadPDFSettings;
+
