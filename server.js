@@ -1181,17 +1181,33 @@ app.get('/api/exams/:id/pdf', auth, async (req, res) => {
 
         console.log('📄 Launching Puppeteer for PDF generation...');
 
-        // Launch Puppeteer
-        const browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
+        // Launch Puppeteer with Windows-compatible settings
+        let browser;
+        try {
+            browser = await puppeteer.launch({
+                headless: true, // Use boolean for better Windows compatibility
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-software-rasterizer',
+                    '--single-process'
+                ]
+            });
+        } catch (launchError) {
+            console.error('Puppeteer launch failed:', launchError);
+            return res.status(500).json({
+                error: 'Không thể khởi động trình duyệt. Vui lòng kiểm tra cài đặt Puppeteer.',
+                details: launchError.message
+            });
+        }
 
         const page = await browser.newPage();
         await page.setContent(html, { waitUntil: 'networkidle0' });
 
         // Wait for KaTeX to render
-        await page.waitForTimeout(1000);
+        await new Promise(r => setTimeout(r, 1500));
 
         // Generate PDF
         const pdfBuffer = await page.pdf({
