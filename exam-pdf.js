@@ -197,8 +197,18 @@ function renderExamToHTML(examData) {
                 margin-right: 5px;
                 font-size: 0.9em; /* Slightly smaller label A. B. */
             }
-            .tf-statements { margin-left: 15px; font-size: 13pt; }
-            .statement { margin: 6px 0; }
+            .tf-statements { 
+                margin-left: 20px; 
+                margin-top: 8px;
+                font-size: 13pt; 
+            }
+            .statement { 
+                margin: 8px 0;
+                line-height: 1.6;
+            }
+            .question-content {
+                display: inline;
+            }
             .end-marker { 
                 text-align: center; 
                 margin-top: 25px; 
@@ -342,7 +352,7 @@ async function renderKaTeX(container) {
 
 // Generate PDF using Simple Single-Container + Image Slicing
 async function generateExamPDFWithLaTeX(examData) {
-    console.log('📄 Starting PDF generation (Simple approach)...');
+    console.log('📄 Starting PDF generation...');
 
     if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('jsPDF chưa được tải');
     if (!window.html2canvas) throw new Error('html2canvas chưa được tải');
@@ -350,7 +360,13 @@ async function generateExamPDFWithLaTeX(examData) {
     await loadPDFSettings();
     const { jsPDF } = window.jspdf;
 
-    // Create single container for ALL content
+    // A4 dimensions in mm and pixels at 96 DPI
+    const A4_WIDTH_MM = 210;
+    const A4_HEIGHT_MM = 297;
+    const A4_WIDTH_PX = 595; // 210mm at 72dpi = 595px (standard)
+    const MARGIN_MM = 15; // 15mm margins
+
+    // Create container matching A4 width with margins
     let container = document.getElementById('pdfRenderContainer');
     if (container) container.remove();
 
@@ -360,69 +376,66 @@ async function generateExamPDFWithLaTeX(examData) {
         position: absolute;
         left: 0;
         top: 0;
-        width: 794px;
+        width: ${A4_WIDTH_PX}px;
         background: white;
-        padding: 40px 50px;
+        padding: 45px;
         font-family: 'Times New Roman', serif;
-        font-size: 12pt;
-        line-height: 1.5;
+        font-size: 11pt;
+        line-height: 1.6;
         color: black;
         box-sizing: border-box;
     `;
     document.body.appendChild(container);
 
-    // Render ALL content at once
+    // Render content
     container.innerHTML = renderExamToHTML(examData);
 
     console.log('📄 Rendering KaTeX...');
     await renderKaTeX(container);
-    await new Promise(r => setTimeout(r, 500));
+
+    // Wait for fonts and formulas to render
+    await new Promise(r => setTimeout(r, 800));
 
     console.log('📄 Capturing with html2canvas...');
+
     const canvas = await html2canvas(container, {
         scale: 2,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true,
+        logging: false
     });
 
-    // A4 dimensions with margins
-    const pdfWidth = 210;
-    const pdfHeight = 297;
-    const margin = 10; // 10mm margins on all sides
+    console.log('📄 Canvas size:', canvas.width, 'x', canvas.height);
 
-    // Printable area (inside margins)
-    const printableWidth = pdfWidth - (margin * 2); // 190mm
-    const printableHeight = pdfHeight - (margin * 2); // 277mm
-
-    // Calculate image dimensions that fit printable area
-    const imgWidth = printableWidth;
+    // Calculate dimensions for PDF
+    const imgWidth = A4_WIDTH_MM - (MARGIN_MM * 2); // Content width in mm
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const pageHeight = A4_HEIGHT_MM - (MARGIN_MM * 2); // Printable height per page
 
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const imgData = canvas.toDataURL('image/png');
 
-    // Pagination with margins
-    let position = 0; // Current position in the image (mm)
+    // Pagination
+    let yOffset = 0;
     let pageNum = 0;
 
-    while (position < imgHeight) {
+    while (yOffset < imgHeight) {
         if (pageNum > 0) {
             pdf.addPage();
         }
 
-        // Add image with proper margin positioning
-        // x = margin (left margin)
-        // y = margin - position (top margin, shifted up for subsequent pages)
+        // Draw image with offset
         pdf.addImage(
             imgData,
-            'JPEG',
-            margin,              // X: left margin
-            margin - position,   // Y: top margin, shifted up by current position
+            'PNG',
+            MARGIN_MM,
+            MARGIN_MM - yOffset,
             imgWidth,
             imgHeight
         );
 
-        // Move to next page worth of content
-        position += printableHeight;
+        yOffset += pageHeight;
         pageNum++;
     }
 
