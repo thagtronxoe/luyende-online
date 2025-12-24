@@ -3153,3 +3153,150 @@ showDashboard = async function () {
     // Check for active exam resume
     checkAndResumeExam();
 };
+
+// ========== EXAM MODE SELECTION SYSTEM ==========
+// State for selected exam
+if (typeof selectedExamForMode === 'undefined') var selectedExamForMode = null;
+
+// Show exam mode selection modal
+function showExamModeModal(examId, examTitle) {
+    selectedExamForMode = examId;
+
+    const modal = document.getElementById('examModeModal');
+    const titleEl = document.getElementById('examModeTitle');
+    const descEl = document.getElementById('examModeDesc');
+
+    if (titleEl) titleEl.textContent = '📝 Chọn chế độ làm bài';
+    if (descEl) descEl.textContent = `Đề thi: ${examTitle || 'Đang tải...'}`;
+
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+// Close exam mode modal
+function closeExamModeModal() {
+    const modal = document.getElementById('examModeModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    selectedExamForMode = null;
+}
+
+// Start online mode (existing flow)
+async function startOnlineMode() {
+    closeExamModeModal();
+    if (selectedExamForMode) {
+        await startExamFromFilter(selectedExamForMode);
+    }
+}
+
+// Start form mode (bubble sheet)
+async function startFormMode() {
+    closeExamModeModal();
+
+    if (!selectedExamForMode) return;
+
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/${selectedExamForMode}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Không thể tải đề thi');
+
+        const examData = await response.json();
+
+        // Show bubble sheet modal
+        if (typeof showBubbleSheet === 'function') {
+            showBubbleSheet(examData);
+        } else {
+            alert('Chế độ điền form đang được phát triển...');
+        }
+    } catch (err) {
+        console.error('Error loading exam for form mode:', err);
+        alert('Lỗi: ' + err.message);
+    }
+}
+
+// Print exam mode (PDF download)
+async function printExamMode() {
+    closeExamModeModal();
+
+    if (!selectedExamForMode) return;
+
+    // Use PDF generator
+    if (typeof generateAndDownloadExamPDF === 'function') {
+        await generateAndDownloadExamPDF(selectedExamForMode);
+    } else {
+        alert('Chức năng in đề đang được phát triển...');
+    }
+}
+
+// Override startExamFromFilter to show mode modal instead
+const originalStartExamFromFilter = typeof startExamFromFilter !== 'undefined' ? startExamFromFilter : null;
+
+startExamFromFilter = async function (examId) {
+    // Fetch exam title first
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/${examId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const exam = await response.json();
+            showExamModeModal(examId, exam.title);
+        } else {
+            showExamModeModal(examId, null);
+        }
+    } catch (err) {
+        showExamModeModal(examId, null);
+    }
+};
+
+// Direct start exam (bypass mode modal) - for internal use
+async function directStartExam(examId) {
+    if (originalStartExamFromFilter) {
+        await originalStartExamFromFilter(examId);
+    } else {
+        // Fallback implementation
+        try {
+            const token = localStorage.getItem('luyende_token');
+            const response = await fetch(`/api/exams/${examId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Failed to load exam');
+
+            const exam = await response.json();
+
+            // Set exam data
+            examData.examTitle = exam.title;
+            examData.id = exam._id || exam.id;
+            examData.displayId = exam.displayId || exam.id;
+            examData.duration = exam.duration || 90;
+            examData.template = exam.template || 'thpt_toan';
+            examData.studentName = currentUser ? currentUser.name : 'User';
+            examData.questions = exam.questions || [];
+
+            // Store subject/grade info for history
+            examData.subjectId = currentSubject?.id;
+            examData.grade = currentGrade;
+
+            showPreExam();
+        } catch (err) {
+            console.error('Error starting exam:', err);
+            alert('Lỗi tải đề thi: ' + err.message);
+        }
+    }
+}
+
+// Updated startOnlineMode to use directStartExam
+startOnlineMode = async function () {
+    closeExamModeModal();
+    if (selectedExamForMode) {
+        await directStartExam(selectedExamForMode);
+    }
+};
+

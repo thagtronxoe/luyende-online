@@ -31,6 +31,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
         // Preprocess LaTeX before KaTeX renders
         // Convert \vec to \overrightarrow for large vector arrows
@@ -749,7 +751,52 @@
             </div>
         </div>
     </div>
+    <!-- Exam Mode Selection Modal -->
+    <div id="examModeModal" class="modal">
+        <div class="modal-content exam-mode-modal">
+            <div class="modal-header">
+                <h3 id="examModeTitle">📝 Chọn chế độ làm bài</h3>
+                <button class="modal-close" onclick="closeExamModeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="exam-mode-desc" id="examModeDesc">Đề thi: ...</p>
+                <div class="exam-mode-options">
+                    <button class="exam-mode-btn online" onclick="startOnlineMode()">
+                        <span class="mode-icon">💻</span>
+                        <span class="mode-name">Làm online</span>
+                        <span class="mode-desc">Làm bài trực tiếp trên web</span>
+                    </button>
+                    <button class="exam-mode-btn form" onclick="startFormMode()">
+                        <span class="mode-icon">📋</span>
+                        <span class="mode-name">Điền form</span>
+                        <span class="mode-desc">Phiếu trả lời trắc nghiệm</span>
+                    </button>
+                    <button class="exam-mode-btn print" onclick="printExamMode()">
+                        <span class="mode-icon">🖨️</span>
+                        <span class="mode-name">In đề</span>
+                        <span class="mode-desc">Tải PDF đề thi giấy</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bubble Sheet Modal -->
+    <div id="bubbleSheetModal" class="modal bubble-sheet-modal">
+        <div class="modal-content bubble-sheet-content">
+            <div class="modal-header">
+                <h3>📋 Phiếu trả lời trắc nghiệm</h3>
+                <button class="modal-close" onclick="closeBubbleSheet()">✕</button>
+            </div>
+            <div id="bubbleSheetContainer">
+                <!-- Bubble sheet will be rendered here -->
+            </div>
+        </div>
+    </div>
+
     <script src="api.js"></script>
+    <script src="exam-pdf.js"></script>
+    <script src="bubble-sheet.js"></script>
     <script src="script.js"></script>
 </body>
 
