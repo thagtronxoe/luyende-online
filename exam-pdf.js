@@ -68,54 +68,58 @@ function renderExamToHTML(examData) {
             .pdf-content { 
                 font-family: 'Times New Roman', serif; 
                 font-size: 11pt;
-                max-width: 100%;
+                width: 100%;
             }
             .header-row { 
-                display: flex; 
-                justify-content: space-between; 
+                width: 100%;
                 margin-bottom: 3px;
                 font-size: 11pt;
             }
-            .header-left { text-align: left; }
-            .header-right { text-align: right; }
+            .header-row::after { content: ""; display: table; clear: both; }
+            .header-left { float: left; text-align: left; }
+            .header-right { float: right; text-align: right; }
             .exam-title {
                 text-align: center;
                 font-weight: bold;
-                font-size: 13pt;
-                margin: 10px 0;
+                font-size: 14pt;
+                margin: 12px 0;
                 text-transform: uppercase;
+                clear: both;
             }
-            .student-info { margin: 8px 0; font-size: 10pt; }
+            .student-info { margin: 8px 0; font-size: 10pt; clear: both; }
             .part-header { 
                 font-weight: bold; 
-                margin: 12px 0 8px 0; 
+                margin: 15px 0 10px 0; 
                 font-size: 11pt;
+                clear: both;
             }
             .question { 
-                margin: 6px 0; 
-                page-break-inside: avoid;
+                margin: 8px 0; 
                 font-size: 11pt;
+                clear: both;
             }
             .question-num { font-weight: bold; }
-            .question-content {
-                display: inline;
-            }
-            .options { 
-                display: grid; 
-                grid-template-columns: 1fr 1fr; 
-                gap: 3px 15px; 
-                margin: 5px 0 5px 15px;
+            .question-text { margin-bottom: 5px; }
+            .options-table { 
+                width: 100%;
+                margin: 5px 0 5px 20px;
                 font-size: 10.5pt;
+                border-collapse: collapse;
             }
-            .option { display: flex; gap: 4px; }
-            .option-label { font-weight: bold; min-width: 18px; }
-            .tf-statements { margin-left: 15px; font-size: 10.5pt; }
-            .statement { margin: 2px 0; }
+            .options-table td {
+                width: 50%;
+                padding: 2px 10px 2px 0;
+                vertical-align: top;
+            }
+            .option-label { font-weight: bold; }
+            .tf-statements { margin-left: 20px; font-size: 10.5pt; }
+            .statement { margin: 3px 0; }
             .end-marker { 
                 text-align: center; 
-                margin-top: 15px; 
+                margin-top: 20px; 
                 font-weight: bold;
                 font-size: 11pt;
+                clear: both;
             }
             .footer-note {
                 margin-top: 10px;
@@ -123,8 +127,8 @@ function renderExamToHTML(examData) {
                 font-size: 10pt;
             }
             /* Formula sizing */
-            .katex { font-size: 0.95em !important; }
-            .katex-display { margin: 5px 0 !important; font-size: 0.9em !important; }
+            .katex { font-size: 1em !important; }
+            .katex-display { margin: 5px 0 !important; }
         </style>
         
         <div class="pdf-content">
@@ -163,21 +167,27 @@ function renderExamToHTML(examData) {
 
     // PHẦN I - Trắc nghiệm
     if (mcQuestions.length > 0) {
-        html += `<div class="part-header">PHẦN I. Thí sinh trả lời từ câu 1 đến câu ${mcQuestions.length}.</div>`;
+        html += `<div class="part-header">PHẦN I. Thí sinh trả lời từ câu 1 đến câu ${mcQuestions.length}. Mỗi câu hỏi thí sinh chỉ chọn một phương án.</div>`;
 
         mcQuestions.forEach(q => {
+            const optionLabels = ['A', 'B', 'C', 'D'];
+            const opts = q.options || [];
+
             html += `
                 <div class="question">
-                    <span class="question-num">Câu ${questionNum}.</span> <span class="question-content">${q.question}</span>
-                    <div class="options">
+                    <div class="question-text"><span class="question-num">Câu ${questionNum}.</span> ${q.question}</div>
+                    <table class="options-table">
+                        <tr>
+                            <td><span class="option-label">A.</span> ${opts[0] || ''}</td>
+                            <td><span class="option-label">B.</span> ${opts[1] || ''}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="option-label">C.</span> ${opts[2] || ''}</td>
+                            <td><span class="option-label">D.</span> ${opts[3] || ''}</td>
+                        </tr>
+                    </table>
+                </div>
             `;
-
-            const optionLabels = ['A', 'B', 'C', 'D'];
-            (q.options || []).forEach((opt, i) => {
-                html += `<div class="option"><span class="option-label">${optionLabels[i]}.</span><span>${opt}</span></div>`;
-            });
-
-            html += `</div></div>`;
             questionNum++;
         });
     }
