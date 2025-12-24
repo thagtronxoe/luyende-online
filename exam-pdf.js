@@ -50,7 +50,7 @@ function createQuestionElement(questionNum, question, type) {
 
     // Add KaTeX size control CSS
     let html = `<style>.katex { font-size: 1em !important; } .katex-display { margin: 0.3em 0 !important; font-size: 0.95em !important; }</style>`;
-    html += `<div style="margin-bottom: 5px;"><strong>Câu ${questionNum}.</strong> <span class="question-text">${question.question || ''}</span></div>`;
+    html += `<div style="margin-bottom: 5px;"><strong style="font-size: 14px; font-weight: 700;">Câu ${questionNum}.</strong> <span class="question-text">${question.question || ''}</span></div>`;
 
     const options = question.options || [];
 
