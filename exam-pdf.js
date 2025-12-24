@@ -35,8 +35,16 @@ class ExamPDFGenerator {
 
     // Add Vietnamese font support
     async loadFonts() {
-        // jsPDF uses built-in fonts, Vietnamese may need encoding
-        // For full Vietnamese support, we use UTF-8 encoding
+        // Try to load Vietnamese font
+        if (typeof loadVietnameseFont === 'function') {
+            const success = await loadVietnameseFont(this.doc);
+            if (success) {
+                console.log('📄 Vietnamese font loaded');
+                return;
+            }
+        }
+        // Fallback to helvetica
+        console.log('📄 Using fallback font (helvetica)');
         this.doc.setFont('helvetica');
     }
 
