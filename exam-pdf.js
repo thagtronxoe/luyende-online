@@ -293,7 +293,7 @@ async function generateExamPDFWithLaTeX(examData) {
 
     console.log('📄 Capturing with html2canvas...');
     const canvas = await html2canvas(container, {
-        scale: 1.5, // Reduced scale for smaller formulas
+        scale: 1.5,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff'
@@ -302,52 +302,41 @@ async function generateExamPDFWithLaTeX(examData) {
     // A4 dimensions with margins
     const pageWidth = 210;
     const pageHeight = 297;
-    const marginTop = 12;
-    const marginBottom = 12;
-    const marginLeft = 10;
-    const marginRight = 10;
+    const margin = 10; // 10mm margin all sides
 
     // Printable area
-    const printWidth = pageWidth - marginLeft - marginRight;
-    const printHeight = pageHeight - marginTop - marginBottom;
+    const printWidth = pageWidth - (margin * 2);
+    const printHeight = pageHeight - (margin * 2);
 
-    // Calculate image dimensions
+    // Calculate scaled image dimensions
     const imgWidth = printWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     const pdf = new jsPDF('p', 'mm', 'a4');
     const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
-    let yOffset = 0;
-    let pageNum = 0;
+    let position = 0; // Current Y position on full image
+    let pageCount = 0;
 
-    // Add pages with proper margins
-    while (yOffset < imgHeight) {
-        if (pageNum > 0) {
+    // Simple pagination: slide the image up for each page
+    while (position < imgHeight) {
+        if (pageCount > 0) {
             pdf.addPage();
         }
 
-        // Calculate source position in the original image
-        const srcY = (yOffset / imgHeight) * canvas.height;
-        const remainingHeight = imgHeight - yOffset;
-        const sliceHeight = Math.min(printHeight, remainingHeight);
-
-        // Add image slice with margins
+        // Add entire image, but shift it up based on current page
         pdf.addImage(
             imgData,
             'JPEG',
-            marginLeft,           // x position with left margin
-            marginTop - (yOffset > 0 ? (yOffset % printHeight) * (printHeight / sliceHeight) : 0),
+            margin,              // X with left margin
+            margin - position,   // Y: shifts image up for subsequent pages
             imgWidth,
-            imgHeight,
-            undefined,
-            'FAST'
+            imgHeight
         );
 
-        yOffset += printHeight;
-        pageNum++;
+        position += printHeight;
+        pageCount++;
     }
-
 
     container.innerHTML = '';
 
