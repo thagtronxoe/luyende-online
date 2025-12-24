@@ -756,28 +756,33 @@
     </div>
     <!-- Exam Mode Selection Modal -->
     <div id="examModeModal" class="modal">
-        <div class="modal-content exam-mode-modal">
+        <div class="modal-content exam-mode-modal-large">
             <div class="modal-header">
                 <h3 id="examModeTitle">📝 Chọn chế độ làm bài</h3>
                 <button class="modal-close" onclick="closeExamModeModal()">✕</button>
             </div>
             <div class="modal-body">
                 <p class="exam-mode-desc" id="examModeDesc">Đề thi: ...</p>
-                <div class="exam-mode-options">
-                    <button class="exam-mode-btn online" onclick="startOnlineMode()">
+                <div class="exam-mode-grid">
+                    <button class="exam-mode-card online" onclick="startOnlineMode()">
                         <span class="mode-icon">💻</span>
                         <span class="mode-name">Làm online</span>
                         <span class="mode-desc">Làm bài trực tiếp trên web</span>
                     </button>
-                    <button class="exam-mode-btn form" onclick="startFormMode()">
+                    <button class="exam-mode-card form" onclick="startFormMode()">
                         <span class="mode-icon">📋</span>
                         <span class="mode-name">Điền form</span>
                         <span class="mode-desc">Phiếu trả lời trắc nghiệm</span>
                     </button>
-                    <button class="exam-mode-btn print" onclick="printExamMode()">
-                        <span class="mode-icon">🖨️</span>
-                        <span class="mode-name">In đề</span>
-                        <span class="mode-desc">Tải PDF đề thi giấy</span>
+                    <button class="exam-mode-card preview" onclick="previewPDFMode()">
+                        <span class="mode-icon">👁️</span>
+                        <span class="mode-name">Xem trước PDF</span>
+                        <span class="mode-desc">Xem đề thi dạng PDF</span>
+                    </button>
+                    <button class="exam-mode-card print" onclick="printExamMode()">
+                        <span class="mode-icon">📥</span>
+                        <span class="mode-name">Tải PDF</span>
+                        <span class="mode-desc">Tải file PDF về máy</span>
                     </button>
                 </div>
             </div>

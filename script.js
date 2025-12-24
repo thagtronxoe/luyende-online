@@ -3352,3 +3352,17 @@ printExamMode = async function () {
     }
 };
 
+// Preview PDF mode - open PDF in new tab
+async function previewPDFMode() {
+    const examId = selectedExamForMode; // Save before closing
+    closeExamModeModal();
+
+    if (!examId) return;
+
+    // Use PDF preview
+    if (typeof previewExamPDF === 'function') {
+        await previewExamPDF(examId);
+    } else {
+        alert('Chức năng xem trước đang được phát triển...');
+    }
+}

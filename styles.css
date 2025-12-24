@@ -4662,61 +4662,64 @@ body {
     }
 }
 
-/* ========== EXAM MODE MODAL ========== */
-.exam-mode-modal {
-    max-width: 500px;
+/* ========== EXAM MODE MODAL (LARGE) ========== */
+.exam-mode-modal-large {
+    max-width: 600px;
+    width: 90%;
 }
 
 .exam-mode-desc {
     color: #6b7280;
     font-size: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    text-align: center;
 }
 
-.exam-mode-options {
+.exam-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.exam-mode-card {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-}
-
-.exam-mode-btn {
-    display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 16px;
     border: 2px solid #e5e7eb;
-    border-radius: 12px;
+    border-radius: 16px;
     background: white;
     cursor: pointer;
     transition: all 0.2s ease;
-    text-align: left;
+    text-align: center;
+    min-height: 140px;
 }
 
-.exam-mode-btn:hover {
+.exam-mode-card:hover {
     border-color: var(--primary-blue);
     background: #f0f7ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.exam-mode-btn .mode-icon {
-    font-size: 28px;
-    flex-shrink: 0;
+.exam-mode-card .mode-icon {
+    font-size: 36px;
 }
 
-.exam-mode-btn .mode-name {
+.exam-mode-card .mode-name {
     font-size: 16px;
     font-weight: 600;
     color: #1f2937;
-    display: block;
 }
 
-.exam-mode-btn .mode-desc {
-    font-size: 13px;
+.exam-mode-card .mode-desc {
+    font-size: 12px;
     color: #6b7280;
-    display: block;
-    margin-top: 2px;
 }
 
-.exam-mode-btn.online:hover {
+.exam-mode-card.online:hover {
     border-color: #3b82f6;
     background: #eff6ff;
 }

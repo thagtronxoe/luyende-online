@@ -1097,6 +1097,45 @@ app.get('/api/vip/users', adminAuth, async (req, res) => {
     }
 });
 
+// ========== PDF SETTINGS API ==========
+
+// Get PDF settings
+app.get('/api/settings/pdf', async (req, res) => {
+    try {
+        const settings = await Settings.findOne({ key: 'pdf' });
+        if (settings) {
+            res.json(settings.value);
+        } else {
+            // Default settings
+            res.json({
+                headerLeft1: 'LUYỆN ĐỀ ONLINE',
+                headerRight1: 'ĐỀ LUYỆN TẬP',
+                headerLeft2: 'ĐỀ THI THỬ',
+                showPageCount: true,
+                showDuration: true,
+                showStudentInfo: true,
+                footerNote: '- Thí sinh được sử dụng tài liệu cá nhân.'
+            });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update PDF settings (admin only)
+app.put('/api/settings/pdf', adminAuth, async (req, res) => {
+    try {
+        const settings = await Settings.findOneAndUpdate(
+            { key: 'pdf' },
+            { key: 'pdf', value: req.body },
+            { upsert: true, new: true }
+        );
+        res.json(settings.value);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ========== CATCH-ALL ROUTE ==========
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
