@@ -355,8 +355,8 @@ async function generateExamPDFWithLaTeX(examData) {
     const PAGE_ASPECT_RATIO = 297 / 210; // A4 H/W
     const CONTAINER_HEIGHT = Math.floor(CONTAINER_WIDTH * PAGE_ASPECT_RATIO); // ~1131px
     const PAGE_PADDING = 40; // px
-    // We reserve 20px internal padding for safety, so reduce usable height
-    const CONTENT_SAFE_TOP_PADDING = 20;
+    // We reserve 60px internal padding for safety to prevent ANY top clipping
+    const CONTENT_SAFE_TOP_PADDING = 60;
     const CONTENT_HEIGHT_LIMIT = CONTAINER_HEIGHT - (PAGE_PADDING * 2) - CONTENT_SAFE_TOP_PADDING;
 
     // 1. Create Staging Container (to render full content first)
@@ -448,6 +448,8 @@ async function generateExamPDFWithLaTeX(examData) {
             logging: false,
             backgroundColor: '#ffffff',
             windowWidth: 1600, // Ensure wide viewport to prevent wrapping/clipping
+            scrollY: 0, // Force start from top
+            scrollX: 0,
             x: 0,
             y: 0
         });
