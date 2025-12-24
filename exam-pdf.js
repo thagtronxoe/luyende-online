@@ -357,7 +357,7 @@ async function generateExamPDFWithLaTeX(examData) {
     container = document.createElement('div');
     container.id = 'pdfRenderContainer';
     container.style.cssText = `
-        position: fixed;
+        position: absolute;
         left: 0;
         top: 0;
         width: 794px;
@@ -368,8 +368,6 @@ async function generateExamPDFWithLaTeX(examData) {
         line-height: 1.5;
         color: black;
         box-sizing: border-box;
-        z-index: 99999;
-        overflow: visible;
     `;
     document.body.appendChild(container);
 
@@ -380,28 +378,10 @@ async function generateExamPDFWithLaTeX(examData) {
     await renderKaTeX(container);
     await new Promise(r => setTimeout(r, 500));
 
-    // Get actual content height
-    const contentHeight = container.scrollHeight;
-    console.log('📄 Content height:', contentHeight);
-
     console.log('📄 Capturing with html2canvas...');
-
-    // Scroll to top before capture
-    window.scrollTo(0, 0);
-
     const canvas = await html2canvas(container, {
         scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        width: 794,
-        height: contentHeight,
-        windowWidth: 794,
-        windowHeight: contentHeight,
-        scrollX: 0,
-        scrollY: 0,
-        x: 0,
-        y: 0
+        backgroundColor: '#ffffff'
     });
 
     // A4 dimensions with margins
