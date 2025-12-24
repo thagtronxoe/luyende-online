@@ -350,7 +350,9 @@ async function generateExamPDFWithLaTeX(examData) {
     const PAGE_ASPECT_RATIO = 297 / 210; // A4 H/W
     const CONTAINER_HEIGHT = Math.floor(CONTAINER_WIDTH * PAGE_ASPECT_RATIO); // ~1131px
     const PAGE_PADDING = 40; // px
-    const CONTENT_HEIGHT_LIMIT = CONTAINER_HEIGHT - (PAGE_PADDING * 2); // Printable height in px
+    // We reserve 20px internal padding for safety, so reduce usable height
+    const CONTENT_SAFE_TOP_PADDING = 20;
+    const CONTENT_HEIGHT_LIMIT = CONTAINER_HEIGHT - (PAGE_PADDING * 2) - CONTENT_SAFE_TOP_PADDING;
 
     // 1. Create Staging Container (to render full content first)
     // We need this to render KaTeX and get accurate element heights
@@ -389,7 +391,7 @@ async function generateExamPDFWithLaTeX(examData) {
     const children = Array.from(contentDiv.children);
 
     let pageCount = 1;
-    let currentPage = createPageContainer(pageCount, CONTAINER_WIDTH, CONTAINER_HEIGHT, PAGE_PADDING);
+    let currentPage = createPageContainer(pageCount, CONTAINER_WIDTH, CONTAINER_HEIGHT, PAGE_PADDING, CONTENT_SAFE_TOP_PADDING);
     let currentHeight = 0;
 
     pagesContainer.appendChild(currentPage);
@@ -410,7 +412,7 @@ async function generateExamPDFWithLaTeX(examData) {
         if (currentHeight + totalChildHeight > CONTENT_HEIGHT_LIMIT && currentHeight > 0) {
             // New Page
             pageCount++;
-            currentPage = createPageContainer(pageCount, CONTAINER_WIDTH, CONTAINER_HEIGHT, PAGE_PADDING);
+            currentPage = createPageContainer(pageCount, CONTAINER_WIDTH, CONTAINER_HEIGHT, PAGE_PADDING, CONTENT_SAFE_TOP_PADDING);
             pagesContainer.appendChild(currentPage);
             currentHeight = 0;
         }
@@ -480,7 +482,7 @@ async function fetchExamForPDF(examId) {
     return examData;
 }
 
-function createPageContainer(pageNum, width, height, padding) {
+function createPageContainer(pageNum, width, height, padding, safeTopPadding = 0) {
     const div = document.createElement('div');
     div.className = 'pdf-page-node';
     div.style.cssText = `
@@ -500,8 +502,8 @@ function createPageContainer(pageNum, width, height, padding) {
     // Content Area
     const content = document.createElement('div');
     content.className = 'page-content-area';
-    // Add 1px padding-top to prevent margin collapse at top of page
-    content.style.cssText = 'width: 100%; padding-top: 1px;';
+    // Add safe padding to prevent top clipping
+    content.style.cssText = `width: 100%; padding-top: ${safeTopPadding}px;`;
     div.appendChild(content);
 
     // Optional: Add Page Number Footer
