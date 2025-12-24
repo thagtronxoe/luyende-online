@@ -38,12 +38,12 @@ function createPDFRenderContainer() {
             position: fixed;
             left: -9999px;
             top: 0;
-            width: 520px;
+            width: 800px; /* Increased width for better resolution */
             background: white;
-            padding: 20px 25px;
+            padding: 30px 40px;
             font-family: 'Times New Roman', serif;
-            font-size: 9pt;
-            line-height: 1.35;
+            font-size: 13pt; /* Larger internal font, scales down nicely */
+            line-height: 1.4;
             color: black;
             box-sizing: border-box;
         `;
@@ -73,20 +73,21 @@ function renderExamToHTML(examData) {
     else if (semester === 'ck2') semesterText = 'ĐỀ ÔN TẬP CUỐI HỌC KÌ 2';
     else semesterText = 'ĐỀ ÔN TẬP';
 
-    // Logo URL
+    // Low-res workaround: Use simple text header if logo fails, handled by CSS/HTML structure
+    // Logo URL (keeping variable but user said not needed, we use text header primarily now)
     const logoUrl = window.location.origin + '/luyen_de_logo_blue.svg';
 
     let html = `
         <style>
             .pdf-content { 
                 font-family: 'Times New Roman', serif; 
-                font-size: 9pt;
+                font-size: 13pt;
                 width: 100%;
             }
             .header-row { 
                 width: 100%;
-                margin-bottom: 1px;
-                font-size: 9pt;
+                margin-bottom: 5px;
+                font-size: 13pt;
             }
             .header-row::after { content: ""; display: table; clear: both; }
             .header-left { float: left; text-align: left; }
@@ -94,62 +95,63 @@ function renderExamToHTML(examData) {
             .exam-title {
                 text-align: center;
                 font-weight: bold;
-                font-size: 11pt;
-                margin: 6px 0;
+                font-size: 16pt;
+                margin: 15px 0;
                 text-transform: uppercase;
                 clear: both;
             }
-            .student-info { margin: 4px 0; font-size: 8pt; clear: both; }
+            .student-info { margin: 10px 0; font-size: 12pt; clear: both; }
             .part-header { 
                 font-weight: bold; 
-                margin: 8px 0 4px 0; 
-                font-size: 9pt;
+                margin: 15px 0 8px 0; 
+                font-size: 13pt;
                 clear: both;
             }
             .question { 
-                margin: 4px 0; 
-                font-size: 9pt;
+                margin: 10px 0; 
+                font-size: 13pt;
                 clear: both;
+                page-break-inside: avoid; /* Attempt to keep questions together */
             }
             .question-num { font-weight: bold; }
-            .question-text { margin-bottom: 2px; }
+            .question-text { margin-bottom: 5px; }
             .options-table { 
-                width: 95%;
-                margin: 2px 0 2px 12px;
-                font-size: 8.5pt;
+                width: 98%;
+                margin: 5px 0 5px 15px;
+                font-size: 13pt;
                 border-collapse: collapse;
             }
             .options-table td {
                 width: 50%;
-                padding: 1px 5px 1px 0;
+                padding: 2px 5px 2px 0;
                 vertical-align: top;
             }
             .option-label { font-weight: bold; }
-            .tf-statements { margin-left: 12px; font-size: 8.5pt; }
-            .statement { margin: 1px 0; }
+            .tf-statements { margin-left: 15px; font-size: 13pt; }
+            .statement { margin: 3px 0; }
             .end-marker { 
                 text-align: center; 
-                margin-top: 12px; 
+                margin-top: 20px; 
                 font-weight: bold;
-                font-size: 9pt;
+                font-size: 13pt;
                 clear: both;
             }
             .footer-note {
-                margin-top: 4px;
+                margin-top: 10px;
                 font-style: italic;
-                font-size: 8pt;
+                font-size: 11pt;
             }
-            /* Formula sizing - smaller for print */
-            .katex { font-size: 0.85em !important; }
-            .katex-display { margin: 3px 0 !important; font-size: 0.85em !important; }
+            /* Formula sizing */
+            .katex { font-size: 1.05em !important; }
+            .katex-display { margin: 5px 0 !important; font-size: 1.05em !important; }
         </style>
         
         <div class="pdf-content">
             <!-- Header with Text Logo -->
             <div class="header-row">
                 <div class="header-left">
-                    <div style="font-weight: bold; font-size: 11pt; color: #1e40af;">LUYỆN ĐỀ ONLINE</div>
-                    <div style="font-size: 7pt; color: #666;">luyendeonline.io.vn</div>
+                    <div style="font-weight: bold; font-size: 16pt; color: #1e40af;">LUYỆN ĐỀ ONLINE</div>
+                    <div style="font-size: 11pt; color: #666;">luyendeonline.io.vn</div>
                 </div>
                 <div class="header-right">
                     <div><strong>${semesterText}</strong></div>
