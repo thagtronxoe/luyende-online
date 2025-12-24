@@ -232,7 +232,7 @@ async function generateExamPDFPerQuestion(examData) {
         }
 
         pdf.addImage(imgData, 'PNG', margin, currentY, contentWidth, scaledHeight);
-        currentY += scaledHeight + 2; // 2mm spacing between elements
+        currentY += scaledHeight + 0.5; // 0.5mm spacing between elements
     };
 
     // 1. Capture and add header
