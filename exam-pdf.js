@@ -38,12 +38,12 @@ function createPDFRenderContainer() {
             position: fixed;
             left: -9999px;
             top: 0;
-            width: 700px;
+            width: 595px;
             background: white;
-            padding: 30px 40px;
+            padding: 25px 35px;
             font-family: 'Times New Roman', serif;
-            font-size: 11pt;
-            line-height: 1.5;
+            font-size: 10pt;
+            line-height: 1.4;
             color: black;
             box-sizing: border-box;
         `;
@@ -67,13 +67,13 @@ function renderExamToHTML(examData) {
         <style>
             .pdf-content { 
                 font-family: 'Times New Roman', serif; 
-                font-size: 11pt;
+                font-size: 10pt;
                 width: 100%;
             }
             .header-row { 
                 width: 100%;
-                margin-bottom: 3px;
-                font-size: 11pt;
+                margin-bottom: 2px;
+                font-size: 10pt;
             }
             .header-row::after { content: ""; display: table; clear: both; }
             .header-left { float: left; text-align: left; }
@@ -81,53 +81,53 @@ function renderExamToHTML(examData) {
             .exam-title {
                 text-align: center;
                 font-weight: bold;
-                font-size: 14pt;
-                margin: 12px 0;
+                font-size: 12pt;
+                margin: 8px 0;
                 text-transform: uppercase;
                 clear: both;
             }
-            .student-info { margin: 8px 0; font-size: 10pt; clear: both; }
+            .student-info { margin: 6px 0; font-size: 9pt; clear: both; }
             .part-header { 
                 font-weight: bold; 
-                margin: 15px 0 10px 0; 
-                font-size: 11pt;
+                margin: 10px 0 6px 0; 
+                font-size: 10pt;
                 clear: both;
             }
             .question { 
-                margin: 8px 0; 
-                font-size: 11pt;
+                margin: 5px 0; 
+                font-size: 10pt;
                 clear: both;
             }
             .question-num { font-weight: bold; }
-            .question-text { margin-bottom: 5px; }
+            .question-text { margin-bottom: 3px; }
             .options-table { 
-                width: 100%;
-                margin: 5px 0 5px 20px;
-                font-size: 10.5pt;
+                width: 95%;
+                margin: 3px 0 3px 15px;
+                font-size: 9.5pt;
                 border-collapse: collapse;
             }
             .options-table td {
                 width: 50%;
-                padding: 2px 10px 2px 0;
+                padding: 1px 8px 1px 0;
                 vertical-align: top;
             }
             .option-label { font-weight: bold; }
-            .tf-statements { margin-left: 20px; font-size: 10.5pt; }
-            .statement { margin: 3px 0; }
+            .tf-statements { margin-left: 15px; font-size: 9.5pt; }
+            .statement { margin: 2px 0; }
             .end-marker { 
                 text-align: center; 
-                margin-top: 20px; 
+                margin-top: 15px; 
                 font-weight: bold;
-                font-size: 11pt;
+                font-size: 10pt;
                 clear: both;
             }
             .footer-note {
-                margin-top: 10px;
+                margin-top: 6px;
                 font-style: italic;
-                font-size: 10pt;
+                font-size: 9pt;
             }
-            /* Formula sizing */
-            .katex { font-size: 1em !important; }
+            /* Formula sizing - smaller for print */
+            .katex { font-size: 0.95em !important; }
             .katex-display { margin: 5px 0 !important; }
         </style>
         
