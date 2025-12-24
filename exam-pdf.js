@@ -340,9 +340,9 @@ async function renderKaTeX(container) {
     });
 }
 
-// Generate PDF using Page-by-Page DOM Construction
+// Generate PDF using Simple Single-Container + Image Slicing
 async function generateExamPDFWithLaTeX(examData) {
-    console.log('📄 Starting PDF generation (Page-by-Page approach)...');
+    console.log('📄 Starting PDF generation (Simple approach)...');
 
     if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('jsPDF chưa được tải');
     if (!window.html2canvas) throw new Error('html2canvas chưa được tải');
@@ -350,122 +350,82 @@ async function generateExamPDFWithLaTeX(examData) {
     await loadPDFSettings();
     const { jsPDF } = window.jspdf;
 
-    // Constants
-    const CONTAINER_WIDTH = 800; // px
-    const PAGE_ASPECT_RATIO = 297 / 210; // A4 H/W
-    const CONTAINER_HEIGHT = Math.floor(CONTAINER_WIDTH * PAGE_ASPECT_RATIO); // ~1131px
-    const PAGE_PADDING = 40; // px
-    // Minimal safe padding to prevent edge clipping
-    const CONTENT_SAFE_TOP_PADDING = 5;
-    const CONTENT_HEIGHT_LIMIT = CONTAINER_HEIGHT - (PAGE_PADDING * 2) - CONTENT_SAFE_TOP_PADDING;
+    // Create single container for ALL content
+    let container = document.getElementById('pdfRenderContainer');
+    if (container) container.remove();
 
-    // 1. Create Staging Container (to render full content first)
-    // We need this to render KaTeX and get accurate element heights
-    let staging = document.getElementById('pdfStagingContainer');
-    if (staging) staging.remove();
-
-    staging = document.createElement('div');
-    staging.id = 'pdfStagingContainer';
-    staging.style.cssText = `
-        position: fixed; left: -9999px; top: 0; width: ${CONTAINER_WIDTH}px;
-        background: white; font-family: 'Times New Roman', serif;
-        font-size: 13pt; line-height: 1.4; color: black;
+    container = document.createElement('div');
+    container.id = 'pdfRenderContainer';
+    container.style.cssText = `
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 794px;
+        background: white;
+        padding: 40px 50px;
+        font-family: 'Times New Roman', serif;
+        font-size: 12pt;
+        line-height: 1.5;
+        color: black;
+        box-sizing: border-box;
     `;
-    document.body.appendChild(staging);
+    document.body.appendChild(container);
 
-    // Render raw HTML
-    staging.innerHTML = renderExamToHTML(examData);
+    // Render ALL content at once
+    container.innerHTML = renderExamToHTML(examData);
 
-    // Turn header parts into a proper header block for logic separation
-    // Note: renderExamToHTML produces .header-row, .exam-title etc. 
-    // We will treat the top generic info as "Header" and Questions as "Content"
+    console.log('📄 Rendering KaTeX...');
+    await renderKaTeX(container);
+    await new Promise(r => setTimeout(r, 500));
 
-    console.log('📄 Rendering KaTeX in staging...');
-    await renderKaTeX(staging);
-    await new Promise(r => setTimeout(r, 400));
+    console.log('📄 Capturing with html2canvas...');
+    const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        width: 794,
+        windowWidth: 794
+    });
 
-    // 2. Distribute Elements into Pages
-    const pagesContainer = document.createElement('div');
-    pagesContainer.id = 'pdfPagesContainer';
-    pagesContainer.style.cssText = `
-        position: fixed; left: -9999px; top: 0;
-    `;
-    document.body.appendChild(pagesContainer);
-
-    const contentDiv = staging.querySelector('.pdf-content');
-    const children = Array.from(contentDiv.children);
-
-    let pageCount = 1;
-    let currentPage = createPageContainer(pageCount, CONTAINER_WIDTH, CONTAINER_HEIGHT, PAGE_PADDING, CONTENT_SAFE_TOP_PADDING);
-    let currentHeight = 0;
-
-    pagesContainer.appendChild(currentPage);
-
-    // Helper to add footer/header if needed (currently simplified)
-
-    for (const child of children) {
-        // Clone to calculate/insert
-        const clone = child.cloneNode(true);
-        // We need to append to current page to check height? 
-        // Actually we can check the 'staging' height of the child
-        const childHeight = child.offsetHeight;
-        const style = window.getComputedStyle(child);
-        const margin = (parseFloat(style.marginTop) || 0) + (parseFloat(style.marginBottom) || 0);
-        const totalChildHeight = childHeight + margin;
-
-        // Check if fits
-        if (currentHeight + totalChildHeight > CONTENT_HEIGHT_LIMIT && currentHeight > 0) {
-            // New Page
-            pageCount++;
-            currentPage = createPageContainer(pageCount, CONTAINER_WIDTH, CONTAINER_HEIGHT, PAGE_PADDING, CONTENT_SAFE_TOP_PADDING);
-            pagesContainer.appendChild(currentPage);
-            currentHeight = 0;
-        }
-
-        // Append to current page content area
-        currentPage.querySelector('.page-content-area').appendChild(clone);
-        currentHeight += totalChildHeight;
-    }
-
-    // 3. Render Each Page to Canvas -> add to PDF
-    console.log(`📄 Generated ${pageCount} DOM pages. Capturing...`);
-
-    const pdf = new jsPDF('p', 'mm', 'a4');
+    // A4 dimensions
     const pdfWidth = 210;
     const pdfHeight = 297;
 
-    const pages = Array.from(pagesContainer.children);
+    // Calculate image dimensions that fit A4
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    for (let i = 0; i < pages.length; i++) {
-        const page = pages[i];
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
-        // Force layout refresh
-        await new Promise(r => requestAnimationFrame(r));
+    // Simple pagination: slide image up for each page
+    let position = 0;
+    let pageNum = 0;
 
-        const canvas = await html2canvas(page, {
-            scale: 2, // Higher res for clear text
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff',
-            windowWidth: 1600, // Ensure wide viewport to prevent wrapping/clipping
-            scrollY: 0, // Force start from top
-            scrollX: 0,
-            x: 0,
-            y: 0
-        });
+    while (position < imgHeight) {
+        if (pageNum > 0) {
+            pdf.addPage();
+        }
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        // Add entire image, shifted up by current position
+        pdf.addImage(
+            imgData,
+            'JPEG',
+            0,
+            -position,
+            imgWidth,
+            imgHeight
+        );
 
-        if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-
-        console.log(`📄 Captured page ${i + 1}/${pages.length}`);
+        position += pdfHeight;
+        pageNum++;
     }
 
     // Cleanup
-    staging.remove();
-    pagesContainer.remove();
+    container.remove();
 
+    console.log(`📄 PDF generated: ${pageNum} pages`);
     return pdf;
 }
 
