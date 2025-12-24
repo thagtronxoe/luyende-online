@@ -1165,8 +1165,8 @@ app.get('/api/exams/:id/pdf', auth, async (req, res) => {
             return res.status(404).json({ error: 'Exam not found' });
         }
 
-        // Get subject name
-        const subject = await Subject.findById(exam.subjectId);
+        // Get subject name (subjectId is a custom string like 'toan12_12')
+        const subject = await Subject.findOne({ id: exam.subjectId });
         const examData = {
             ...exam.toObject(),
             subjectName: subject ? subject.name : 'TOÁN'
