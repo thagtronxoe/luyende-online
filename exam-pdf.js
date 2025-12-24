@@ -370,44 +370,56 @@ window.examPDFGenerator = new ExamPDFGenerator();
 
 // Utility function to generate and download exam PDF
 async function generateAndDownloadExamPDF(examId) {
+    console.log('📄 Starting PDF generation for examId:', examId);
+
     try {
         // Check if jsPDF is loaded
+        console.log('📄 Checking jsPDF:', !!window.jspdf, !!window.jspdf?.jsPDF);
         if (!window.jspdf || !window.jspdf.jsPDF) {
-            alert('Thư viện PDF chưa được tải. Vui lòng tải lại trang và thử lại.');
-            console.error('jsPDF not loaded. Check CDN.');
+            alert('Thư viện PDF chưa được tải. Vui lòng tải lại trang (Ctrl+F5) và thử lại.');
+            console.error('jsPDF not loaded. window.jspdf =', window.jspdf);
             return;
         }
-        // Show loading
-        const loadingToast = showToast ? showToast('Đang tạo PDF...', 'info') : null;
+
+        console.log('📄 jsPDF loaded successfully');
 
         // Fetch exam data
         const token = localStorage.getItem('luyende_token');
+        console.log('📄 Fetching exam data...');
         const response = await fetch(`/api/exams/${examId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!response.ok) throw new Error('Không thể tải đề thi');
+        if (!response.ok) {
+            console.error('📄 API response not ok:', response.status);
+            throw new Error('Không thể tải đề thi');
+        }
 
         const examData = await response.json();
+        console.log('📄 Exam data loaded:', examData.title);
 
         // Get subject name
-        const subject = cachedSubjects?.find(s => s.id === examData.subjectId);
+        const subject = typeof cachedSubjects !== 'undefined' ? cachedSubjects?.find(s => s.id === examData.subjectId) : null;
         examData.subjectName = subject?.name || 'TOÁN';
+        console.log('📄 Subject:', examData.subjectName);
 
         // Generate PDF
+        console.log('📄 Generating PDF...');
         await window.examPDFGenerator.generateExamPDF(examData);
+        console.log('📄 PDF generated successfully');
 
         // Create filename
         const filename = `${examData.title || 'de-thi'}.pdf`.replace(/[^a-zA-Z0-9-_.\u00C0-\u024F]/g, '-');
+        console.log('📄 Saving as:', filename);
 
         // Download
         window.examPDFGenerator.save(filename);
+        console.log('📄 PDF saved!');
 
-        if (typeof showToast === 'function') showToast('Đã tạo PDF thành công!', 'success');
+        alert('Đã tạo PDF thành công! Kiểm tra thư mục Downloads.');
 
     } catch (err) {
-        console.error('Error generating PDF:', err);
-        if (showToast) showToast('Lỗi tạo PDF: ' + err.message, 'error');
+        console.error('📄 Error generating PDF:', err);
         alert('Lỗi tạo PDF: ' + err.message);
     }
 }
