@@ -66,10 +66,11 @@ function createQuestionElement(questionNum, question, type) {
             });
             html += `</div>`;
         } else {
-            // Vertical layout - one per line
-            options.forEach((opt, i) => {
-                html += `<div style="margin-left: 15px; margin-bottom: 3px;"><strong>${labels[i]}.</strong> <span class="option-text">${opt}</span></div>`;
-            });
+            // 2-row layout: A/B on row 1, C/D on row 2
+            html += `<div style="margin-left: 15px;">`;
+            html += `<div style="display: flex; gap: 20px; margin-bottom: 3px;"><span style="flex: 1;"><strong>A.</strong> <span class="option-text">${options[0] || ''}</span></span><span style="flex: 1;"><strong>B.</strong> <span class="option-text">${options[1] || ''}</span></span></div>`;
+            html += `<div style="display: flex; gap: 20px;"><span style="flex: 1;"><strong>C.</strong> <span class="option-text">${options[2] || ''}</span></span><span style="flex: 1;"><strong>D.</strong> <span class="option-text">${options[3] || ''}</span></span></div>`;
+            html += `</div>`;
         }
     } else if (type === 'true-false' || type === 'true_false') {
         // True/False always vertical
@@ -179,9 +180,13 @@ async function renderKaTeX(element) {
     await new Promise(r => setTimeout(r, 100));
 }
 
-// Capture element to canvas
+// Capture element to canvas (off-screen, not visible)
 async function captureElement(element) {
-    // Append to body temporarily for rendering
+    // Position off-screen so it's not visible
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+    element.style.top = '0';
+
     document.body.appendChild(element);
     await renderKaTeX(element);
 
