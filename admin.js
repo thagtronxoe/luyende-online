@@ -122,12 +122,12 @@ async function showAdminTab(tabName) {
 async function updateDashboardStats() {
     try {
         const users = await getUsers();
-        const packages = await getPackages();
+        const subjects = await getSubjects();
         const exams = await getAllExams();
         const history = getExamHistory();
 
         document.getElementById('totalUsers').textContent = users.length;
-        document.getElementById('totalPackages').textContent = packages.length;
+        document.getElementById('totalSubjects').textContent = subjects.length;
         document.getElementById('totalExams').textContent = exams.length;
         document.getElementById('totalAttempts').textContent = history.length;
     } catch (err) {
@@ -150,7 +150,6 @@ async function getUsers() {
 
 async function renderUsers(filterText = '') {
     const users = await getUsers();
-    const packages = await getPackages();
     const tbody = document.getElementById('usersTableBody');
 
     // Filter users by username or email
@@ -167,8 +166,8 @@ async function renderUsers(filterText = '') {
     }
 
     tbody.innerHTML = filtered.map(user => {
-        const activatedPkgs = user.activatedPackages || [];
-        const pkgCount = activatedPkgs.length;
+        // Count VIP subjects activated (from user.vipSubjects or activatedPackages)
+        const vipCount = (user.vipSubjects || user.activatedPackages || []).length;
         return `
         <tr>
             <td>${user._id || user.id}</td>
@@ -176,7 +175,7 @@ async function renderUsers(filterText = '') {
             <td>${user.email || 'N/A'}</td>
             <td>${user.username}</td>
             <td>${user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'N/A'}</td>
-            <td><span class="badge ${pkgCount > 0 ? 'badge-success' : 'badge-secondary'}">${pkgCount}/${packages.length} gói</span></td>
+            <td><span class="badge ${vipCount > 0 ? 'badge-success' : 'badge-secondary'}">${vipCount} VIP</span></td>
             <td>
                 <button class="btn-action btn-edit" onclick="showUserDetail('${user._id || user.id}')">👁 Xem</button>
                 <button class="btn-action btn-delete" onclick="deleteUser('${user._id || user.id}')">🗑️ Xóa</button>
