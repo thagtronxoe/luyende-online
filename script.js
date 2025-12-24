@@ -2576,12 +2576,8 @@ function switchGradeTab(grade) {
         tab.classList.toggle('active', tab.dataset.grade === grade);
     });
 
-    // Re-render course list (new) or subjects (fallback)
-    if (document.getElementById('courseList')) {
-        renderCourseList();
-    } else {
-        renderSubjects();
-    }
+    // Always render subjects as cards
+    renderSubjects();
 }
 
 // Show exams for a subject
@@ -3122,18 +3118,15 @@ async function loadCourseGroupExams(subjectId, groupId) {
 // Updated showDashboard to use new system
 const originalShowDashboard = showDashboard;
 showDashboard = async function () {
-    console.log('🎨 showDashboard - New Dashboard');
+    console.log('🎨 showDashboard - Subject Cards');
 
     updateUserNameDisplay();
 
-    // Load data for new dashboard
+    // Load data for dashboard
     await Promise.all([
         loadSubjects(),
         loadExamStats()
     ]);
-
-    // Also load legacy packages for backwards compatibility
-    await loadPackages();
 
     // Reset to "all" grade tab
     currentGrade = 'all';
@@ -3141,12 +3134,8 @@ showDashboard = async function () {
         tab.classList.toggle('active', tab.dataset.grade === 'all');
     });
 
-    // Render course list (new accordion style) or subjects (fallback)
-    if (document.getElementById('courseList')) {
-        renderCourseList();
-    } else {
-        renderSubjects();
-    }
+    // Render subjects as cards
+    renderSubjects();
 
     showScreen('dashboardScreen');
 
@@ -3294,9 +3283,54 @@ async function directStartExam(examId) {
 
 // Updated startOnlineMode to use directStartExam
 startOnlineMode = async function () {
+    const examId = selectedExamForMode; // Save before closing
     closeExamModeModal();
-    if (selectedExamForMode) {
-        await directStartExam(selectedExamForMode);
+    if (examId) {
+        await directStartExam(examId);
+    }
+};
+
+// Override startFormMode to save examId first
+startFormMode = async function () {
+    const examId = selectedExamForMode; // Save before closing
+    closeExamModeModal();
+
+    if (!examId) return;
+
+    try {
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/${examId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Không thể tải đề thi');
+
+        const exam = await response.json();
+
+        // Show bubble sheet modal
+        if (typeof showBubbleSheet === 'function') {
+            showBubbleSheet(exam);
+        } else {
+            alert('Chế độ điền form đang được phát triển...');
+        }
+    } catch (err) {
+        console.error('Error loading exam for form mode:', err);
+        alert('Lỗi: ' + err.message);
+    }
+};
+
+// Override printExamMode to save examId first
+printExamMode = async function () {
+    const examId = selectedExamForMode; // Save before closing
+    closeExamModeModal();
+
+    if (!examId) return;
+
+    // Use PDF generator
+    if (typeof generateAndDownloadExamPDF === 'function') {
+        await generateAndDownloadExamPDF(examId);
+    } else {
+        alert('Chức năng in đề đang được phát triển...');
     }
 };
 
