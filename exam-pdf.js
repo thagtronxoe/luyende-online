@@ -436,10 +436,13 @@ async function generateExamPDFWithLaTeX(examData) {
         await new Promise(r => requestAnimationFrame(r));
 
         const canvas = await html2canvas(page, {
-            scale: 1.5, // High res
+            scale: 2, // Higher res for clear text
             useCORS: true,
             logging: false,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            windowWidth: 1600, // Ensure wide viewport to prevent wrapping/clipping
+            x: 0,
+            y: 0
         });
 
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -491,11 +494,14 @@ function createPageContainer(pageNum, width, height, padding) {
         position: relative;
         font-family: 'Times New Roman', serif;
         font-size: 13pt;
+        overflow: hidden; /* Prevent child overflow clipping */
     `;
 
     // Content Area
     const content = document.createElement('div');
     content.className = 'page-content-area';
+    // Add 1px padding-top to prevent margin collapse at top of page
+    content.style.cssText = 'width: 100%; padding-top: 1px;';
     div.appendChild(content);
 
     // Optional: Add Page Number Footer
