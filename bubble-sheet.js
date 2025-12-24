@@ -151,7 +151,7 @@ function renderTFBoxes(totalQuestions) {
     return html;
 }
 
-// Render FIB boxes - each has sign + 4 digit columns
+// Render FIB boxes - matching official format
 function renderFIBBoxes(totalQuestions) {
     let html = '';
 
@@ -159,17 +159,31 @@ function renderFIBBoxes(totalQuestions) {
         html += `
             <div class="fib-box">
                 <div class="fib-box-header">Câu ${q}</div>
-                <div class="fib-digits-grid">
-                    <div class="fib-sign-col">
-                        <span class="fib-sign-label">−</span>
-                        <span class="bubble fib-sign" data-question="fib-${q}" data-sign="negative">○</span>
-                        <span class="fib-comma-label">,</span>
-                        <span class="bubble fib-comma" data-question="fib-${q}" data-comma="true">○</span>
+                <div class="fib-grid-content">
+                    <!-- Header row: −, (empty), (empty), (empty) -->
+                    <div class="fib-header-row">
+                        <span class="fib-sign-cell">
+                            <span class="fib-sign-label">−</span>
+                            <span class="bubble fib-sign" data-question="fib-${q}" data-sign="negative">○</span>
+                        </span>
+                        <span class="fib-col-header"></span>
+                        <span class="fib-col-header"></span>
+                        <span class="fib-col-header"></span>
+                        <span class="fib-col-header"></span>
                     </div>
-                    ${[0, 1, 2, 3].map(col => `
-                        <div class="fib-digit-col">
-                            ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => `
-                                <span class="bubble fib" data-question="fib-${q}" data-col="${col}" data-val="${num}">${num}</span>
+                    <!-- Comma row -->
+                    <div class="fib-comma-row">
+                        <span class="fib-comma-cell">
+                            <span class="fib-comma-label">,</span>
+                            <span class="bubble fib-comma" data-question="fib-${q}" data-comma="true">○</span>
+                        </span>
+                    </div>
+                    <!-- Digit rows 0-9 -->
+                    ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => `
+                        <div class="fib-digit-row">
+                            <span class="fib-num-label">${num}</span>
+                            ${[0, 1, 2, 3].map(col => `
+                                <span class="bubble fib" data-question="fib-${q}" data-col="${col}" data-val="${num}">○</span>
                             `).join('')}
                         </div>
                     `).join('')}

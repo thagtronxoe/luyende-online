@@ -4920,38 +4920,62 @@ body {
     margin-bottom: 8px;
 }
 
-.fib-digits-grid {
-    display: flex;
-    gap: 2px;
-}
-
-.fib-sign-col {
+.fib-grid-content {
     display: flex;
     flex-direction: column;
+}
+
+.fib-header-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.fib-sign-cell {
+    display: flex;
     align-items: center;
     gap: 2px;
-    padding-right: 4px;
+    min-width: 40px;
 }
 
 .fib-sign-label,
 .fib-comma-label {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
-    height: 20px;
+    color: #1f2937;
+}
+
+.fib-comma-row {
     display: flex;
     align-items: center;
+    margin-bottom: 2px;
 }
 
-.fib-digit-col {
+.fib-comma-cell {
     display: flex;
-    flex-direction: column;
-    gap: 1px;
+    align-items: center;
+    gap: 2px;
+    min-width: 40px;
 }
 
-.fib-digit-col .bubble {
+.fib-digit-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fib-num-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    min-width: 16px;
+    text-align: center;
+}
+
+.fib-digit-row .bubble {
     width: 18px;
     height: 18px;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 /* Mobile responsive */
