@@ -42,13 +42,15 @@ function createQuestionElement(questionNum, question, type) {
     div.style.cssText = `
         padding: 8px 15px;
         font-family: 'Times New Roman', serif;
-        font-size: 13px;
-        line-height: 1.5;
+        font-size: 12px;
+        line-height: 1.4;
         background: white;
         width: 750px;
     `;
 
-    let html = `<div style="margin-bottom: 6px;"><strong>Câu ${questionNum}.</strong> <span class="question-text">${question.question || ''}</span></div>`;
+    // Add KaTeX size control CSS
+    let html = `<style>.katex { font-size: 1em !important; } .katex-display { margin: 0.3em 0 !important; font-size: 0.95em !important; }</style>`;
+    html += `<div style="margin-bottom: 5px;"><strong>Câu ${questionNum}.</strong> <span class="question-text">${question.question || ''}</span></div>`;
 
     const options = question.options || [];
 
