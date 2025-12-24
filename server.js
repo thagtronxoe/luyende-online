@@ -1114,7 +1114,7 @@ app.get('/api/settings/pdf', async (req, res) => {
                 showPageCount: true,
                 showDuration: true,
                 showStudentInfo: true,
-                footerNote: '- Thí sinh được sử dụng tài liệu cá nhân.'
+                footerNote: '- Thí sinh KHÔNG được sử dụng tài liệu.'
             });
         }
     } catch (err) {

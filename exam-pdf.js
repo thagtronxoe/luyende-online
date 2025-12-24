@@ -12,7 +12,7 @@ let pdfSettings = {
     showPageCount: true,
     showDuration: true,
     showStudentInfo: true,
-    footerNote: '- Thí sinh được sử dụng tài liệu cá nhân.'
+    footerNote: '- Thí sinh KHÔNG được sử dụng tài liệu.'
 };
 
 // Load PDF settings from server
@@ -228,6 +228,7 @@ function renderExamToHTML(examData) {
     html += `
             <div class="end-marker">---------- HẾT ----------</div>
             <div class="footer-note">${pdfSettings.footerNote}</div>
+            <div class="footer-note">- Giám thị không giải thích gì thêm.</div>
         </div>
     `;
 
