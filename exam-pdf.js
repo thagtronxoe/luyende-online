@@ -40,26 +40,42 @@ function createQuestionElement(questionNum, question, type) {
     const div = document.createElement('div');
     div.className = 'pdf-question';
     div.style.cssText = `
-        padding: 10px 20px;
+        padding: 8px 15px;
         font-family: 'Times New Roman', serif;
-        font-size: 14px;
-        line-height: 1.6;
+        font-size: 13px;
+        line-height: 1.5;
         background: white;
         width: 750px;
     `;
 
-    let html = `<div style="margin-bottom: 8px;"><strong>Câu ${questionNum}.</strong> <span class="question-text">${question.question || ''}</span></div>`;
+    let html = `<div style="margin-bottom: 6px;"><strong>Câu ${questionNum}.</strong> <span class="question-text">${question.question || ''}</span></div>`;
 
     const options = question.options || [];
+
     if (type === 'multiple-choice' || type === 'single' || type === 'multiple_choice') {
         const labels = ['A', 'B', 'C', 'D'];
-        options.forEach((opt, i) => {
-            html += `<div style="margin-left: 20px; margin-bottom: 4px;"><strong>${labels[i]}.</strong> <span class="option-text">${opt}</span></div>`;
-        });
+
+        // Check if options are short (all under 20 chars) - display inline
+        const allShort = options.every(opt => (opt || '').length < 25);
+
+        if (allShort && options.length === 4) {
+            // Inline layout: A. xx    B. yy    C. zz    D. ww
+            html += `<div style="margin-left: 15px; display: flex; flex-wrap: wrap; gap: 10px;">`;
+            options.forEach((opt, i) => {
+                html += `<span style="min-width: 120px;"><strong>${labels[i]}.</strong> <span class="option-text">${opt}</span></span>`;
+            });
+            html += `</div>`;
+        } else {
+            // Vertical layout - one per line
+            options.forEach((opt, i) => {
+                html += `<div style="margin-left: 15px; margin-bottom: 3px;"><strong>${labels[i]}.</strong> <span class="option-text">${opt}</span></div>`;
+            });
+        }
     } else if (type === 'true-false' || type === 'true_false') {
+        // True/False always vertical
         const labels = ['a)', 'b)', 'c)', 'd)'];
         options.forEach((opt, i) => {
-            html += `<div style="margin-left: 20px; margin-bottom: 4px;">${labels[i]} <span class="option-text">${opt}</span></div>`;
+            html += `<div style="margin-left: 15px; margin-bottom: 3px;">${labels[i]} <span class="option-text">${opt}</span></div>`;
         });
     }
 
