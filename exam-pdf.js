@@ -371,6 +371,12 @@ window.examPDFGenerator = new ExamPDFGenerator();
 // Utility function to generate and download exam PDF
 async function generateAndDownloadExamPDF(examId) {
     try {
+        // Check if jsPDF is loaded
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            alert('Thư viện PDF chưa được tải. Vui lòng tải lại trang và thử lại.');
+            console.error('jsPDF not loaded. Check CDN.');
+            return;
+        }
         // Show loading
         const loadingToast = showToast ? showToast('Đang tạo PDF...', 'info') : null;
 
@@ -397,7 +403,7 @@ async function generateAndDownloadExamPDF(examId) {
         // Download
         window.examPDFGenerator.save(filename);
 
-        if (showToast) showToast('Đã tạo PDF thành công!', 'success');
+        if (typeof showToast === 'function') showToast('Đã tạo PDF thành công!', 'success');
 
     } catch (err) {
         console.error('Error generating PDF:', err);
