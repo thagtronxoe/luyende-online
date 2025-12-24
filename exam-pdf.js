@@ -145,15 +145,15 @@ function renderExamToHTML(examData) {
         </style>
         
         <div class="pdf-content">
-            <!-- Header with Logo -->
+            <!-- Header with Text Logo -->
             <div class="header-row">
                 <div class="header-left">
-                    <img src="${logoUrl}" alt="Luyện Đề Online" style="height: 35px; margin-bottom: 3px;" onerror="this.style.display='none'">
-                    <div style="font-size: 8pt; color: #666;">luyendeonline.io.vn</div>
+                    <div style="font-weight: bold; font-size: 11pt; color: #1e40af;">LUYỆN ĐỀ ONLINE</div>
+                    <div style="font-size: 7pt; color: #666;">luyendeonline.io.vn</div>
                 </div>
                 <div class="header-right">
-                    <strong>${semesterText}</strong><br>
-                    <strong>Môn: ${subjectName.toUpperCase()} ${grade}</strong>
+                    <div><strong>${semesterText}</strong></div>
+                    <div><strong>Môn: ${subjectName.toUpperCase()}</strong></div>
                 </div>
             </div>
     `;
