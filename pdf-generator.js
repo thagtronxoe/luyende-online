@@ -25,39 +25,73 @@ function fetchImage(url) {
     });
 }
 
-// Convert LaTeX formula to image URL using CodeCogs
-function latexToImageUrl(latex) {
-    const encoded = encodeURIComponent(latex);
-    return `https://latex.codecogs.com/png.image?\\dpi{150}${encoded}`;
+// Convert LaTeX formula to readable text (simple conversion for common cases)
+function latexToText(latex) {
+    if (!latex) return '';
+
+    let result = latex
+        // Fractions
+        .replace(/\\dfrac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)')
+        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)')
+        // Square root
+        .replace(/\\sqrt\{([^}]+)\}/g, '√($1)')
+        .replace(/\\sqrt\[([^\]]+)\]\{([^}]+)\}/g, '∛($2)')
+        // Subscripts and superscripts (simple)
+        .replace(/\^2/g, '²')
+        .replace(/\^3/g, '³')
+        .replace(/\^n/g, 'ⁿ')
+        .replace(/_\{([^}]+)\}/g, '[$1]')
+        .replace(/\^\{([^}]+)\}/g, '^{$1}')
+        // Greek letters
+        .replace(/\\alpha/g, 'α')
+        .replace(/\\beta/g, 'β')
+        .replace(/\\gamma/g, 'γ')
+        .replace(/\\delta/g, 'δ')
+        .replace(/\\pi/g, 'π')
+        .replace(/\\theta/g, 'θ')
+        .replace(/\\lambda/g, 'λ')
+        .replace(/\\sigma/g, 'σ')
+        .replace(/\\omega/g, 'ω')
+        .replace(/\\phi/g, 'φ')
+        // Operators
+        .replace(/\\times/g, '×')
+        .replace(/\\div/g, '÷')
+        .replace(/\\pm/g, '±')
+        .replace(/\\leq/g, '≤')
+        .replace(/\\geq/g, '≥')
+        .replace(/\\neq/g, '≠')
+        .replace(/\\approx/g, '≈')
+        .replace(/\\infty/g, '∞')
+        .replace(/\\in/g, '∈')
+        .replace(/\\subset/g, '⊂')
+        .replace(/\\cup/g, '∪')
+        .replace(/\\cap/g, '∩')
+        .replace(/\\forall/g, '∀')
+        .replace(/\\exists/g, '∃')
+        .replace(/\\rightarrow/g, '→')
+        .replace(/\\leftarrow/g, '←')
+        .replace(/\\overline\{([^}]+)\}/g, '$1̄')
+        .replace(/\\vec\{([^}]+)\}/g, '$1⃗')
+        // Remove remaining backslash commands
+        .replace(/\\[a-zA-Z]+/g, '')
+        // Clean up braces
+        .replace(/\{/g, '')
+        .replace(/\}/g, '')
+        // Clean up extra spaces
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    return result;
 }
 
-// Parse text and extract LaTeX formulas
-function parseContent(text) {
-    if (!text) return [{ type: 'text', content: '' }];
+// Process text: replace LaTeX formulas with readable text
+function processLatexInText(text) {
+    if (!text) return '';
 
-    const parts = [];
-    // Match $...$ (inline) and $$...$$ (display)
-    const regex = /\$\$([^$]+)\$\$|\$([^$]+)\$/g;
-    let lastIndex = 0;
-    let match;
-
-    while ((match = regex.exec(text)) !== null) {
-        // Add text before formula
-        if (match.index > lastIndex) {
-            parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
-        }
-        // Add formula
-        const formula = match[1] || match[2]; // $$...$$ or $...$
-        const isDisplay = !!match[1];
-        parts.push({ type: 'latex', content: formula, display: isDisplay });
-        lastIndex = regex.lastIndex;
-    }
-    // Add remaining text
-    if (lastIndex < text.length) {
-        parts.push({ type: 'text', content: text.slice(lastIndex) });
-    }
-
-    return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+    // Replace $$...$$ and $...$ with processed formula
+    return text
+        .replace(/\$\$([^$]+)\$\$/g, (match, formula) => latexToText(formula))
+        .replace(/\$([^$]+)\$/g, (match, formula) => latexToText(formula));
 }
 
 // Generate PDF from exam data
@@ -146,19 +180,27 @@ async function generateExamPDF(examData, pdfSettings = {}) {
 
         for (const q of mcQuestions) {
             doc.moveDown(0.5);
+
+            // Process question text with LaTeX conversion
+            const questionText = processLatexInText(q.question || '');
             doc.fontSize(11).font('Vietnamese-Bold');
             doc.text(`Câu ${questionNum}. `, { continued: true });
             doc.font('Vietnamese');
+            doc.text(questionText);
 
-            // Render question text (with LaTeX if present)
-            await renderTextWithLatex(doc, q.question || '');
-
-            // Options
-            const opts = q.options || [];
+            // Options - process LaTeX and display in 2 rows
+            const opts = (q.options || []).map(opt => processLatexInText(opt));
             if (opts.length >= 4) {
-                doc.moveDown(0.3);
-                doc.text(`    A. ${opts[0]}          B. ${opts[1]}`);
-                doc.text(`    C. ${opts[2]}          D. ${opts[3]}`);
+                doc.moveDown(0.2);
+                doc.text(`     A. ${opts[0]}`);
+                doc.text(`     B. ${opts[1]}`);
+                doc.text(`     C. ${opts[2]}`);
+                doc.text(`     D. ${opts[3]}`);
+            } else {
+                opts.forEach((opt, i) => {
+                    const label = String.fromCharCode(65 + i); // A, B, C, D
+                    doc.text(`     ${label}. ${opt}`);
+                });
             }
 
             questionNum++;
@@ -173,14 +215,16 @@ async function generateExamPDF(examData, pdfSettings = {}) {
 
         tfQuestions.forEach((q, idx) => {
             doc.moveDown(0.5);
+            const questionText = processLatexInText(q.question || '');
             doc.fontSize(11).font('Vietnamese-Bold');
             doc.text(`Câu ${idx + 1}. `, { continued: true });
             doc.font('Vietnamese');
-            doc.text(q.question || '');
+            doc.text(questionText);
 
             const labels = ['a)', 'b)', 'c)', 'd)'];
             (q.options || []).forEach((opt, i) => {
-                doc.text(`    ${labels[i]} ${opt}`);
+                const optText = processLatexInText(opt);
+                doc.text(`     ${labels[i]} ${optText}`);
             });
         });
     }
@@ -193,10 +237,11 @@ async function generateExamPDF(examData, pdfSettings = {}) {
 
         fibQuestions.forEach((q, idx) => {
             doc.moveDown(0.5);
+            const questionText = processLatexInText(q.question || '');
             doc.fontSize(11).font('Vietnamese-Bold');
             doc.text(`Câu ${idx + 1}. `, { continued: true });
             doc.font('Vietnamese');
-            doc.text(q.question || '');
+            doc.text(questionText);
         });
     }
 
@@ -218,26 +263,6 @@ async function generateExamPDF(examData, pdfSettings = {}) {
             resolve(Buffer.concat(buffers));
         });
     });
-}
-
-// Render text with embedded LaTeX formulas
-async function renderTextWithLatex(doc, text) {
-    const parts = parseContent(text);
-
-    for (const part of parts) {
-        if (part.type === 'text') {
-            doc.text(part.content, { continued: parts.indexOf(part) < parts.length - 1 });
-        } else if (part.type === 'latex') {
-            try {
-                const imageUrl = latexToImageUrl(part.content);
-                const imageBuffer = await fetchImage(imageUrl);
-                doc.image(imageBuffer, { height: 15, continued: !part.display });
-            } catch (err) {
-                // Fallback: just show the formula as text
-                doc.text(`[${part.content}]`, { continued: parts.indexOf(part) < parts.length - 1 });
-            }
-        }
-    }
 }
 
 module.exports = { generateExamPDF };
