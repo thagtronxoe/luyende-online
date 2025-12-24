@@ -62,6 +62,19 @@ function renderExamToHTML(examData) {
     const subjectName = examData.subjectName || 'TOÁN';
     const duration = examData.duration || 90;
     const examTitle = examData.title || 'Đề thi';
+    const grade = examData.grade || '12';
+
+    // Semester detection for header
+    const semester = examData.semester || '';
+    let semesterText = '';
+    if (semester === 'gk1') semesterText = 'ĐỀ ÔN TẬP GIỮA HỌC KÌ 1';
+    else if (semester === 'ck1') semesterText = 'ĐỀ ÔN TẬP CUỐI HỌC KÌ 1';
+    else if (semester === 'gk2') semesterText = 'ĐỀ ÔN TẬP GIỮA HỌC KÌ 2';
+    else if (semester === 'ck2') semesterText = 'ĐỀ ÔN TẬP CUỐI HỌC KÌ 2';
+    else semesterText = 'ĐỀ ÔN TẬP';
+
+    // Logo URL
+    const logoUrl = window.location.origin + '/luyen_de_logo_blue.svg';
 
     let html = `
         <style>
@@ -132,14 +145,16 @@ function renderExamToHTML(examData) {
         </style>
         
         <div class="pdf-content">
-            <!-- Header -->
+            <!-- Header with Logo -->
             <div class="header-row">
-                <div class="header-left"><strong>${pdfSettings.headerLeft1}</strong></div>
-                <div class="header-right"><strong>${pdfSettings.headerRight1}</strong></div>
-            </div>
-            <div class="header-row">
-                <div class="header-left"><strong>${pdfSettings.headerLeft2}</strong></div>
-                <div class="header-right"><strong>Môn: ${subjectName.toUpperCase()}</strong></div>
+                <div class="header-left">
+                    <img src="${logoUrl}" alt="Luyện Đề Online" style="height: 35px; margin-bottom: 3px;" onerror="this.style.display='none'">
+                    <div style="font-size: 8pt; color: #666;">luyendeonline.io.vn</div>
+                </div>
+                <div class="header-right">
+                    <strong>${semesterText}</strong><br>
+                    <strong>Môn: ${subjectName.toUpperCase()} ${grade}</strong>
+                </div>
             </div>
     `;
 
