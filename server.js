@@ -1167,17 +1167,40 @@ app.put('/api/settings/pdf', adminAuth, async (req, res) => {
     }
 });
 
-// ========== PDF GENERATION (PDFKit) ==========
+// ========== PDF ENDPOINTS ==========
+
+// Upload PDF from client (client generates nice PDF with html2canvas + KaTeX)
+app.post('/api/exams/:id/pdf', auth, async (req, res) => {
+    try {
+        const examId = req.params.id;
+        console.log('📄 PDF upload for exam:', examId);
+
+        const pdfDir = path.join(__dirname, 'pdfs');
+        if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
+        const pdfPath = path.join(pdfDir, `${examId}.pdf`);
+
+        // Get raw body as buffer
+        const chunks = [];
+        req.on('data', chunk => chunks.push(chunk));
+        req.on('end', () => {
+            const pdfBuffer = Buffer.concat(chunks);
+            fs.writeFileSync(pdfPath, pdfBuffer);
+            console.log('📄 PDF saved:', pdfPath, `(${pdfBuffer.length} bytes)`);
+            res.json({ success: true, size: pdfBuffer.length });
+        });
+    } catch (err) {
+        console.error('PDF upload error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get cached PDF (fast)
 app.get('/api/exams/:id/pdf', auth, async (req, res) => {
     try {
         const examId = req.params.id;
         console.log('📄 PDF request for exam:', examId);
 
-        // Define PDF cache path
         const pdfDir = path.join(__dirname, 'pdfs');
-        if (!fs.existsSync(pdfDir)) {
-            fs.mkdirSync(pdfDir, { recursive: true });
-        }
         const pdfPath = path.join(pdfDir, `${examId}.pdf`);
 
         // Check if cached PDF exists
@@ -1185,48 +1208,16 @@ app.get('/api/exams/:id/pdf', auth, async (req, res) => {
             console.log('📄 Serving cached PDF');
             const cachedPdf = fs.readFileSync(pdfPath);
             res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${examId}.pdf`);
+            res.setHeader('Content-Disposition', `inline; filename="${examId}.pdf"`);
             return res.send(cachedPdf);
         }
 
-        // No cache - need to generate
-        console.log('📄 Generating new PDF...');
-
-        // Find exam
-        let exam = await Exam.findOne({ id: examId });
-        if (!exam && examId.match(/^[0-9a-fA-F]{24}$/)) {
-            exam = await Exam.findById(examId);
-        }
-
-        if (!exam) {
-            return res.status(404).json({ error: 'Không tìm thấy đề thi' });
-        }
-
-        // Get subject and settings
-        const subject = await Subject.findOne({ id: exam.subjectId });
-        const examData = {
-            ...exam.toObject(),
-            subjectName: subject ? subject.name : 'TOÁN'
-        };
-        const pdfSettingsDoc = await Settings.findOne({ key: 'pdf' });
-        const pdfSettings = pdfSettingsDoc ? pdfSettingsDoc.value : {};
-
-        // Generate PDF
-        const pdfBuffer = await generateExamPDF(examData, pdfSettings);
-
-        // Save to cache
-        fs.writeFileSync(pdfPath, pdfBuffer);
-        console.log('📄 PDF cached to:', pdfPath);
-
-        // Send PDF
-        const safeFilename = encodeURIComponent(exam.title || 'de-thi').replace(/%20/g, '_') + '.pdf';
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${safeFilename}`);
-        res.send(pdfBuffer);
+        // No PDF exists - tell client to generate and upload
+        res.status(404).json({ error: 'PDF chưa được tạo. Vui lòng tạo PDF trước.' });
 
     } catch (err) {
-        console.error('PDF generation error:', err);
-        res.status(500).json({ error: 'Lỗi tạo PDF: ' + err.message });
+        console.error('PDF error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 

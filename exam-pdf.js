@@ -307,48 +307,88 @@ async function generateExamPDFPerQuestion(examData) {
     return pdf;
 }
 
-// Preview PDF in new tab - FETCH FROM SERVER (fast, uses pre-generated PDF)
+// Upload PDF blob to server
+async function uploadPDFToServer(examId, pdfBlob) {
+    const token = localStorage.getItem('luyende_token');
+    const response = await fetch(`/api/exams/${examId}/pdf`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/pdf'
+        },
+        body: pdfBlob
+    });
+    if (!response.ok) throw new Error('Upload failed');
+    return await response.json();
+}
+
+// Preview PDF - try server first, generate if not found
 async function previewExamPDF(examId) {
-    console.log('📄 Fetching PDF from server...');
+    console.log('📄 Checking for cached PDF...');
     try {
         const token = localStorage.getItem('luyende_token');
+
+        // Try to fetch from server first
         const response = await fetch(`/api/exams/${examId}/pdf`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Lỗi tải PDF');
+        if (response.ok) {
+            // PDF exists on server - open it
+            const pdfBlob = await response.blob();
+            window.open(URL.createObjectURL(pdfBlob), '_blank');
+            console.log('📄 Opened cached PDF');
+            return;
         }
 
-        const pdfBlob = await response.blob();
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        window.open(pdfUrl, '_blank');
+        // PDF not found - generate with html2canvas + KaTeX
+        console.log('📄 No cached PDF. Generating...');
+        const examData = await fetchExamForPDF(examId);
+        const pdf = await generateExamPDFPerQuestion(examData);
+        const pdfBlob = pdf.output('blob');
 
-        console.log('📄 Preview opened successfully');
+        // Upload to server for next time
+        console.log('📄 Uploading to server...');
+        await uploadPDFToServer(examId, pdfBlob);
+        console.log('📄 PDF uploaded and cached');
+
+        // Open the generated PDF
+        window.open(URL.createObjectURL(pdfBlob), '_blank');
+
     } catch (err) {
         console.error('📄 Error:', err);
         alert('Lỗi xem PDF: ' + err.message);
     }
 }
 
-// Download PDF - FETCH FROM SERVER (fast, uses pre-generated PDF)  
+// Download PDF - same logic as preview
 async function generateAndDownloadExamPDF(examId) {
-    console.log('📄 Downloading PDF from server...');
+    console.log('📄 Getting PDF for download...');
     try {
         const token = localStorage.getItem('luyende_token');
+
+        // Try server first
         const response = await fetch(`/api/exams/${examId}/pdf`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Lỗi tải PDF');
+        let pdfBlob;
+        if (response.ok) {
+            pdfBlob = await response.blob();
+            console.log('📄 Using cached PDF');
+        } else {
+            // Generate new
+            console.log('📄 Generating PDF...');
+            const examData = await fetchExamForPDF(examId);
+            const pdf = await generateExamPDFPerQuestion(examData);
+            pdfBlob = pdf.output('blob');
+
+            // Upload
+            await uploadPDFToServer(examId, pdfBlob);
+            console.log('📄 PDF uploaded');
         }
 
-        const pdfBlob = await response.blob();
-
-        // Create download link
+        // Download
         const link = document.createElement('a');
         link.href = URL.createObjectURL(pdfBlob);
         link.download = `de-thi-${examId}.pdf`;
@@ -356,7 +396,6 @@ async function generateAndDownloadExamPDF(examId) {
         link.click();
         document.body.removeChild(link);
 
-        console.log('📄 PDF downloaded');
     } catch (err) {
         console.error('📄 Error:', err);
         alert('Lỗi tải PDF: ' + err.message);
@@ -368,4 +407,3 @@ window.generateAndDownloadExamPDF = generateAndDownloadExamPDF;
 window.previewExamPDF = previewExamPDF;
 window.pdfSettings = pdfSettings;
 window.loadPDFSettings = loadPDFSettings;
-
