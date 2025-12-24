@@ -307,38 +307,59 @@ async function generateExamPDFPerQuestion(examData) {
     return pdf;
 }
 
-// Preview PDF in new tab
+// Preview PDF in new tab - FETCH FROM SERVER (fast, uses pre-generated PDF)
 async function previewExamPDF(examId) {
-    console.log('📄 Creating PDF preview...');
+    console.log('📄 Fetching PDF from server...');
     try {
-        const examData = await fetchExamForPDF(examId);
-        const pdf = await generateExamPDFPerQuestion(examData);
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/${examId}/pdf`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-        const pdfBlob = pdf.output('blob');
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Lỗi tải PDF');
+        }
+
+        const pdfBlob = await response.blob();
         const pdfUrl = URL.createObjectURL(pdfBlob);
         window.open(pdfUrl, '_blank');
 
         console.log('📄 Preview opened successfully');
     } catch (err) {
-        console.error('📄 Error creating preview:', err);
-        alert('Lỗi xem trước PDF: ' + err.message);
+        console.error('📄 Error:', err);
+        alert('Lỗi xem PDF: ' + err.message);
     }
 }
 
-// Download PDF
+// Download PDF - FETCH FROM SERVER (fast, uses pre-generated PDF)  
 async function generateAndDownloadExamPDF(examId) {
-    console.log('📄 Starting PDF download...');
+    console.log('📄 Downloading PDF from server...');
     try {
-        const examData = await fetchExamForPDF(examId);
-        const pdf = await generateExamPDFPerQuestion(examData);
+        const token = localStorage.getItem('luyende_token');
+        const response = await fetch(`/api/exams/${examId}/pdf`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-        const filename = `${examData.title || 'de-thi'}.pdf`.replace(/[^a-zA-Z0-9-_.\u00C0-\u024F]/g, '-');
-        pdf.save(filename);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Lỗi tải PDF');
+        }
 
-        console.log('📄 PDF saved as:', filename);
+        const pdfBlob = await response.blob();
+
+        // Create download link
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(pdfBlob);
+        link.download = `de-thi-${examId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log('📄 PDF downloaded');
     } catch (err) {
-        console.error('📄 Error generating PDF:', err);
-        alert('Lỗi tạo PDF: ' + err.message);
+        console.error('📄 Error:', err);
+        alert('Lỗi tải PDF: ' + err.message);
     }
 }
 
@@ -347,3 +368,4 @@ window.generateAndDownloadExamPDF = generateAndDownloadExamPDF;
 window.previewExamPDF = previewExamPDF;
 window.pdfSettings = pdfSettings;
 window.loadPDFSettings = loadPDFSettings;
+
