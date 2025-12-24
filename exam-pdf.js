@@ -1,15 +1,13 @@
 /**
- * Exam PDF Generator with LaTeX Support
- * Uses html2canvas to render KaTeX formulas as images
- * Supports customizable header from admin settings
+ * Exam PDF Generator - Per-Question Capture Approach
+ * Uses html2canvas to capture each question individually, then combines into PDF
+ * This avoids clipping issues by rendering each element separately
  */
 
-// Default PDF settings (can be overridden by admin)
+// Default PDF settings
 let pdfSettings = {
     headerLeft1: 'LUYỆN ĐỀ ONLINE',
-    headerRight1: 'ĐỀ LUYỆN TẬP',
-    headerLeft2: 'ĐỀ THI THỬ',
-    showPageCount: true,
+    headerRight1: 'ĐỀ ÔN TẬP',
     showDuration: true,
     showStudentInfo: true,
     footerNote: '- Thí sinh KHÔNG được sử dụng tài liệu.'
@@ -20,503 +18,280 @@ async function loadPDFSettings() {
     try {
         const response = await fetch('/api/settings/pdf');
         if (response.ok) {
-            const settings = await response.json();
-            pdfSettings = { ...pdfSettings, ...settings };
+            pdfSettings = { ...pdfSettings, ...await response.json() };
         }
     } catch (err) {
         console.log('Using default PDF settings');
     }
 }
 
-
-// Helper to manage page breaks in DOM before rendering
-function adjustPageLayout(container) {
-    // Constants for A4
-    const PDF_PAGE_HEIGHT_MM = 297;
-    const PDF_MARGIN_TOP_MM = 10;
-    const PDF_MARGIN_BOTTOM_MM = 10;
-    const PDF_PRINT_HEIGHT_MM = PDF_PAGE_HEIGHT_MM - PDF_MARGIN_TOP_MM - PDF_MARGIN_BOTTOM_MM; // 277mm
-
-    // Container is 800px wide, mapped to 190mm (210 - 20) printable width
-    const CONTAINER_WIDTH_PX = 800;
-    const PRINTABLE_WIDTH_MM = 190;
-
-    // Calculate Page Height in Layout Pixels
-    // Ratio: px / mm = 800 / 190
-    const PX_PER_MM = CONTAINER_WIDTH_PX / PRINTABLE_WIDTH_MM;
-    const PAGE_HEIGHT_PX = Math.floor(PDF_PRINT_HEIGHT_MM * PX_PER_MM) - 5; // -5px safety buffer
-
-    console.log(`📄 Page Layout Config: ${PX_PER_MM.toFixed(2)} px/mm, Page Limit: ${PAGE_HEIGHT_PX}px`);
-
-    const contentDiv = container.querySelector('.pdf-content');
-    if (!contentDiv) return;
-
-    const children = Array.from(contentDiv.children);
-    let currentPageY = 0;
-
-    children.forEach(child => {
-        // Skip absolutely positioned elements if any, or existing spacers
-        if (child.classList.contains('page-break-spacer')) return;
-
-        const style = window.getComputedStyle(child);
-        const height = child.offsetHeight;
-        const marginTop = parseFloat(style.marginTop) || 0;
-        const marginBottom = parseFloat(style.marginBottom) || 0;
-
-        // Total space this element takes vertically
-        const elementTotalHeight = height + marginTop + marginBottom;
-
-        // Logic:
-        // If adding this element exceeds the page height...
-        if (currentPageY + elementTotalHeight > PAGE_HEIGHT_PX) {
-            // ...insert a spacer to consume the rest of the current page
-            // so this element starts fresh on the next page
-            const remainingSpace = PAGE_HEIGHT_PX - currentPageY;
-
-            if (remainingSpace > 0) {
-                const spacer = document.createElement('div');
-                spacer.className = 'page-break-spacer';
-                spacer.style.height = remainingSpace + 'px';
-                spacer.style.width = '100%';
-                // spacer.style.background = 'red'; // Debug: visualize breaks
-
-                contentDiv.insertBefore(spacer, child);
-            }
-
-            // Reset Y for new page
-            currentPageY = elementTotalHeight;
-            console.log(`📄 Page break inserted. New page starts with element height ${elementTotalHeight}`);
-        } else {
-            // Fits on current page
-            currentPageY += elementTotalHeight;
-        }
-    });
-}
-
-// Create hidden render container with proper A4 sizing
-function createPDFRenderContainer() {
-    let container = document.getElementById('pdfRenderContainer');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'pdfRenderContainer';
-        container.style.cssText = `
-            position: fixed;
-            left: -9999px;
-            top: 0;
-            width: 800px; /* Increased width for better resolution */
-            background: white;
-            padding: 30px 40px;
-            font-family: 'Times New Roman', serif;
-            font-size: 13pt; /* Larger internal font, scales down nicely */
-            line-height: 1.4;
-            color: black;
-            box-sizing: border-box;
-        `;
-        document.body.appendChild(container);
-    }
-    return container;
-}
-
-// Render exam content to HTML with KaTeX
-function renderExamToHTML(examData) {
-    const questions = examData.questions || [];
-    const mcQuestions = questions.filter(q => q.type === 'multiple-choice');
-    const tfQuestions = questions.filter(q => q.type === 'true-false');
-    const fibQuestions = questions.filter(q => q.type === 'fill-in-blank');
-
-    const subjectName = examData.subjectName || 'TOÁN';
-    const duration = examData.duration || 90;
-    const examTitle = examData.title || 'Đề thi';
-    const grade = examData.grade || '12';
-
-    // Semester detection for header
-    const semester = examData.semester || '';
-    let semesterText = '';
-    if (semester === 'gk1') semesterText = 'ĐỀ ÔN TẬP GIỮA HỌC KÌ 1';
-    else if (semester === 'ck1') semesterText = 'ĐỀ ÔN TẬP CUỐI HỌC KÌ 1';
-    else if (semester === 'gk2') semesterText = 'ĐỀ ÔN TẬP GIỮA HỌC KÌ 2';
-    else if (semester === 'ck2') semesterText = 'ĐỀ ÔN TẬP CUỐI HỌC KÌ 2';
-    else semesterText = 'ĐỀ ÔN TẬP';
-
-    // Low-res workaround: Use simple text header if logo fails, handled by CSS/HTML structure
-    // Logo URL (keeping variable but user said not needed, we use text header primarily now)
-    const logoUrl = window.location.origin + '/luyen_de_logo_blue.svg';
-
-    let html = `
-        <style>
-            .pdf-content { 
-                font-family: 'Times New Roman', serif; 
-                font-size: 13pt;
-                width: 100%;
-            }
-            .header-row { 
-                width: 100%;
-                margin-bottom: 5px;
-                font-size: 13pt;
-            }
-            .header-row::after { content: ""; display: table; clear: both; }
-            .header-left { float: left; text-align: left; }
-            .header-right { float: right; text-align: right; }
-            .exam-title {
-                text-align: center;
-                font-weight: bold;
-                font-size: 16pt;
-                margin: 15px 0;
-                text-transform: uppercase;
-                clear: both;
-            }
-            .student-info { margin: 10px 0; font-size: 12pt; clear: both; }
-            .part-header { 
-                font-weight: bold; 
-                margin: 15px 0 8px 0; 
-                font-size: 13pt;
-                clear: both;
-            }
-            .question { 
-                margin: 10px 0; 
-                font-size: 13pt;
-                clear: both;
-                page-break-inside: avoid; /* Attempt to keep questions together */
-            }
-            .question-num { font-weight: bold; }
-            .question-text { margin-bottom: 8px; }
-            .options-table { 
-                width: 98%;
-                margin: 5px 0 8px 15px;
-                font-size: 13pt;
-                border-collapse: separate;
-                border-spacing: 0 8px; /* Space between rows */
-            }
-            .options-table td {
-                width: 50%;
-                padding: 4px 10px 4px 0; /* More right padding */
-                vertical-align: top;
-            }
-            .option-label { 
-                font-weight: bold; 
-                margin-right: 5px;
-                font-size: 0.9em; /* Slightly smaller label A. B. */
-            }
-            .tf-statements { 
-                margin-left: 20px; 
-                margin-top: 8px;
-                font-size: 13pt; 
-            }
-            .statement { 
-                margin: 8px 0;
-                line-height: 1.6;
-            }
-            .question-content {
-                display: inline;
-            }
-            .end-marker { 
-                text-align: center; 
-                margin-top: 25px; 
-                font-weight: bold;
-                font-size: 13pt;
-                clear: both;
-            }
-            .footer-note {
-                margin-top: 15px;
-                font-style: italic;
-                font-size: 11pt;
-            }
-            /* Formula sizing */
-            .katex { font-size: 1.05em !important; }
-            .katex-display { margin: 5px 0 !important; font-size: 1.05em !important; }
-        </style>
-        
-        <div class="pdf-content">
-            <!-- Header with Text Logo -->
-            <div class="header-row">
-                <div class="header-left">
-                    <div style="font-weight: bold; font-size: 16pt; color: #1e40af;">LUYỆN ĐỀ ONLINE</div>
-                    <div style="font-size: 11pt; color: #666;">luyendeonline.io.vn</div>
-                </div>
-                <div class="header-right">
-                    <div><strong>${semesterText}</strong></div>
-                    <div><strong>Môn: ${subjectName.toUpperCase()}</strong></div>
-                </div>
-            </div>
-    `;
-
-    if (pdfSettings.showDuration) {
-        html += `
-            <div class="header-row">
-                <div class="header-left"><em>(Đề thi có nhiều trang)</em></div>
-                <div class="header-right"><em>Thời gian: ${duration} phút</em></div>
-            </div>
-        `;
-    }
-
-    // Exam title
-    html += `<div class="exam-title">${examTitle}</div>`;
-
-    if (pdfSettings.showStudentInfo) {
-        html += `
-            <div class="student-info">
-                <p>Họ, tên thí sinh: ................................................ Số báo danh: .................</p>
-            </div>
-        `;
-    }
-
-    let questionNum = 1;
-
-    // PHẦN I - Trắc nghiệm
-    if (mcQuestions.length > 0) {
-        html += `<div class="part-header">PHẦN I. Thí sinh trả lời từ câu 1 đến câu ${mcQuestions.length}. Mỗi câu hỏi thí sinh chỉ chọn một phương án.</div>`;
-
-        mcQuestions.forEach(q => {
-            const optionLabels = ['A', 'B', 'C', 'D'];
-            const opts = q.options || [];
-
-            html += `
-                <div class="question">
-                    <div class="question-text"><span class="question-num">Câu ${questionNum}.</span> ${q.question}</div>
-                    <table class="options-table">
-                        <tr>
-                            <td><span class="option-label">A.</span> ${opts[0] || ''}</td>
-                            <td><span class="option-label">B.</span> ${opts[1] || ''}</td>
-                        </tr>
-                        <tr>
-                            <td><span class="option-label">C.</span> ${opts[2] || ''}</td>
-                            <td><span class="option-label">D.</span> ${opts[3] || ''}</td>
-                        </tr>
-                    </table>
-                </div>
-            `;
-            questionNum++;
-        });
-    }
-
-    // PHẦN II - Đúng sai
-    if (tfQuestions.length > 0) {
-        html += `<div class="part-header">PHẦN II. Đúng sai - ${tfQuestions.length} câu.</div>`;
-
-        tfQuestions.forEach((q, idx) => {
-            html += `
-                <div class="question">
-                    <span class="question-num">Câu ${idx + 1}.</span> <span class="question-content">${q.question}</span>
-                    <div class="tf-statements">
-            `;
-
-            const labels = ['a)', 'b)', 'c)', 'd)'];
-            (q.options || []).forEach((opt, i) => {
-                html += `<div class="statement">${labels[i]} ${opt}</div>`;
-            });
-
-            html += `</div></div>`;
-        });
-    }
-
-    // PHẦN III - Điền số
-    if (fibQuestions.length > 0) {
-        html += `<div class="part-header">PHẦN III. Điền đáp án - ${fibQuestions.length} câu.</div>`;
-
-        fibQuestions.forEach((q, idx) => {
-            html += `
-                <div class="question">
-                    <span class="question-num">Câu ${idx + 1}.</span> <span class="question-content">${q.question}</span>
-                </div>
-            `;
-        });
-    }
-
-    html += `
-            <div class="end-marker">---------- HẾT ----------</div>
-            <div class="footer-note">${pdfSettings.footerNote}</div>
-            <div class="footer-note">- Giám thị không giải thích gì thêm.</div>
-        </div>
-    `;
-
-    return html;
-}
-
-// Render KaTeX in container
-async function renderKaTeX(container) {
-    return new Promise((resolve) => {
-        if (typeof renderMathInElement === 'function') {
-            renderMathInElement(container, {
-                delimiters: [
-                    { left: '$$', right: '$$', display: true },
-                    { left: '$', right: '$', display: false },
-                    { left: '\\(', right: '\\)', display: false },
-                    { left: '\\[', right: '\\]', display: true }
-                ],
-                throwOnError: false
-            });
-        }
-        setTimeout(resolve, 500);
-    });
-}
-
-// Generate PDF using Simple Single-Container + Image Slicing
-async function generateExamPDFWithLaTeX(examData) {
-    console.log('📄 Starting PDF generation...');
-
-    if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('jsPDF chưa được tải');
-    if (!window.html2canvas) throw new Error('html2canvas chưa được tải');
-
-    await loadPDFSettings();
-    const { jsPDF } = window.jspdf;
-
-    // A4 dimensions in mm and pixels at 96 DPI
-    const A4_WIDTH_MM = 210;
-    const A4_HEIGHT_MM = 297;
-    const A4_WIDTH_PX = 595; // 210mm at 72dpi = 595px (standard)
-    const MARGIN_MM = 15; // 15mm margins
-
-    // Create container matching A4 width with margins
-    let container = document.getElementById('pdfRenderContainer');
-    if (container) container.remove();
-
-    container = document.createElement('div');
-    container.id = 'pdfRenderContainer';
-    container.style.cssText = `
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: ${A4_WIDTH_PX}px;
-        background: white;
-        padding: 45px;
-        font-family: 'Times New Roman', serif;
-        font-size: 11pt;
-        line-height: 1.6;
-        color: black;
-        box-sizing: border-box;
-    `;
-    document.body.appendChild(container);
-
-    // Render content
-    container.innerHTML = renderExamToHTML(examData);
-
-    console.log('📄 Rendering KaTeX...');
-    await renderKaTeX(container);
-
-    // Wait for fonts and formulas to render
-    await new Promise(r => setTimeout(r, 800));
-
-    console.log('📄 Capturing with html2canvas...');
-
-    const canvas = await html2canvas(container, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true,
-        logging: false
-    });
-
-    console.log('📄 Canvas size:', canvas.width, 'x', canvas.height);
-
-    // Calculate dimensions for PDF
-    const imgWidth = A4_WIDTH_MM - (MARGIN_MM * 2); // Content width in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    const pageHeight = A4_HEIGHT_MM - (MARGIN_MM * 2); // Printable height per page
-
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgData = canvas.toDataURL('image/png');
-
-    // Pagination
-    let yOffset = 0;
-    let pageNum = 0;
-
-    while (yOffset < imgHeight) {
-        if (pageNum > 0) {
-            pdf.addPage();
-        }
-
-        // Draw image with offset
-        pdf.addImage(
-            imgData,
-            'PNG',
-            MARGIN_MM,
-            MARGIN_MM - yOffset,
-            imgWidth,
-            imgHeight
-        );
-
-        yOffset += pageHeight;
-        pageNum++;
-    }
-
-    // Cleanup
-    container.remove();
-
-    console.log(`📄 PDF generated: ${pageNum} pages`);
-    return pdf;
-}
-
-// Helper: Fetch exam details for PDF
+// Fetch exam data for PDF generation
 async function fetchExamForPDF(examId) {
     const token = localStorage.getItem('luyende_token');
     const response = await fetch(`/api/exams/${examId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
-
     if (!response.ok) throw new Error('Không thể tải đề thi');
-
-    const examData = await response.json();
-
-    // Add Subject Name fallback if missing
-    if (!examData.subjectName && typeof cachedSubjects !== 'undefined') {
-        const subject = cachedSubjects.find(s => s.id === examData.subjectId);
-        examData.subjectName = subject?.name || 'TOÁN';
-    }
-
-    return examData;
+    return await response.json();
 }
 
-function createPageContainer(pageNum, width, height, padding, safeTopPadding = 0) {
+// Create a single question element for capture
+function createQuestionElement(questionNum, question, type) {
     const div = document.createElement('div');
-    div.className = 'pdf-page-node';
+    div.className = 'pdf-question';
     div.style.cssText = `
-        width: ${width}px;
-        min-height: ${height}px;
-        max-height: ${height}px;
-        background: white;
-        padding: ${padding}px;
-        box-sizing: border-box;
-        margin-bottom: 20px;
-        position: relative;
+        padding: 10px 20px;
         font-family: 'Times New Roman', serif;
-        font-size: 13pt;
-        overflow: visible;
+        font-size: 14px;
+        line-height: 1.6;
+        background: white;
+        width: 750px;
     `;
 
-    // Content Area
-    const content = document.createElement('div');
-    content.className = 'page-content-area';
-    // Add safe padding to prevent top clipping
-    content.style.cssText = `width: 100%; padding-top: ${safeTopPadding}px;`;
-    div.appendChild(content);
+    let html = `<div style="margin-bottom: 8px;"><strong>Câu ${questionNum}.</strong> <span class="question-text">${question.question || ''}</span></div>`;
 
-    // Optional: Add Page Number Footer
-    const footer = document.createElement('div');
-    footer.style.cssText = `
-        position: absolute; bottom: 15px; width: 100%; text-align: center;
-        font-size: 10pt; color: #666; left: 0;
-    `;
-    footer.innerText = `Trang ${pageNum}`;
-    div.appendChild(footer);
+    const options = question.options || [];
+    if (type === 'multiple-choice' || type === 'single' || type === 'multiple_choice') {
+        const labels = ['A', 'B', 'C', 'D'];
+        options.forEach((opt, i) => {
+            html += `<div style="margin-left: 20px; margin-bottom: 4px;"><strong>${labels[i]}.</strong> <span class="option-text">${opt}</span></div>`;
+        });
+    } else if (type === 'true-false' || type === 'true_false') {
+        const labels = ['a)', 'b)', 'c)', 'd)'];
+        options.forEach((opt, i) => {
+            html += `<div style="margin-left: 20px; margin-bottom: 4px;">${labels[i]} <span class="option-text">${opt}</span></div>`;
+        });
+    }
 
+    div.innerHTML = html;
     return div;
 }
 
-// Preview PDF - opens in new tab
-async function previewExamPDF(examId) {
-    console.log('📄 Fetching PDF from server...');
-    try {
-        const token = localStorage.getItem('luyende_token');
-        const response = await fetch(`/api/exams/${examId}/pdf`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+// Create header element
+function createHeaderElement(examData) {
+    const div = document.createElement('div');
+    div.className = 'pdf-header';
+    div.style.cssText = `
+        padding: 20px;
+        font-family: 'Times New Roman', serif;
+        background: white;
+        width: 750px;
+    `;
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Lỗi tạo PDF');
+    const semester = examData.semester || '';
+    let semesterText = 'ĐỀ ÔN TẬP';
+    if (semester === 'gk1') semesterText = 'ĐỀ ÔN TẬP GIỮA HỌC KÌ 1';
+    else if (semester === 'ck1') semesterText = 'ĐỀ ÔN TẬP CUỐI HỌC KÌ 1';
+    else if (semester === 'gk2') semesterText = 'ĐỀ ÔN TẬP GIỮA HỌC KÌ 2';
+    else if (semester === 'ck2') semesterText = 'ĐỀ ÔN TẬP CUỐI HỌC KÌ 2';
+
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <div>
+                <div style="font-weight: bold; font-size: 16px;">LUYỆN ĐỀ ONLINE</div>
+                <div style="font-size: 12px; color: #666;">luyendeonline.io.vn</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: bold;">${semesterText}</div>
+                <div>Môn: ${(examData.subjectName || 'TOÁN').toUpperCase()}</div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-bottom: 15px;">
+            <div>(Đề thi có nhiều trang)</div>
+            <div>Thời gian: ${examData.duration || 90} phút</div>
+        </div>
+        <h2 style="text-align: center; margin: 20px 0; font-size: 18px;">${(examData.title || 'ĐỀ THI').toUpperCase()}</h2>
+        <div style="margin: 15px 0; font-size: 14px;">
+            Họ, tên thí sinh: .................................................... Số báo danh: ..................
+        </div>
+    `;
+    return div;
+}
+
+// Create section title element
+function createSectionElement(title) {
+    const div = document.createElement('div');
+    div.className = 'pdf-section';
+    div.style.cssText = `
+        padding: 10px 20px;
+        font-family: 'Times New Roman', serif;
+        font-size: 14px;
+        font-weight: bold;
+        background: white;
+        width: 750px;
+    `;
+    div.textContent = title;
+    return div;
+}
+
+// Create footer element
+function createFooterElement() {
+    const div = document.createElement('div');
+    div.className = 'pdf-footer';
+    div.style.cssText = `
+        padding: 20px;
+        font-family: 'Times New Roman', serif;
+        font-size: 14px;
+        background: white;
+        width: 750px;
+        text-align: center;
+    `;
+    div.innerHTML = `
+        <div style="font-weight: bold; margin: 20px 0;">---------- HẾT ----------</div>
+        <div style="text-align: left; font-size: 12px; color: #666;">
+            <div>- Thí sinh KHÔNG được sử dụng tài liệu.</div>
+            <div>- Giám thị không giải thích gì thêm.</div>
+        </div>
+    `;
+    return div;
+}
+
+// Render KaTeX in element
+async function renderKaTeX(element) {
+    if (typeof renderMathInElement === 'function') {
+        renderMathInElement(element, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        });
+    }
+    // Wait for KaTeX to render
+    await new Promise(r => setTimeout(r, 100));
+}
+
+// Capture element to canvas
+async function captureElement(element) {
+    // Append to body temporarily for rendering
+    document.body.appendChild(element);
+    await renderKaTeX(element);
+
+    const canvas = await html2canvas(element, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true
+    });
+
+    document.body.removeChild(element);
+    return canvas;
+}
+
+// Main PDF generation function - captures each question individually
+async function generateExamPDFPerQuestion(examData) {
+    console.log('📄 Starting per-question PDF generation...');
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 15;
+    const contentWidth = pageWidth - (margin * 2);
+
+    let currentY = margin;
+    let pageNum = 1;
+
+    // Helper to add image to PDF with page break handling
+    const addImageToPDF = (imgData, imgWidth, imgHeight) => {
+        // Scale to fit content width
+        const scale = contentWidth / imgWidth;
+        const scaledHeight = imgHeight * scale;
+
+        // Check if need new page
+        if (currentY + scaledHeight > pageHeight - margin) {
+            pdf.addPage();
+            pageNum++;
+            currentY = margin;
         }
 
-        const pdfBlob = await response.blob();
+        pdf.addImage(imgData, 'PNG', margin, currentY, contentWidth, scaledHeight);
+        currentY += scaledHeight + 2; // 2mm spacing between elements
+    };
+
+    // 1. Capture and add header
+    console.log('📄 Capturing header...');
+    const headerElement = createHeaderElement(examData);
+    const headerCanvas = await captureElement(headerElement);
+    addImageToPDF(headerCanvas.toDataURL('image/png'), headerCanvas.width / 2, headerCanvas.height / 2);
+
+    // 2. Process questions by type
+    const questions = examData.questions || [];
+    const mcQuestions = questions.filter(q => q.type === 'multiple_choice' || q.type === 'single' || q.type === 'multiple-choice');
+    const tfQuestions = questions.filter(q => q.type === 'true_false' || q.type === 'true-false');
+    const fibQuestions = questions.filter(q => q.type === 'fill_in_blank' || q.type === 'fill-in-blank' || q.type === 'fill');
+
+    // PHẦN I - Multiple Choice
+    if (mcQuestions.length > 0) {
+        console.log(`📄 Capturing ${mcQuestions.length} multiple choice questions...`);
+
+        const sectionEl = createSectionElement(`PHẦN I. Thí sinh trả lời từ câu 1 đến câu ${mcQuestions.length}. Mỗi câu hỏi thí sinh chỉ chọn một phương án.`);
+        const sectionCanvas = await captureElement(sectionEl);
+        addImageToPDF(sectionCanvas.toDataURL('image/png'), sectionCanvas.width / 2, sectionCanvas.height / 2);
+
+        for (let i = 0; i < mcQuestions.length; i++) {
+            const q = mcQuestions[i];
+            const questionEl = createQuestionElement(i + 1, q, q.type);
+            const questionCanvas = await captureElement(questionEl);
+            addImageToPDF(questionCanvas.toDataURL('image/png'), questionCanvas.width / 2, questionCanvas.height / 2);
+
+            console.log(`📄 Question ${i + 1}/${mcQuestions.length} captured`);
+        }
+    }
+
+    // PHẦN II - True/False
+    if (tfQuestions.length > 0) {
+        console.log(`📄 Capturing ${tfQuestions.length} true/false questions...`);
+
+        const sectionEl = createSectionElement(`PHẦN II. Đúng sai - ${tfQuestions.length} câu.`);
+        const sectionCanvas = await captureElement(sectionEl);
+        addImageToPDF(sectionCanvas.toDataURL('image/png'), sectionCanvas.width / 2, sectionCanvas.height / 2);
+
+        for (let i = 0; i < tfQuestions.length; i++) {
+            const q = tfQuestions[i];
+            const questionEl = createQuestionElement(i + 1, q, q.type);
+            const questionCanvas = await captureElement(questionEl);
+            addImageToPDF(questionCanvas.toDataURL('image/png'), questionCanvas.width / 2, questionCanvas.height / 2);
+        }
+    }
+
+    // PHẦN III - Fill in blank
+    if (fibQuestions.length > 0) {
+        console.log(`📄 Capturing ${fibQuestions.length} fill-in questions...`);
+
+        const sectionEl = createSectionElement(`PHẦN III. Điền đáp án - ${fibQuestions.length} câu.`);
+        const sectionCanvas = await captureElement(sectionEl);
+        addImageToPDF(sectionCanvas.toDataURL('image/png'), sectionCanvas.width / 2, sectionCanvas.height / 2);
+
+        for (let i = 0; i < fibQuestions.length; i++) {
+            const q = fibQuestions[i];
+            const questionEl = createQuestionElement(i + 1, q, q.type);
+            const questionCanvas = await captureElement(questionEl);
+            addImageToPDF(questionCanvas.toDataURL('image/png'), questionCanvas.width / 2, questionCanvas.height / 2);
+        }
+    }
+
+    // 3. Capture and add footer
+    console.log('📄 Capturing footer...');
+    const footerEl = createFooterElement();
+    const footerCanvas = await captureElement(footerEl);
+    addImageToPDF(footerCanvas.toDataURL('image/png'), footerCanvas.width / 2, footerCanvas.height / 2);
+
+    console.log(`📄 PDF generation complete: ${pageNum} pages`);
+    return pdf;
+}
+
+// Preview PDF in new tab
+async function previewExamPDF(examId) {
+    console.log('📄 Creating PDF preview...');
+    try {
+        const examData = await fetchExamForPDF(examId);
+        const pdf = await generateExamPDFPerQuestion(examData);
+
+        const pdfBlob = pdf.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
         window.open(pdfUrl, '_blank');
 
@@ -527,42 +302,20 @@ async function previewExamPDF(examId) {
     }
 }
 
-// Download PDF - saves to disk
+// Download PDF
 async function generateAndDownloadExamPDF(examId) {
-    console.log('📄 Downloading PDF from server...');
+    console.log('📄 Starting PDF download...');
     try {
-        const token = localStorage.getItem('luyende_token');
-        const response = await fetch(`/api/exams/${examId}/pdf`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const examData = await fetchExamForPDF(examId);
+        const pdf = await generateExamPDFPerQuestion(examData);
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Lỗi tạo PDF');
-        }
+        const filename = `${examData.title || 'de-thi'}.pdf`.replace(/[^a-zA-Z0-9-_.\u00C0-\u024F]/g, '-');
+        pdf.save(filename);
 
-        const pdfBlob = await response.blob();
-
-        // Extract filename from Content-Disposition header or use default
-        const contentDisposition = response.headers.get('Content-Disposition');
-        let filename = 'de-thi.pdf';
-        if (contentDisposition) {
-            const match = contentDisposition.match(/filename="(.+)"/);
-            if (match) filename = match[1];
-        }
-
-        // Create download link
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(pdfBlob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        console.log('📄 PDF downloaded:', filename);
+        console.log('📄 PDF saved as:', filename);
     } catch (err) {
-        console.error('📄 Error downloading PDF:', err);
-        alert('Lỗi tải PDF: ' + err.message);
+        console.error('📄 Error generating PDF:', err);
+        alert('Lỗi tạo PDF: ' + err.message);
     }
 }
 
@@ -571,4 +324,3 @@ window.generateAndDownloadExamPDF = generateAndDownloadExamPDF;
 window.previewExamPDF = previewExamPDF;
 window.pdfSettings = pdfSettings;
 window.loadPDFSettings = loadPDFSettings;
-
