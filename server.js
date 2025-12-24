@@ -1173,7 +1173,7 @@ app.get('/api/exams/:id/pdf', auth, async (req, res) => {
         };
 
         // Get PDF settings
-        const pdfSettingsDoc = await Setting.findOne({ key: 'pdf' });
+        const pdfSettingsDoc = await Settings.findOne({ key: 'pdf' });
         const pdfSettings = pdfSettingsDoc ? pdfSettingsDoc.value : {};
 
         // Generate HTML
