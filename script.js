@@ -2738,6 +2738,24 @@ function filterBySemester(semester) {
     loadSubjectExams();
 }
 
+// Show pre-exam confirmation screen
+function showPreExam() {
+    // Populate pre-exam info
+    const preStudentName = document.getElementById('preStudentName');
+    const preExamTitle = document.getElementById('preExamTitle');
+
+    if (preStudentName) preStudentName.textContent = examData.studentName || currentUser?.name || 'User';
+    if (preExamTitle) preExamTitle.textContent = examData.examTitle || 'Đề thi';
+
+    // Hide loading, show start button
+    const loadingContainer = document.getElementById('loadingContainer');
+    const startExamBtn = document.getElementById('startExamBtn');
+    if (loadingContainer) loadingContainer.style.display = 'none';
+    if (startExamBtn) startExamBtn.style.display = 'inline-block';
+
+    showScreen('preExamScreen');
+}
+
 // Start exam from new filter view
 async function startExamFromFilter(examId) {
     try {
