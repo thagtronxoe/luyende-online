@@ -6,14 +6,8 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 require('dotenv').config();
 
-// PDF Generation
-let puppeteer;
-try {
-    puppeteer = require('puppeteer');
-} catch (e) {
-    console.log('⚠️ Puppeteer not installed - PDF generation will not work');
-}
-const { generateExamPDFHTML } = require('./pdf-template');
+// PDF Generation with PDFKit
+const { generateExamPDF } = require('./pdf-generator');
 
 const app = express();
 
@@ -1145,27 +1139,22 @@ app.put('/api/settings/pdf', adminAuth, async (req, res) => {
     }
 });
 
-// ========== PDF GENERATION ==========
+// ========== PDF GENERATION (PDFKit) ==========
 app.get('/api/exams/:id/pdf', auth, async (req, res) => {
     try {
-        if (!puppeteer) {
-            return res.status(500).json({ error: 'Puppeteer is not installed on this server' });
-        }
+        console.log('📄 Generating PDF for exam:', req.params.id);
 
-        // Try finding by custom 'id' field first (most common), then by MongoDB _id
-        let exam;
-        exam = await Exam.findOne({ id: req.params.id });
-
+        // Find exam by custom 'id' field first, then by MongoDB _id
+        let exam = await Exam.findOne({ id: req.params.id });
         if (!exam && req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-            // Fallback: try MongoDB ObjectId
             exam = await Exam.findById(req.params.id);
         }
 
         if (!exam) {
-            return res.status(404).json({ error: 'Exam not found' });
+            return res.status(404).json({ error: 'Không tìm thấy đề thi' });
         }
 
-        // Get subject name (subjectId is a custom string like 'toan12_12')
+        // Get subject name
         const subject = await Subject.findOne({ id: exam.subjectId });
         const examData = {
             ...exam.toObject(),
@@ -1176,52 +1165,8 @@ app.get('/api/exams/:id/pdf', auth, async (req, res) => {
         const pdfSettingsDoc = await Settings.findOne({ key: 'pdf' });
         const pdfSettings = pdfSettingsDoc ? pdfSettingsDoc.value : {};
 
-        // Generate HTML
-        const html = generateExamPDFHTML(examData, pdfSettings);
-
-        console.log('📄 Launching Puppeteer for PDF generation...');
-
-        // Launch Puppeteer with Windows-compatible settings
-        let browser;
-        try {
-            browser = await puppeteer.launch({
-                headless: true, // Use boolean for better Windows compatibility
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu',
-                    '--disable-software-rasterizer',
-                    '--single-process'
-                ]
-            });
-        } catch (launchError) {
-            console.error('Puppeteer launch failed:', launchError);
-            return res.status(500).json({
-                error: 'Không thể khởi động trình duyệt. Vui lòng kiểm tra cài đặt Puppeteer.',
-                details: launchError.message
-            });
-        }
-
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle0' });
-
-        // Wait for KaTeX to render
-        await new Promise(r => setTimeout(r, 1500));
-
-        // Generate PDF
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            margin: {
-                top: '15mm',
-                right: '15mm',
-                bottom: '15mm',
-                left: '15mm'
-            },
-            printBackground: true
-        });
-
-        await browser.close();
+        // Generate PDF with PDFKit
+        const pdfBuffer = await generateExamPDF(examData, pdfSettings);
 
         console.log('📄 PDF generated successfully');
 
@@ -1232,7 +1177,7 @@ app.get('/api/exams/:id/pdf', auth, async (req, res) => {
 
     } catch (err) {
         console.error('PDF generation error:', err);
-        res.status(500).json({ error: 'Failed to generate PDF: ' + err.message });
+        res.status(500).json({ error: 'Lỗi tạo PDF: ' + err.message });
     }
 });
 
