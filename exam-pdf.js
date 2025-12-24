@@ -335,114 +335,178 @@ async function renderKaTeX(container) {
     });
 }
 
-// Generate PDF using html2canvas
+// Generate PDF using Page-by-Page DOM Construction
 async function generateExamPDFWithLaTeX(examData) {
-    console.log('📄 Starting PDF generation with LaTeX support...');
+    console.log('📄 Starting PDF generation (Page-by-Page approach)...');
 
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-        throw new Error('jsPDF chưa được tải');
-    }
-    if (!window.html2canvas) {
-        throw new Error('html2canvas chưa được tải');
-    }
+    if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('jsPDF chưa được tải');
+    if (!window.html2canvas) throw new Error('html2canvas chưa được tải');
 
-    // Load settings
     await loadPDFSettings();
-
     const { jsPDF } = window.jspdf;
 
-    const container = createPDFRenderContainer();
-    container.innerHTML = renderExamToHTML(examData);
+    // Constants
+    const CONTAINER_WIDTH = 800; // px
+    const PAGE_ASPECT_RATIO = 297 / 210; // A4 H/W
+    const CONTAINER_HEIGHT = Math.floor(CONTAINER_WIDTH * PAGE_ASPECT_RATIO); // ~1131px
+    const PAGE_PADDING = 40; // px
+    const CONTENT_HEIGHT_LIMIT = CONTAINER_HEIGHT - (PAGE_PADDING * 2); // Printable height in px
 
-    console.log('📄 Rendering KaTeX formulas...');
-    await renderKaTeX(container);
+    // 1. Create Staging Container (to render full content first)
+    // We need this to render KaTeX and get accurate element heights
+    let staging = document.getElementById('pdfStagingContainer');
+    if (staging) staging.remove();
+
+    staging = document.createElement('div');
+    staging.id = 'pdfStagingContainer';
+    staging.style.cssText = `
+        position: fixed; left: -9999px; top: 0; width: ${CONTAINER_WIDTH}px;
+        background: white; font-family: 'Times New Roman', serif;
+        font-size: 13pt; line-height: 1.4; color: black;
+    `;
+    document.body.appendChild(staging);
+
+    // Render raw HTML
+    staging.innerHTML = renderExamToHTML(examData);
+
+    // Turn header parts into a proper header block for logic separation
+    // Note: renderExamToHTML produces .header-row, .exam-title etc. 
+    // We will treat the top generic info as "Header" and Questions as "Content"
+
+    console.log('📄 Rendering KaTeX in staging...');
+    await renderKaTeX(staging);
     await new Promise(r => setTimeout(r, 400));
 
-    // Smart Page Breaks
-    console.log('📄 Adjusting page breaks...');
-    adjustPageLayout(container);
-    // Wait for layout update
-    await new Promise(r => setTimeout(r, 200));
+    // 2. Distribute Elements into Pages
+    const pagesContainer = document.createElement('div');
+    pagesContainer.id = 'pdfPagesContainer';
+    pagesContainer.style.cssText = `
+        position: fixed; left: -9999px; top: 0;
+    `;
+    document.body.appendChild(pagesContainer);
 
-    console.log('📄 Capturing with html2canvas...');
-    const canvas = await html2canvas(container, {
-        scale: 1.5,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-    });
+    const contentDiv = staging.querySelector('.pdf-content');
+    const children = Array.from(contentDiv.children);
 
-    // A4 dimensions with margins
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const margin = 10; // 10mm margin all sides
+    let pageCount = 1;
+    let currentPage = createPageContainer(pageCount, CONTAINER_WIDTH, CONTAINER_HEIGHT, PAGE_PADDING);
+    let currentHeight = 0;
 
-    // Printable area
-    const printWidth = pageWidth - (margin * 2);
-    const printHeight = pageHeight - (margin * 2);
+    pagesContainer.appendChild(currentPage);
 
-    // Calculate scaled image dimensions
-    const imgWidth = printWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    // Helper to add footer/header if needed (currently simplified)
 
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    for (const child of children) {
+        // Clone to calculate/insert
+        const clone = child.cloneNode(true);
+        // We need to append to current page to check height? 
+        // Actually we can check the 'staging' height of the child
+        const childHeight = child.offsetHeight;
+        const style = window.getComputedStyle(child);
+        const margin = (parseFloat(style.marginTop) || 0) + (parseFloat(style.marginBottom) || 0);
+        const totalChildHeight = childHeight + margin;
 
-    let position = 0; // Current Y position on full image
-    let pageCount = 0;
-
-    // Simple pagination: slide the image up for each page
-    while (position < imgHeight) {
-        if (pageCount > 0) {
-            pdf.addPage();
+        // Check if fits
+        if (currentHeight + totalChildHeight > CONTENT_HEIGHT_LIMIT && currentHeight > 0) {
+            // New Page
+            pageCount++;
+            currentPage = createPageContainer(pageCount, CONTAINER_WIDTH, CONTAINER_HEIGHT, PAGE_PADDING);
+            pagesContainer.appendChild(currentPage);
+            currentHeight = 0;
         }
 
-        // Add entire image, but shift it up based on current page
-        pdf.addImage(
-            imgData,
-            'JPEG',
-            margin,              // X with left margin
-            margin - position,   // Y: shifts image up for subsequent pages
-            imgWidth,
-            imgHeight
-        );
-
-        position += printHeight;
-        pageCount++;
+        // Append to current page content area
+        currentPage.querySelector('.page-content-area').appendChild(clone);
+        currentHeight += totalChildHeight;
     }
 
-    container.innerHTML = '';
+    // 3. Render Each Page to Canvas -> add to PDF
+    console.log(`📄 Generated ${pageCount} DOM pages. Capturing...`);
 
-    console.log('📄 PDF generated successfully!');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = 210;
+    const pdfHeight = 297;
+
+    const pages = Array.from(pagesContainer.children);
+
+    for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
+
+        // Force layout refresh
+        await new Promise(r => requestAnimationFrame(r));
+
+        const canvas = await html2canvas(page, {
+            scale: 1.5, // High res
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+        console.log(`📄 Captured page ${i + 1}/${pages.length}`);
+    }
+
+    // Cleanup
+    staging.remove();
+    pagesContainer.remove();
+
     return pdf;
+}
+
+function createPageContainer(pageNum, width, height, padding) {
+    const div = document.createElement('div');
+    div.className = 'pdf-page-node';
+    div.style.cssText = `
+        width: ${width}px;
+        min-height: ${height}px;
+        background: white;
+        padding: ${padding}px;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+        position: relative;
+        font-family: 'Times New Roman', serif;
+        font-size: 13pt;
+    `;
+
+    // Content Area
+    const content = document.createElement('div');
+    content.className = 'page-content-area';
+    div.appendChild(content);
+
+    // Optional: Add Page Number Footer
+    const footer = document.createElement('div');
+    footer.style.cssText = `
+        position: absolute; bottom: 15px; width: 100%; text-align: center;
+        font-size: 10pt; color: #666; left: 0;
+    `;
+    footer.innerText = `Trang ${pageNum}`;
+    div.appendChild(footer);
+
+    return div;
 }
 
 // Preview PDF in modal
 async function previewExamPDF(examId) {
     console.log('📄 Creating PDF preview...');
-
     try {
-        const token = localStorage.getItem('luyende_token');
-        const response = await fetch(`/api/exams/${examId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const examData = await fetchExamForPDF(examId);
 
-        if (!response.ok) throw new Error('Không thể tải đề thi');
-
-        const examData = await response.json();
-        const subject = typeof cachedSubjects !== 'undefined' ?
-            cachedSubjects?.find(s => s.id === examData.subjectId) : null;
-        examData.subjectName = subject?.name || 'TOÁN';
-
+        // Generate PDF using LaTeX support
         const pdf = await generateExamPDFWithLaTeX(examData);
 
-        // Open in new tab for preview
         const pdfBlob = pdf.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
         window.open(pdfUrl, '_blank');
 
+        console.log('📄 Preview opened successfully');
+
     } catch (err) {
-        console.error('📄 Error previewing PDF:', err);
+        console.error('📄 Error creating preview:', err);
         alert('Lỗi xem trước PDF: ' + err.message);
     }
 }
