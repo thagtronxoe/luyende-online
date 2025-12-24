@@ -179,30 +179,35 @@ function renderExamToHTML(examData) {
                 page-break-inside: avoid; /* Attempt to keep questions together */
             }
             .question-num { font-weight: bold; }
-            .question-text { margin-bottom: 5px; }
+            .question-text { margin-bottom: 8px; }
             .options-table { 
                 width: 98%;
-                margin: 5px 0 5px 15px;
+                margin: 5px 0 8px 15px;
                 font-size: 13pt;
-                border-collapse: collapse;
+                border-collapse: separate;
+                border-spacing: 0 8px; /* Space between rows */
             }
             .options-table td {
                 width: 50%;
-                padding: 2px 5px 2px 0;
+                padding: 4px 10px 4px 0; /* More right padding */
                 vertical-align: top;
             }
-            .option-label { font-weight: bold; }
+            .option-label { 
+                font-weight: bold; 
+                margin-right: 5px;
+                font-size: 0.9em; /* Slightly smaller label A. B. */
+            }
             .tf-statements { margin-left: 15px; font-size: 13pt; }
-            .statement { margin: 3px 0; }
+            .statement { margin: 6px 0; }
             .end-marker { 
                 text-align: center; 
-                margin-top: 20px; 
+                margin-top: 25px; 
                 font-weight: bold;
                 font-size: 13pt;
                 clear: both;
             }
             .footer-note {
-                margin-top: 10px;
+                margin-top: 15px;
                 font-style: italic;
                 font-size: 11pt;
             }
