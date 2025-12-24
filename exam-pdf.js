@@ -388,19 +388,24 @@ async function generateExamPDFWithLaTeX(examData) {
         windowWidth: 794
     });
 
-    // A4 dimensions
+    // A4 dimensions with margins
     const pdfWidth = 210;
     const pdfHeight = 297;
+    const margin = 10; // 10mm margins on all sides
 
-    // Calculate image dimensions that fit A4
-    const imgWidth = pdfWidth;
+    // Printable area (inside margins)
+    const printableWidth = pdfWidth - (margin * 2); // 190mm
+    const printableHeight = pdfHeight - (margin * 2); // 277mm
+
+    // Calculate image dimensions that fit printable area
+    const imgWidth = printableWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     const pdf = new jsPDF('p', 'mm', 'a4');
     const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
-    // Simple pagination: slide image up for each page
-    let position = 0;
+    // Pagination with margins
+    let position = 0; // Current position in the image (mm)
     let pageNum = 0;
 
     while (position < imgHeight) {
@@ -408,17 +413,20 @@ async function generateExamPDFWithLaTeX(examData) {
             pdf.addPage();
         }
 
-        // Add entire image, shifted up by current position
+        // Add image with proper margin positioning
+        // x = margin (left margin)
+        // y = margin - position (top margin, shifted up for subsequent pages)
         pdf.addImage(
             imgData,
             'JPEG',
-            0,
-            -position,
+            margin,              // X: left margin
+            margin - position,   // Y: top margin, shifted up by current position
             imgWidth,
             imgHeight
         );
 
-        position += pdfHeight;
+        // Move to next page worth of content
+        position += printableHeight;
         pageNum++;
     }
 
